@@ -4,7 +4,7 @@ Read this file first at the start of every session.
 
 ## Current Status
 
-Planning complete. No implementation code, workflow JSON, Docker files, schemas, scripts, prompts, or fixtures have been created yet.
+Stage 1 local runtime scaffold is implemented and verified. Docker Compose now runs local n8n, Postgres, and GreenMail. No workflow JSON, database schema, prompts, fixtures, or triage logic have been created yet.
 
 The staged plan is saved in `build-plan.md`.
 
@@ -12,7 +12,7 @@ The staged plan is saved in `build-plan.md`.
 
 | Stage | Name | Status | Notes |
 |---|---|---|---|
-| 1 | Local Environment, Accounts, and Runtime Setup | Not started | Default decision changed: local Docker first; tunnel only for Telegram/public webhook tests; VPS/Caddy production-only. |
+| 1 | Local Environment, Accounts, and Runtime Setup | Implemented pending manual credentials | Local Docker runtime verified with n8n, Postgres, GreenMail, and Cloudflare Tunnel quick URL. Real OpenAI, Telegram bot, and demo mailbox credentials still need manual setup in n8n. |
 | 2 | Data Model, Config, and Fixture Corpus | Not started | No schema or fixtures created yet. |
 | 3 | OpenAI Model Contract and Accuracy Harness | Not started | Must verify current model string and accepted parameters live. |
 | 4 | Core Triage Sub-Workflow | Not started | Depends on stages 2-3. |
@@ -41,8 +41,8 @@ The staged plan is saved in `build-plan.md`.
 
 ## Open Questions Before Stage 1
 
-- Which domain/mailbox should be used for the demo?
-- Which tunnel should be used for Telegram testing: Cloudflare Tunnel, ngrok, or another option?
+- Resolved for Stage 1: use GreenMail as the local IMAP/SMTP simulator. Real demo mailbox/domain is deferred until outbound demo rehearsal.
+- Resolved for Stage 1: use Cloudflare Tunnel quick tunnels for temporary HTTPS callback testing.
 
 ## Deviations From Original Plan
 
@@ -54,7 +54,11 @@ The staged plan is saved in `build-plan.md`.
 
 ## Verification Log
 
-No verification has been run yet.
+- 2026-07-31: `docker compose config` passes after `.env` is present.
+- 2026-07-31: `.\scripts\start-local.ps1` created ignored `.env` from `.env.example` and started `n8n`, `postgres`, and `greenmail`.
+- 2026-07-31: `.\scripts\validate-stage-1.ps1` passed. Verified Postgres readiness, n8n HTTP 200, loopback bindings for n8n on 5678 and Postgres on 5432, and GreenMail SMTP/IMAP send/fetch.
+- 2026-07-31: Cloudflare quick tunnel started successfully for `http://localhost:5678` and issued a `trycloudflare.com` HTTPS URL. The test tunnel was stopped after verification.
+- 2026-07-31: Manual n8n credential checks remain pending because no real OpenAI API key, Telegram bot token/chat ID, or real demo mailbox credentials have been supplied. GreenMail local IMAP/SMTP values are documented for n8n credential creation.
 
 ## Outstanding Risks To Recheck During Build
 

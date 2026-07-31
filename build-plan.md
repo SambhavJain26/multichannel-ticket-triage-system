@@ -36,10 +36,10 @@ Implementation defaults unless you override them:
 - Use a dedicated IMAP mailbox for intake and a domain-authenticated sender identity for outbound demo replies if available. A plain Gmail sender is acceptable only for internal testing, not a prospect screen share.
 - During early testing, approved outbound tenant replies go only to controlled test inboxes. Prospect-supplied addresses can be enabled intentionally during demo rehearsal once the approval gate and double-approve guard are verified.
 
-Open questions to confirm before implementation:
+Stage 1 setup choices confirmed:
 
-- Which domain/mailbox should be used for the demo?
-- Which local tunnel should be used for Telegram testing: Cloudflare Tunnel, ngrok, or another option?
+- Use GreenMail as the local IMAP/SMTP simulator. A real demo mailbox/domain is deferred until outbound demo rehearsal.
+- Use Cloudflare Tunnel quick tunnels for temporary HTTPS callback testing.
 
 ## Stage 1 - Local Environment, Accounts, and Runtime Setup
 
