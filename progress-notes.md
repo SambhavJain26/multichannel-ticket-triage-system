@@ -59,6 +59,7 @@ The staged plan is saved in `build-plan.md`.
 - 2026-07-31: `.\scripts\validate-stage-1.ps1` passed. Verified Postgres readiness, n8n HTTP 200, loopback bindings for n8n on 5678 and Postgres on 5432, and GreenMail SMTP/IMAP send/fetch.
 - 2026-07-31: Cloudflare quick tunnel started successfully for `http://localhost:5678` and issued a `trycloudflare.com` HTTPS URL. The test tunnel was stopped after verification.
 - 2026-07-31: Manual n8n credential checks remain pending because no real OpenAI API key, Telegram bot token/chat ID, or real demo mailbox credentials have been supplied. GreenMail local IMAP/SMTP values are documented for n8n credential creation.
+- 2026-07-31: User created `maintenance-triage-openai` and `maintenance-triage-telegram-bot` credentials in n8n. Added and ran `.\scripts\import-local-n8n-credentials.ps1`, which imported `maintenance-triage-postgres-local`, `maintenance-triage-greenmail-imap-local`, and `maintenance-triage-greenmail-smtp-local` through n8n's `import:credentials` CLI. Verified all five `maintenance-triage-*` credentials exist and are owned by the personal n8n project.
 
 ## Outstanding Risks To Recheck During Build
 

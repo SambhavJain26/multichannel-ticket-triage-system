@@ -62,6 +62,14 @@ Use these names so later workflow exports can refer to credentials without embed
 | OpenAI | `maintenance-triage-openai` |
 | Telegram Bot | `maintenance-triage-telegram-bot` |
 
+The three local infrastructure credentials can be imported without the browser UI:
+
+```powershell
+.\scripts\import-local-n8n-credentials.ps1
+```
+
+This reads `.env`, creates a temporary ignored JSON file, imports it through n8n's `import:credentials` CLI, and deletes the temporary file. It intentionally does not create OpenAI or Telegram credentials because those contain real external secrets.
+
 ## Postgres Credential Values
 
 Use the values from `.env`.
