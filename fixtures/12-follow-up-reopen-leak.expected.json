@@ -1,0 +1,19 @@
+{
+  "id": 12,
+  "slug": "follow-up-reopen-leak",
+  "is_live_demo": false,
+  "expected_priority": "URGENT",
+  "expected_model_priority": "URGENT",
+  "expected_request_type": "FOLLOW_UP",
+  "expected_is_maintenance_request": true,
+  "expected_trade": "PLUMBING",
+  "expected_safety_signals": ["NONE"],
+  "expected_missing_info": ["NONE"],
+  "expected_language": "en",
+  "expected_habitability_flag": false,
+  "expected_accommodation_or_legal_flag": false,
+  "expected_human_only": false,
+  "expected_override_applied": false,
+  "expected_draft_policy": "draft_allowed",
+  "notes": "Follow-up should reopen or append later, not look like a new first report."
+}

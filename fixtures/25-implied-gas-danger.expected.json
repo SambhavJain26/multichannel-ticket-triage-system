@@ -1,0 +1,19 @@
+{
+  "id": 25,
+  "slug": "implied-gas-danger",
+  "is_live_demo": false,
+  "expected_priority": "EMERGENCY",
+  "expected_model_priority": "EMERGENCY",
+  "expected_request_type": "NEW_ISSUE",
+  "expected_is_maintenance_request": true,
+  "expected_trade": "APPLIANCE",
+  "expected_safety_signals": ["GAS"],
+  "expected_missing_info": ["NONE"],
+  "expected_language": "en",
+  "expected_habitability_flag": true,
+  "expected_accommodation_or_legal_flag": false,
+  "expected_human_only": false,
+  "expected_override_applied": false,
+  "expected_draft_policy": "draft_allowed",
+  "notes": "Stove plus symptoms must be treated as gas danger even without exact keyword rule."
+}

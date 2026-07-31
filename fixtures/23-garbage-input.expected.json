@@ -1,0 +1,19 @@
+{
+  "id": 23,
+  "slug": "garbage-input",
+  "is_live_demo": false,
+  "expected_priority": "NEEDS_REVIEW",
+  "expected_model_priority": "ROUTINE",
+  "expected_request_type": "NEW_ISSUE",
+  "expected_is_maintenance_request": true,
+  "expected_trade": "UNKNOWN",
+  "expected_safety_signals": ["NONE"],
+  "expected_missing_info": ["ISSUE_DETAIL"],
+  "expected_language": "en",
+  "expected_habitability_flag": false,
+  "expected_accommodation_or_legal_flag": false,
+  "expected_human_only": false,
+  "expected_override_applied": false,
+  "expected_draft_policy": "draft_suppressed",
+  "notes": "Unreadable input should force NEEDS_REVIEW and no draft."
+}

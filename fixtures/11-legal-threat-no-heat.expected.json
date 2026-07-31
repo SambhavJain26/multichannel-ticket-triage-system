@@ -1,0 +1,19 @@
+{
+  "id": 11,
+  "slug": "legal-threat-no-heat",
+  "is_live_demo": false,
+  "expected_priority": "EMERGENCY",
+  "expected_model_priority": "EMERGENCY",
+  "expected_request_type": "FOLLOW_UP",
+  "expected_is_maintenance_request": true,
+  "expected_trade": "HVAC",
+  "expected_safety_signals": ["NO_HEAT"],
+  "expected_missing_info": ["NONE"],
+  "expected_language": "en",
+  "expected_habitability_flag": true,
+  "expected_accommodation_or_legal_flag": true,
+  "expected_human_only": true,
+  "expected_override_applied": true,
+  "expected_draft_policy": "draft_suppressed",
+  "notes": "Legal-sensitive no-heat item; emergency priority but human-only."
+}

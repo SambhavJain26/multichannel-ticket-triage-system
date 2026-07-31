@@ -4,7 +4,7 @@ Read this file first at the start of every session.
 
 ## Current Status
 
-Stage 1 local runtime scaffold is implemented and verified. Docker Compose now runs local n8n, Postgres, and GreenMail. No workflow JSON, database schema, prompts, fixtures, or triage logic have been created yet.
+Stage 2 data foundation is implemented and verified. Docker Compose runs local n8n, Postgres, and GreenMail. The `triage` Postgres schema, config seed, and 30-fixture corpus exist. No workflow JSON, prompts, OpenAI harness, board, or triage logic have been created yet.
 
 The staged plan is saved in `build-plan.md`.
 
@@ -13,7 +13,7 @@ The staged plan is saved in `build-plan.md`.
 | Stage | Name | Status | Notes |
 |---|---|---|---|
 | 1 | Local Environment, Accounts, and Runtime Setup | Implemented pending manual credentials | Local Docker runtime verified with n8n, Postgres, GreenMail, and Cloudflare Tunnel quick URL. Real OpenAI, Telegram bot, and demo mailbox credentials still need manual setup in n8n. |
-| 2 | Data Model, Config, and Fixture Corpus | Not started | No schema or fixtures created yet. |
+| 2 | Data Model, Config, and Fixture Corpus | Implemented | App tables live under dedicated `triage` schema. Seven config rows seeded. Thirty text fixtures with matching expected JSON files validate successfully. |
 | 3 | OpenAI Model Contract and Accuracy Harness | Not started | Must verify current model string and accepted parameters live. |
 | 4 | Core Triage Sub-Workflow | Not started | Depends on stages 2-3. |
 | 5 | Board and Detail View | Not started | Depends on stored tickets/events. |
@@ -60,6 +60,9 @@ The staged plan is saved in `build-plan.md`.
 - 2026-07-31: Cloudflare quick tunnel started successfully for `http://localhost:5678` and issued a `trycloudflare.com` HTTPS URL. The test tunnel was stopped after verification.
 - 2026-07-31: Manual n8n credential checks remain pending because no real OpenAI API key, Telegram bot token/chat ID, or real demo mailbox credentials have been supplied. GreenMail local IMAP/SMTP values are documented for n8n credential creation.
 - 2026-07-31: User created `maintenance-triage-openai` and `maintenance-triage-telegram-bot` credentials in n8n. Added and ran `.\scripts\import-local-n8n-credentials.ps1`, which imported `maintenance-triage-postgres-local`, `maintenance-triage-greenmail-imap-local`, and `maintenance-triage-greenmail-smtp-local` through n8n's `import:credentials` CLI. Verified all five `maintenance-triage-*` credentials exist and are owned by the personal n8n project.
+- 2026-07-31: Added Stage 2 SQL and scripts. Ran `.\scripts\apply-stage-2.ps1 -Reset`; it dropped/recreated only the `triage` schema, created `triage.tickets`, `triage.events`, `triage.config`, and `triage.feedback`, created required indexes, and seeded seven config keys.
+- 2026-07-31: Added 30 synthetic fixture text files and 30 matching expected JSON labels. Ran `python .\scripts\validate-stage-2.py`; it validated all fixtures and confirmed six live-demo fixtures.
+- 2026-07-31: Ran `.\scripts\validate-stage-2.ps1`; it verified Docker services, four `triage` tables, eight required indexes, seven config keys, and full fixture corpus coverage.
 
 ## Outstanding Risks To Recheck During Build
 
