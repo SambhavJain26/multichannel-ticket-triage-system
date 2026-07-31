@@ -4,7 +4,7 @@ Read this file first at the start of every session.
 
 ## Current Status
 
-Stage 2 data foundation is implemented and verified. Docker Compose runs local n8n, Postgres, and GreenMail. The `triage` Postgres schema, config seed, and 30-fixture corpus exist. No workflow JSON, prompts, OpenAI harness, board, or triage logic have been created yet.
+Stage 2 data foundation is implemented and verified. Docker Compose runs local n8n, Postgres, and GreenMail. The `triage` Postgres schema, config seed, and 30-fixture corpus exist. Stage 3 prompt/schema artifacts and the standalone OpenAI harness are implemented for the revised demo gate: six live-demo fixtures, one run, priority/safety acceptance. No workflow JSON, board, or n8n triage logic has been created yet.
 
 The staged plan is saved in `build-plan.md`.
 
@@ -14,7 +14,7 @@ The staged plan is saved in `build-plan.md`.
 |---|---|---|---|
 | 1 | Local Environment, Accounts, and Runtime Setup | Implemented | Local Docker runtime verified with n8n, Postgres, GreenMail, and Cloudflare Tunnel quick URL. OpenAI, Telegram, Postgres, IMAP, and SMTP credentials exist in n8n. Real demo mailbox/domain is deferred until outbound demo rehearsal. |
 | 2 | Data Model, Config, and Fixture Corpus | Implemented | App tables live under dedicated `triage` schema. Seven config rows seeded. Thirty text fixtures with matching expected JSON files validate successfully. |
-| 3 | OpenAI Model Contract and Accuracy Harness | Not started | Must verify current model string and accepted parameters live. |
+| 3 | OpenAI Model Contract and Accuracy Harness | Implemented for demo gate | Responses API probe passed for `gpt-5-nano` and `gpt-5.6-luna`. Reduced live-demo harness passed with 6/6 priority matches, zero under-escalations, zero over-escalations, and zero missed safety signals. Full 30-fixture x 3-run hardening failed and is deferred. |
 | 4 | Core Triage Sub-Workflow | Not started | Depends on stages 2-3. |
 | 5 | Board and Detail View | Not started | Depends on stored tickets/events. |
 | 6 | Alerts, Approval Gate, and Outbound Email | Not started | Depends on core workflow and credentials. |
@@ -63,10 +63,17 @@ The staged plan is saved in `build-plan.md`.
 - 2026-07-31: Added Stage 2 SQL and scripts. Ran `.\scripts\apply-stage-2.ps1 -Reset`; it dropped/recreated only the `triage` schema, created `triage.tickets`, `triage.events`, `triage.config`, and `triage.feedback`, created required indexes, and seeded seven config keys.
 - 2026-07-31: Added 30 synthetic fixture text files and 30 matching expected JSON labels. Ran `python .\scripts\validate-stage-2.py`; it validated all fixtures and confirmed six live-demo fixtures.
 - 2026-07-31: Ran `.\scripts\validate-stage-2.ps1`; it verified Docker services, four `triage` tables, eight required indexes, seven config keys, and full fixture corpus coverage.
+- 2026-07-31: Added Stage 3 prompt/schema artifacts and `scripts/run-stage-3-harness.py` with `probe`, `classify`, `draft`, and `harness` subcommands. Ran `python -m py_compile scripts\run-stage-3-harness.py scripts\validate-stage-2.py`, `python .\scripts\validate-stage-2.py`, `.\scripts\validate-stage-2.ps1`, and `python .\scripts\run-stage-3-harness.py --help`; all passed.
+- 2026-07-31: Ran `python .\scripts\run-stage-3-harness.py probe`; `gpt-5-nano` and `gpt-5.6-luna` both accepted strict Responses API JSON Schema requests with `reasoning: low`. Saved `fixtures/known-good-request.json` without secrets.
+- 2026-07-31: Initial `gpt-5-nano` full harness run over 30 fixtures x 3 runs took about 14m47s and failed the production-style gate: 15.6% exact match, 6 under-escalations, 4 over-escalations, and 10 missed safety signals. User revised Stage 3 target to demo-depth happy-flow testing rather than thorough production-style coverage.
+- 2026-07-31: Added `harness --live-only`, `--fixture-id`, and `--fixture-slug` selection options. Tightened prompt guidance for tenant urgency vs trivial issues, expanded the deterministic flood rule for "pipe under sink burst" wording, and refined draft lint to avoid false positives on tenant-provided onset dates.
+- 2026-07-31: Ran `python .\scripts\run-stage-3-harness.py harness --live-only --runs 1`; it passed the revised demo gate with 6/6 priority matches, 0 under-escalations, 0 over-escalations, 0 missed safety signals, and estimated API cost `$0.003130`. Saved `docs/stage-3-scorecard.md`.
 
 ## Outstanding Risks To Recheck During Build
 
 - Current OpenAI model IDs, prices, and accepted API parameters may change; Stage 3 must verify live.
+- The accidentally exposed OpenAI API key should be rotated before further work or screen sharing.
+- Full-corpus Stage 3 hardening is not demo-blocking but remains weak: the 30-fixture x 3-run nano harness had under-escalations and missed safety signals. Revisit before claiming broad accuracy or moving toward production.
 - Gmail App Password availability may not hold for the selected mailbox type.
 - Tunnel reliability and URL stability must be verified before Telegram callback testing.
 - n8n production hosting has licensing nuance; production should use a client-owned VPS unless n8n confirms another arrangement in writing.

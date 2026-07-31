@@ -1,0 +1,61 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "is_maintenance_request",
+    "request_type",
+    "unit_identifier",
+    "tenant_name",
+    "tenant_contact",
+    "issue_summary",
+    "priority",
+    "priority_reason",
+    "trade",
+    "habitability_flag",
+    "habitability_reason",
+    "safety_signals",
+    "access_notes",
+    "accommodation_or_legal_flag",
+    "accommodation_or_legal_reason",
+    "missing_info",
+    "confidence",
+    "ambiguity_note",
+    "language"
+  ],
+  "properties": {
+    "is_maintenance_request": { "type": "boolean" },
+    "request_type": { "type": "string", "enum": ["NEW_ISSUE", "FOLLOW_UP", "NOT_A_REQUEST"] },
+    "unit_identifier": { "type": ["string", "null"] },
+    "tenant_name": { "type": ["string", "null"] },
+    "tenant_contact": { "type": ["string", "null"] },
+    "issue_summary": { "type": "string" },
+    "priority": { "type": "string", "enum": ["EMERGENCY", "URGENT", "ROUTINE"] },
+    "priority_reason": { "type": "string" },
+    "trade": {
+      "type": "string",
+      "enum": ["PLUMBING", "ELECTRICAL", "HVAC", "APPLIANCE", "STRUCTURAL", "PEST", "LOCKS_SECURITY", "GENERAL", "UNKNOWN"]
+    },
+    "habitability_flag": { "type": "boolean" },
+    "habitability_reason": { "type": ["string", "null"] },
+    "safety_signals": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["GAS", "CARBON_MONOXIDE", "SMOKE_FIRE", "ELECTRICAL", "FLOOD", "SEWAGE", "NO_HEAT", "NO_WATER", "NO_COOLING", "SECURITY", "STRUCTURAL", "NONE"]
+      }
+    },
+    "access_notes": { "type": ["string", "null"] },
+    "accommodation_or_legal_flag": { "type": "boolean" },
+    "accommodation_or_legal_reason": { "type": ["string", "null"] },
+    "missing_info": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["UNIT", "PROPERTY", "CONTACT", "ACCESS_PERMISSION", "PET_ON_SITE", "ISSUE_DETAIL", "ONSET_TIME"]
+      }
+    },
+    "confidence": { "type": "string", "enum": ["HIGH", "MEDIUM", "LOW"] },
+    "ambiguity_note": { "type": ["string", "null"] },
+    "language": { "type": "string" }
+  }
+}

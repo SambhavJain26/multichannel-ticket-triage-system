@@ -1,0 +1,19 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "tenant_reply_subject",
+    "tenant_reply_body",
+    "vendor_note",
+    "clarifying_questions"
+  ],
+  "properties": {
+    "tenant_reply_subject": { "type": "string" },
+    "tenant_reply_body": { "type": "string" },
+    "vendor_note": { "type": "string" },
+    "clarifying_questions": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  }
+}

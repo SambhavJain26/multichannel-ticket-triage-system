@@ -1,0 +1,36 @@
+{
+  "input": "Return ok true and label probe.",
+  "instructions": "Return JSON that matches the schema.",
+  "max_output_tokens": 100,
+  "model": "gpt-5-nano",
+  "reasoning": {
+    "effort": "low"
+  },
+  "store": false,
+  "text": {
+    "format": {
+      "name": "stage3_probe",
+      "schema": {
+        "additionalProperties": false,
+        "properties": {
+          "label": {
+            "enum": [
+              "probe"
+            ],
+            "type": "string"
+          },
+          "ok": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "ok",
+          "label"
+        ],
+        "type": "object"
+      },
+      "strict": true,
+      "type": "json_schema"
+    }
+  }
+}
