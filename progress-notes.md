@@ -4,7 +4,7 @@ Read this file first at the start of every session.
 
 ## Current Status
 
-Stage 2 data foundation is implemented and verified. Docker Compose runs local n8n, Postgres, and GreenMail. The `triage` Postgres schema, config seed, and 30-fixture corpus exist. Stage 3 prompt/schema artifacts and the standalone OpenAI harness are implemented for the revised demo gate: six live-demo fixtures, one run, priority/safety acceptance. No workflow JSON, board, or n8n triage logic has been created yet.
+Stage 4 core triage workflow is implemented and verified for the revised demo-depth gate. Docker Compose runs local n8n, Postgres, and GreenMail. The `triage` Postgres schema, config seed, 30-fixture corpus, Stage 3 OpenAI harness, Stage 4 reusable core workflow, and Stage 4 verification driver exist. No board UI, Telegram alerting, approval buttons, public ingestion, or outbound SMTP send has been created yet.
 
 The staged plan is saved in `build-plan.md`.
 
@@ -15,7 +15,7 @@ The staged plan is saved in `build-plan.md`.
 | 1 | Local Environment, Accounts, and Runtime Setup | Implemented | Local Docker runtime verified with n8n, Postgres, GreenMail, and Cloudflare Tunnel quick URL. OpenAI, Telegram, Postgres, IMAP, and SMTP credentials exist in n8n. Real demo mailbox/domain is deferred until outbound demo rehearsal. |
 | 2 | Data Model, Config, and Fixture Corpus | Implemented | App tables live under dedicated `triage` schema. Seven config rows seeded. Thirty text fixtures with matching expected JSON files validate successfully. |
 | 3 | OpenAI Model Contract and Accuracy Harness | Implemented for demo gate | Responses API probe passed for `gpt-5-nano` and `gpt-5.6-luna`. Reduced live-demo harness passed with 6/6 priority matches, zero under-escalations, zero over-escalations, and zero missed safety signals. Full 30-fixture x 3-run hardening failed and is deferred. |
-| 4 | Core Triage Sub-Workflow | Not started | Depends on stages 2-3. |
+| 4 | Core Triage Sub-Workflow | Implemented for demo gate | Importable n8n core sub-workflow and local Stage 4 driver exist. Core normalizes, dedupes/threads, calls OpenAI Responses via HTTP Request, applies deterministic safety rules, persists tickets/events, drafts when allowed, and supports mock/error test modes. |
 | 5 | Board and Detail View | Not started | Depends on stored tickets/events. |
 | 6 | Alerts, Approval Gate, and Outbound Email | Not started | Depends on core workflow and credentials. |
 | 7 | Ingestion Paths and Follow-Up Importer | Not started | Depends on core workflow; importer supports the sales follow-up ask. |
@@ -34,7 +34,7 @@ The staged plan is saved in `build-plan.md`.
 - Competitor-aware positioning is required; do not claim nobody else does maintenance AI triage.
 - Default setup is local-first. VPS and Caddy are reserved for production deployment.
 - Use a tunnel for Telegram callback testing and temporary public board access.
-- Use n8n's built-in OpenAI node for workflow model calls if the installed version supports Text -> Generate a Model Response with JSON Schema output and the needed model/reasoning settings. Keep HTTP Request as fallback and use direct API calls in the standalone harness.
+- Use HTTP Request for workflow model calls in this local n8n build. The installed n8n `2.29.10` OpenAI node is the older hidden node and does not expose Responses API, strict JSON Schema, or reasoning settings. Direct API calls remain useful for the standalone harness.
 - Do not use n8n AI Agent/LangChain agent loops for the triage classifier.
 - Default model is `gpt-5-nano`. Fallback model is `gpt-5.6-luna` if nano misses safety cases, under-escalates too often, has unstable schema output, or produces weak drafts. Use standard pricing for live workflow estimates; batch pricing is only relevant for offline batch harness/report runs.
 - Early approved outbound replies should go to controlled test inboxes until the approval gate and double-approve guard are verified.
@@ -48,7 +48,8 @@ The staged plan is saved in `build-plan.md`.
 
 - One planning refinement after rechecking `maintenance-triage-demo-build-plan.md`: Stage 8 now explicitly includes demo collateral and rehearsed claims, including accuracy/cost numbers, failure recovery lines, data-handling answer, competitor-aware positioning, and the "what not to claim" list.
 - User corrected deployment approach: demo build is local-first; VPS and Caddy are production-only; tunnel is used for Telegram/public webhook testing.
-- Research correction: current n8n OpenAI node V2 supports Responses API and JSON Schema output, so the workflow default is the built-in OpenAI node when available, not HTTP Request. HTTP Request remains fallback and direct API remains useful for the standalone harness.
+- Stage 4 implementation correction: local n8n `2.29.10` only exposes the older hidden OpenAI node implementation, so Stage 4 uses HTTP Request with the `maintenance-triage-openai` predefined OpenAI credential instead of the built-in OpenAI node.
+- Stage 4 validation correction: n8n CLI execution of an Execute Sub-workflow driver requires the core workflow to be published/active through n8n's workflow CLI, not merely imported. `scripts/import-stage-4-workflows.ps1` now activates both Stage 4 workflows after import.
 - `AGENTS.md` was rewritten using lessons from a similar local n8n AI automation project, adapted for maintenance triage: read order, local service rules, n8n workflow gotchas, fixture expectations, security rules, and completion/documentation discipline.
 - User requested a durable rule to commit and push after every completed task. `AGENTS.md` now requires committing and pushing to `main` after task completion, while still avoiding secrets/local data/generated temp output.
 
@@ -68,6 +69,12 @@ The staged plan is saved in `build-plan.md`.
 - 2026-07-31: Initial `gpt-5-nano` full harness run over 30 fixtures x 3 runs took about 14m47s and failed the production-style gate: 15.6% exact match, 6 under-escalations, 4 over-escalations, and 10 missed safety signals. User revised Stage 3 target to demo-depth happy-flow testing rather than thorough production-style coverage.
 - 2026-07-31: Added `harness --live-only`, `--fixture-id`, and `--fixture-slug` selection options. Tightened prompt guidance for tenant urgency vs trivial issues, expanded the deterministic flood rule for "pipe under sink burst" wording, and refined draft lint to avoid false positives on tenant-provided onset dates.
 - 2026-07-31: Ran `python .\scripts\run-stage-3-harness.py harness --live-only --runs 1`; it passed the revised demo gate with 6/6 priority matches, 0 under-escalations, 0 over-escalations, 0 missed safety signals, and estimated API cost `$0.003130`. Saved `docs/stage-3-scorecard.md`.
+- 2026-07-31: Added Stage 4 SQL support in `db/postgres/003-stage-4-support.sql`: `pgcrypto`, `triage.ticket_ref_seq`, and runtime circuit-breaker fields in `triage.config.runtime_state`.
+- 2026-07-31: Added `scripts/build-stage-4-workflows.py`, which embeds the current prompt/schema artifacts into `workflows/maintenance-triage-core.json` and `workflows/maintenance-triage-stage-4-driver.json`.
+- 2026-07-31: Added Stage 4 helper scripts `scripts/apply-stage-4.ps1`, `scripts/import-stage-4-workflows.ps1`, and `scripts/validate-stage-4.ps1`. The import helper publishes/activates both Stage 4 workflows because the local n8n CLI refuses Execute Sub-workflow calls against inactive workflows.
+- 2026-07-31: Tightened the classification prompt water and squeaky-door boundaries so a contained ceiling drip with a bucket remains `URGENT`, spreading/pouring water remains `EMERGENCY`, and noisy hinges remain `ROUTINE` unless there is a lock/closure/access/injury issue. Added a Stage 4 deterministic human-only guard so accommodation/legal requests without safety signals remain `ROUTINE` and suppress drafts.
+- 2026-07-31: Increased Stage 4 OpenAI HTTP Request timeout to 60 seconds and classification `max_output_tokens` to 2000 after live validation exposed a draft timeout and a truncated classifier JSON response on the rambling buried-leak fixture. HTTP OpenAI nodes now continue on fail so transient API failures become stored review-state behavior instead of failed workflow executions.
+- 2026-07-31: Ran `.\scripts\validate-stage-4.ps1`; it passed. Checks included workflow JSON parse, prompt/schema JSON parse, `docker compose config`, Stage 4 SQL apply, credential presence, workflow import/activation, Stage 4 driver execution, 12 created tickets, 1 duplicate event, 6/6 live demo priority matches, 3 safety override events, accommodation draft suppression, Spanish draft generation, simulated model errors to `NEEDS_REVIEW`, and degraded runtime state after repeated failures.
 
 ## Outstanding Risks To Recheck During Build
 

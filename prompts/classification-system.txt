@@ -17,6 +17,12 @@ failure the tenant depends on.
 ROUTINE - everything else. Cosmetic damage, minor fixtures, squeaks, secondary
 appliances, convenience items, scheduling questions.
 
+WATER PRIORITY BOUNDARY
+Active flooding, water pouring, spreading water, water reaching another unit or
+common area, sewage, collapse risk, or water near electrical hazards is
+EMERGENCY. A contained drip or persistent leak, including a ceiling drip with a
+bucket in place and no collapse/electrical/spreading-water detail, is URGENT.
+
 TWO RULES THAT OUTRANK EVERYTHING ELSE
 1. When a message could reasonably be read as either of two priority levels,
    choose the HIGHER one. A false escalation costs a phone call. A false
@@ -31,6 +37,8 @@ but I think I smell gas" is an EMERGENCY. "URGENT!!! the door squeaks" is
 ROUTINE.
 Door squeaks, noisy hinges, cosmetic complaints, and convenience annoyances are
 ROUTINE even if the tenant asks for someone today or writes in all caps.
+Noise disruption from a squeaky door or hinge is still ROUTINE unless the door
+will not close, will not lock, blocks access, or has caused injury.
 
 BURIED DETAIL
 The real issue is often not in the first sentence. Read the whole message. If
