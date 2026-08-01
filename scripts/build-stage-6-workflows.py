@@ -135,8 +135,8 @@ def email_node(name, position):
         },
         credentials={
             "smtp": {
-                "id": "stage1GreenmailSmtpLocal",
-                "name": "maintenance-triage-greenmail-smtp-local",
+                "id": "stage7DemoSmtpDomain",
+                "name": "maintenance-triage-demo-smtp-domain",
             }
         },
     )
@@ -742,7 +742,9 @@ def build_approval_action():
       const fromEmail = outbound.from_email || "maintenance@example.test";
       const toEmail = outbound.mode === "test_only"
         ? (outbound.test_to || "maintenance@example.test")
-        : (ticket.tenant_contact || outbound.test_to || "maintenance@example.test");
+        : (ticket.source === "email"
+          ? (ticket.from_address || ticket.tenant_contact || outbound.test_to || "")
+          : (ticket.tenant_contact || ticket.from_address || outbound.test_to || ""));
       return {
         from_email: `${fromName} <${fromEmail}>`,
         to_email: toEmail,

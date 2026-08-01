@@ -76,6 +76,7 @@ Known n8n gotchas to account for:
 - Code nodes may be sandboxed; do not assume `process.env` exists.
 - Optional Postgres update/cleanup nodes need `alwaysOutputData` if downstream nodes must continue after zero rows.
 - Postgres nodes that update then reselect rows must return every field later expressions use.
+- Execute Sub-workflow nodes may produce no downstream items when the called workflow exits through multiple routed branches. For ingestion connectors, treat the core workflow as a database-writing side effect and reselect tickets by stable identifiers such as `msg_id` before post-processing.
 - Form Trigger submissions can render fields as `field-0`; normalize form payloads before SQL or AI steps.
 - AI structured output may be wrapped under `output`; downstream expressions should handle wrapped and direct JSON shapes.
 - Form Trigger workflows should use the Form completion step, not Respond to Webhook.

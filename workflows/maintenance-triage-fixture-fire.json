@@ -1,0 +1,168 @@
+{
+  "id": "mt-fixture-fire-stage-7",
+  "name": "Maintenance Triage Fixture Fire",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "manual-start",
+      "name": "Manual Start",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -720,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "return [\n  {\n    \"json\": {\n      \"source\": \"fixture\",\n      \"from_address\": \"01-understated-gas@fixture.example\",\n      \"subject\": \"01-understated-gas\",\n      \"body_raw\": \"hi sorry to bother you this is dana in 2B at maple court. i think theres a smell of gas in the hallway near our door, probably nothing but it has been there since dinner.\",\n      \"received_at\": \"2026-08-01T12:00:00Z\",\n      \"attachment_paths\": [],\n      \"msg_id\": \"<stage7-01-understated-gas@fixture.example>\",\n      \"in_reply_to\": null,\n      \"refs\": null\n    }\n  },\n  {\n    \"json\": {\n      \"source\": \"fixture\",\n      \"from_address\": \"02-panicked-burst-pipe-no-unit@fixture.example\",\n      \"subject\": \"02-panicked-burst-pipe-no-unit\",\n      \"body_raw\": \"water everywhere please help pipe under sink burst i dont know what to do its going into the hallway and downstairs please send someone now\",\n      \"received_at\": \"2026-08-01T12:02:00Z\",\n      \"attachment_paths\": [],\n      \"msg_id\": \"<stage7-02-panicked-burst-pipe-no-unit@fixture.example>\",\n      \"in_reply_to\": null,\n      \"refs\": null\n    }\n  },\n  {\n    \"json\": {\n      \"source\": \"fixture\",\n      \"from_address\": \"03-urgent-squeaky-door@fixture.example\",\n      \"subject\": \"03-urgent-squeaky-door\",\n      \"body_raw\": \"URGENT!!! i need someone here today. the bathroom door squeaks every time my kid opens it and it is driving us crazy. unit 14A.\",\n      \"received_at\": \"2026-08-01T12:04:00Z\",\n      \"attachment_paths\": [],\n      \"msg_id\": \"<stage7-03-urgent-squeaky-door@fixture.example>\",\n      \"in_reply_to\": null,\n      \"refs\": null\n    }\n  },\n  {\n    \"json\": {\n      \"source\": \"fixture\",\n      \"from_address\": \"04-buried-lede@fixture.example\",\n      \"subject\": \"04-buried-lede\",\n      \"body_raw\": \"This is getting ridiculous. First the dog upstairs is barking every night and nobody answers the phone. The trash bins were also left out again and parking spot 12 keeps getting taken by visitors. I have called twice about the hallway light too. Also the bedroom ceiling has been dripping since Saturday and I put a bucket under it. Anyway can someone finally call me back because this place is not cheap. Unit 6C, Jordan.\",\n      \"received_at\": \"2026-08-01T12:06:00Z\",\n      \"attachment_paths\": [],\n      \"msg_id\": \"<stage7-04-buried-lede@fixture.example>\",\n      \"in_reply_to\": null,\n      \"refs\": null\n    }\n  },\n  {\n    \"json\": {\n      \"source\": \"fixture\",\n      \"from_address\": \"05-spanish-no-hot-water@fixture.example\",\n      \"subject\": \"05-spanish-no-hot-water\",\n      \"body_raw\": \"Hola, soy Marisol en el apartamento 3D. No tenemos agua caliente desde hace tres dias y hay un nino pequeno en la casa. Por favor avisen cuando puedan venir.\",\n      \"received_at\": \"2026-08-01T12:08:00Z\",\n      \"attachment_paths\": [],\n      \"msg_id\": \"<stage7-05-spanish-no-hot-water@fixture.example>\",\n      \"in_reply_to\": null,\n      \"refs\": null\n    }\n  },\n  {\n    \"json\": {\n      \"source\": \"fixture\",\n      \"from_address\": \"06-accommodation-request@fixture.example\",\n      \"subject\": \"06-accommodation-request\",\n      \"body_raw\": \"My mother moved in with me at 8B and uses a walker. We need grab bars installed in the bathroom and maybe one by the toilet. Her doctor can send a letter if you need it.\",\n      \"received_at\": \"2026-08-01T12:10:00Z\",\n      \"attachment_paths\": [],\n      \"msg_id\": \"<stage7-06-accommodation-request@fixture.example>\",\n      \"in_reply_to\": null,\n      \"refs\": null\n    }\n  }\n];"
+      },
+      "id": "load-stage-7-demo-fixtures",
+      "name": "Load Stage 7 Demo Fixtures",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -480,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "amount": 2,
+        "unit": "seconds"
+      },
+      "id": "demo-stagger",
+      "name": "Demo Stagger",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -240,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "source": "database",
+        "workflowId": "maintenance-triage-core-stage-4",
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "execute-core-workflow",
+      "name": "Execute Core Workflow",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [
+        20,
+        0
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const contexts = $(\"Load Stage 7 Demo Fixtures\").all();\nreturn contexts.map((item) => ({\n  json: {\n    msg_id: item.json.msg_id || \"\",\n    outcome: \"created\"\n  }\n}));"
+      },
+      "id": "prepare-fixture-post-ingest-items",
+      "name": "Prepare Fixture Post Ingest Items",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        280,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "source": "database",
+        "workflowId": "mt-post-ingest-stage-7",
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "execute-post-ingest",
+      "name": "Execute Post Ingest",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [
+        540,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Manual Start": {
+      "main": [
+        [
+          {
+            "node": "Load Stage 7 Demo Fixtures",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load Stage 7 Demo Fixtures": {
+      "main": [
+        [
+          {
+            "node": "Demo Stagger",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Demo Stagger": {
+      "main": [
+        [
+          {
+            "node": "Execute Core Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Core Workflow": {
+      "main": [
+        [
+          {
+            "node": "Prepare Fixture Post Ingest Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Fixture Post Ingest Items": {
+      "main": [
+        [
+          {
+            "node": "Execute Post Ingest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "pinData": {},
+  "meta": {
+    "stage": 7,
+    "generatedBy": "scripts/build-stage-7-workflows.py"
+  },
+  "versionId": "stage-7-generated",
+  "triggerCount": 0,
+  "tags": []
+}

@@ -1,0 +1,201 @@
+{
+  "id": "mt-post-ingest-stage-7",
+  "name": "Maintenance Triage Post Ingest",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough",
+        "returnOutput": "allRuns"
+      },
+      "id": "post-ingest-input",
+      "name": "Post Ingest Input",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -780,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "database",
+        "operation": "executeQuery",
+        "query": "WITH input_values AS (\n  SELECT\n    NULLIF($1::text, '')::bigint AS ticket_id,\n    NULLIF($2::text, '') AS source_outcome,\n    NULLIF($3::text, '') AS msg_id\n),\ntarget AS (\n  SELECT t.*\n  FROM triage.tickets t\n  JOIN input_values i ON i.ticket_id = t.id OR (i.ticket_id IS NULL AND i.msg_id IS NOT NULL AND t.msg_id = i.msg_id)\n),\nnorm AS (\n  SELECT\n    t.*,\n    lower(regexp_replace(coalesce(t.unit_identifier, ''), '[^a-zA-Z0-9]+', '', 'g')) AS unit_norm,\n    lower(coalesce(t.subject, '') || ' ' || coalesce(t.body_clean, '') || ' ' || coalesce(t.body_raw, '')) AS haystack\n  FROM target t\n),\nexact_matches AS (\n  SELECT\n    u.*,\n    (position(lower(u.property_name) in n.haystack) > 0) AS property_hint\n  FROM triage.units u\n  CROSS JOIN norm n\n  WHERE u.active\n    AND n.unit_norm <> ''\n    AND lower(regexp_replace(u.unit_label, '[^a-zA-Z0-9]+', '', 'g')) = n.unit_norm\n),\nselected_exact AS (\n  SELECT *\n  FROM exact_matches\n  WHERE property_hint OR NOT EXISTS (SELECT 1 FROM exact_matches WHERE property_hint)\n),\nnear_match AS (\n  SELECT u.*\n  FROM triage.units u\n  CROSS JOIN norm n\n  WHERE u.active\n    AND n.unit_norm <> ''\n    AND NOT EXISTS (SELECT 1 FROM selected_exact)\n  ORDER BY\n    CASE\n      WHEN regexp_replace(lower(u.unit_label), '[^0-9]+', '', 'g') <> ''\n       AND regexp_replace(lower(u.unit_label), '[^0-9]+', '', 'g') = regexp_replace(n.unit_norm, '[^0-9]+', '', 'g')\n      THEN 0 ELSE 1\n    END,\n    abs(length(regexp_replace(lower(u.unit_label), '[^a-zA-Z0-9]+', '', 'g')) - length(n.unit_norm)),\n    u.property_name,\n    u.unit_label\n  LIMIT 1\n),\ndecision AS (\n  SELECT\n    n.id AS ticket_id,\n    CASE\n      WHEN n.unit_norm = '' THEN 'NOT_STATED'\n      WHEN (SELECT count(*) FROM selected_exact) = 1 THEN 'EXACT'\n      WHEN (SELECT count(*) FROM selected_exact) > 1 THEN 'AMBIGUOUS'\n      WHEN EXISTS (SELECT 1 FROM near_match) THEN 'NEAR_MISS'\n      ELSE 'NOT_FOUND'\n    END AS unit_match_status,\n    CASE WHEN (SELECT count(*) FROM selected_exact) = 1 THEN (SELECT id FROM selected_exact LIMIT 1) ELSE NULL END AS matched_unit_id,\n    CASE\n      WHEN n.unit_norm = '' THEN 'UNIT NOT STATED'\n      WHEN (SELECT count(*) FROM selected_exact) = 1 THEN (SELECT unit_label || ' - ' || property_name FROM selected_exact LIMIT 1)\n      WHEN (SELECT count(*) FROM selected_exact) > 1 THEN coalesce(n.unit_identifier, 'Unit') || ' matches multiple properties'\n      WHEN EXISTS (SELECT 1 FROM near_match) THEN coalesce(n.unit_identifier, 'Unit') || ' not found; closest ' || (SELECT unit_label || ' - ' || property_name FROM near_match LIMIT 1)\n      ELSE coalesce(n.unit_identifier, 'Unit') || ' not found in roster'\n    END AS unit_match_display,\n    CASE\n      WHEN n.unit_norm = '' THEN 'No unit was stated in the message.'\n      WHEN (SELECT count(*) FROM selected_exact) = 1 THEN 'Unit matched the demo roster.'\n      WHEN (SELECT count(*) FROM selected_exact) > 1 THEN 'Same unit label exists at more than one property and no clear property hint resolved it.'\n      WHEN EXISTS (SELECT 1 FROM near_match) THEN 'No exact roster match; showing the nearest demo unit label.'\n      ELSE 'No matching demo unit was found.'\n    END AS unit_match_reason\n  FROM norm n\n),\nupdated AS (\n  UPDATE triage.tickets t\n  SET\n    unit_match_status = d.unit_match_status,\n    matched_unit_id = d.matched_unit_id,\n    unit_match_display = d.unit_match_display,\n    unit_match_reason = d.unit_match_reason\n  FROM decision d\n  WHERE t.id = d.ticket_id\n  RETURNING t.*\n),\nevent_insert AS (\n  INSERT INTO triage.events (ticket_id, actor, action, detail)\n  SELECT\n    u.id,\n    'system',\n    'unit_matched',\n    jsonb_build_object(\n      'status', u.unit_match_status,\n      'display', u.unit_match_display,\n      'reason', u.unit_match_reason,\n      'matched_unit_id', u.matched_unit_id\n    )\n  FROM updated u\n  RETURNING id\n)\nSELECT\n  u.id AS ticket_id,\n  u.ref,\n  u.priority,\n  u.status,\n  u.unit_match_status,\n  u.unit_match_display,\n  (SELECT source_outcome FROM input_values) AS source_outcome,\n  ((SELECT source_outcome FROM input_values) = 'created') AS should_dispatch_alert\nFROM updated u;",
+        "options": {
+          "queryReplacement": "={{ [$json.ticket_id || $json.id || '', $json.outcome || 'created', $json.msg_id || ''] }}"
+        }
+      },
+      "id": "postgres-match-unit-roster",
+      "name": "Postgres Match Unit Roster",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -540,
+        0
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "stage1PgLocal",
+          "name": "maintenance-triage-postgres-local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "return $input.all().map((item) => ({\n  json: {\n    ...item.json,\n    test_mode: item.json.test_mode || { mock_telegram: true, force_business_hours: true }\n  }\n}));"
+      },
+      "id": "prepare-alert-dispatch-input",
+      "name": "Prepare Alert Dispatch Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -300,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "should-dispatch-alert-condition",
+              "leftValue": "={{ Boolean($json.should_dispatch_alert) }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "should-dispatch-alert",
+      "name": "Should Dispatch Alert",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -60,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "source": "database",
+        "workflowId": "mt-alert-dispatch-stage-6",
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "execute-alert-dispatch",
+      "name": "Execute Alert Dispatch",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [
+        180,
+        -100
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "return $input.all().map(item => ({ json: item.json }));"
+      },
+      "id": "return-post-ingest-result",
+      "name": "Return Post Ingest Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        420,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Post Ingest Input": {
+      "main": [
+        [
+          {
+            "node": "Postgres Match Unit Roster",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Match Unit Roster": {
+      "main": [
+        [
+          {
+            "node": "Prepare Alert Dispatch Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Alert Dispatch Input": {
+      "main": [
+        [
+          {
+            "node": "Should Dispatch Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Should Dispatch Alert": {
+      "main": [
+        [
+          {
+            "node": "Execute Alert Dispatch",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Return Post Ingest Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Alert Dispatch": {
+      "main": [
+        [
+          {
+            "node": "Return Post Ingest Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "pinData": {},
+  "meta": {
+    "stage": 7,
+    "generatedBy": "scripts/build-stage-7-workflows.py"
+  },
+  "versionId": "stage-7-generated",
+  "triggerCount": 0,
+  "tags": []
+}

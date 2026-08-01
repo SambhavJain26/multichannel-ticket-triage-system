@@ -1,0 +1,288 @@
+{
+  "id": "mt-form-ingest-stage-7",
+  "name": "Maintenance Triage Form Ingest",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "authentication": "none",
+        "formTitle": "Report a Maintenance Issue",
+        "formDescription": "Submit a maintenance issue for demo triage.",
+        "defineForm": "json",
+        "jsonOutput": "[{\"fieldLabel\": \"Name\", \"requiredField\": true}, {\"fieldLabel\": \"Unit\", \"requiredField\": false}, {\"fieldLabel\": \"Phone or email\", \"fieldType\": \"email\", \"requiredField\": true}, {\"fieldLabel\": \"What's wrong?\", \"fieldType\": \"textarea\", \"requiredField\": true}, {\"fieldLabel\": \"Can we enter if you're not home?\", \"fieldType\": \"dropdown\", \"fieldOptions\": {\"values\": [{\"option\": \"Yes\"}, {\"option\": \"No\"}, {\"option\": \"Call first\"}]}, \"requiredField\": false}, {\"fieldLabel\": \"Photo\", \"fieldType\": \"file\", \"multipleFiles\": true, \"acceptFileTypes\": \".jpg,.jpeg,.png,.webp,.heic\"}]",
+        "responseMode": "lastNode",
+        "options": {
+          "path": "report-issue",
+          "buttonLabel": "Submit"
+        }
+      },
+      "id": "tenant-report-form",
+      "name": "Tenant Report Form",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        -1120,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "function safeName(value, fallback) {\n  const raw = String(value || fallback || \"attachment.bin\");\n  const cleaned = raw.replace(/[^a-zA-Z0-9._-]+/g, \"-\").replace(/^-+|-+$/g, \"\");\n  return (cleaned || \"attachment.bin\").slice(0, 100);\n}\nfunction field(obj, labels) {\n  for (const label of labels) {\n    if (obj[label] !== undefined && obj[label] !== null && String(obj[label]).trim() !== \"\") return String(obj[label]).trim();\n  }\n  return \"\";\n}\nconst out = [];\nfor (const [index, item] of $input.all().entries()) {\n  const j = item.json || {};\n  const name = field(j, [\"Name\", \"name\", \"field-0\"]);\n  const unit = field(j, [\"Unit\", \"unit\", \"field-1\"]);\n  const contact = field(j, [\"Phone or email\", \"Contact\", \"contact\", \"field-2\"]);\n  const issue = field(j, [\"What's wrong?\", \"What is wrong?\", \"Issue\", \"issue\", \"field-3\"]);\n  const entry = field(j, [\"Can we enter if you're not home?\", \"Entry permission\", \"entry_permission\", \"field-4\"]);\n  const core_payload = {\n    source: \"form\",\n    from_address: contact || null,\n    subject: unit ? `Form report - ${unit}` : \"Form report\",\n    body_raw: [`Tenant: ${name || \"Not stated\"}`, `Unit: ${unit || \"Not stated\"}`, `Contact: ${contact || \"Not stated\"}`, `Entry permission: ${entry || \"Not stated\"}`, \"\", issue || \"(empty form issue)\"].join(\"\\n\"),\n    received_at: new Date().toISOString(),\n    attachment_paths: [],\n    msg_id: `<form-${Date.now()}-${index}@maintenance-triage.local>`,\n    in_reply_to: null,\n    refs: null,\n  };\n  const ingestion_id = `form-${Date.now()}-${index}`;\n  const binary = item.binary || {};\n  const keys = Object.keys(binary);\n  if (keys.length === 0) {\n    out.push({ json: { ingestion_id, has_attachment: false, core_payload } });\n    continue;\n  }\n  keys.forEach((key, attachmentIndex) => {\n    const meta = binary[key] || {};\n    const fileName = safeName(meta.fileName, `form-photo-${attachmentIndex}.bin`);\n    out.push({\n      json: {\n        ingestion_id,\n        has_attachment: true,\n        attachment_path: `/data/attachments/${ingestion_id}-${attachmentIndex}-${fileName}`,\n        core_payload,\n      },\n      binary: { data: meta },\n    });\n  });\n}\nreturn out;"
+      },
+      "id": "prepare-form-core-payload",
+      "name": "Prepare Form Core Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -880,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "has-form-attachment-condition",
+              "leftValue": "={{ Boolean($json.has_attachment) }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "has-form-attachment",
+      "name": "Has Form Attachment",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -640,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "={{ $json.attachment_path }}",
+        "dataPropertyName": "data",
+        "options": {}
+      },
+      "id": "write-form-attachment",
+      "name": "Write Form Attachment",
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [
+        -400,
+        -120
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const groups = new Map();\nfor (const item of $input.all()) {\n  const j = item.json || {};\n  if (!groups.has(j.ingestion_id)) {\n    groups.set(j.ingestion_id, { ...j.core_payload, attachment_paths: [] });\n  }\n  const payload = groups.get(j.ingestion_id);\n  const path = j.fileName || j.attachment_path;\n  const writeFailed = Boolean(j.error);\n  if (j.has_attachment && path && !writeFailed) payload.attachment_paths.push(path);\n}\nreturn [...groups.values()].map((json) => ({ json }));"
+      },
+      "id": "build-form-core-payload",
+      "name": "Build Form Core Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -160,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "source": "database",
+        "workflowId": "maintenance-triage-core-stage-4",
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "execute-core-workflow",
+      "name": "Execute Core Workflow",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [
+        100,
+        0
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const contexts = $(\"Build Form Core Payload\").all();\nreturn contexts.map((item) => ({\n  json: {\n    msg_id: item.json.msg_id || \"\",\n    outcome: \"created\"\n  }\n}));"
+      },
+      "id": "prepare-form-post-ingest-items",
+      "name": "Prepare Form Post Ingest Items",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        360,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "source": "database",
+        "workflowId": "mt-post-ingest-stage-7",
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "execute-post-ingest",
+      "name": "Execute Post Ingest",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [
+        620,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "respondWith": "text",
+        "completionTitle": "Request received",
+        "completionMessage": "={{ 'Reference: ' + ($json.ref || 'pending review') }}",
+        "options": {
+          "formTitle": "Maintenance request"
+        }
+      },
+      "id": "show-reference-completion",
+      "name": "Show Reference Completion",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        880,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Tenant Report Form": {
+      "main": [
+        [
+          {
+            "node": "Prepare Form Core Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Form Core Payload": {
+      "main": [
+        [
+          {
+            "node": "Has Form Attachment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Form Attachment": {
+      "main": [
+        [
+          {
+            "node": "Write Form Attachment",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Form Core Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Form Attachment": {
+      "main": [
+        [
+          {
+            "node": "Build Form Core Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Form Core Payload": {
+      "main": [
+        [
+          {
+            "node": "Execute Core Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Core Workflow": {
+      "main": [
+        [
+          {
+            "node": "Prepare Form Post Ingest Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Form Post Ingest Items": {
+      "main": [
+        [
+          {
+            "node": "Execute Post Ingest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Post Ingest": {
+      "main": [
+        [
+          {
+            "node": "Show Reference Completion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "pinData": {},
+  "meta": {
+    "stage": 7,
+    "generatedBy": "scripts/build-stage-7-workflows.py"
+  },
+  "versionId": "stage-7-generated",
+  "triggerCount": 0,
+  "tags": []
+}

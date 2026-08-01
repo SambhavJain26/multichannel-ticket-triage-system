@@ -1,0 +1,262 @@
+{
+  "id": "mt-email-ingest-stage-7",
+  "name": "Maintenance Triage Email Ingest",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "mailbox": "INBOX",
+        "postProcessAction": "read",
+        "format": "resolved",
+        "dataPropertyAttachmentsPrefixName": "attachment_",
+        "options": {
+          "trackLastMessageId": true,
+          "customEmailConfig": "[\"UNSEEN\"]"
+        }
+      },
+      "id": "demo-mailbox-imap-trigger",
+      "name": "Demo Mailbox IMAP Trigger",
+      "type": "n8n-nodes-base.emailReadImap",
+      "typeVersion": 2.1,
+      "position": [
+        -1040,
+        0
+      ],
+      "credentials": {
+        "imap": {
+          "id": "stage7DemoImapDomain",
+          "name": "maintenance-triage-demo-imap-domain"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "function safeName(value, fallback) {\n  const raw = String(value || fallback || \"attachment.bin\");\n  const cleaned = raw.replace(/[^a-zA-Z0-9._-]+/g, \"-\").replace(/^-+|-+$/g, \"\");\n  return (cleaned || \"attachment.bin\").slice(0, 100);\n}\nfunction headerValue(headers, name) {\n  if (!headers) return null;\n  const lower = name.toLowerCase();\n  if (Array.isArray(headers)) {\n    const hit = headers.find((h) => String(h.name || \"\").toLowerCase() === lower);\n    return hit?.value || null;\n  }\n  for (const [key, value] of Object.entries(headers)) {\n    if (key.toLowerCase() === lower) return Array.isArray(value) ? value.join(\" \") : String(value);\n  }\n  return null;\n}\nfunction firstAddress(value) {\n  if (!value) return \"\";\n  if (typeof value === \"string\") {\n    const match = value.match(/<([^>]+)>/);\n    return (match ? match[1] : value).trim();\n  }\n  if (Array.isArray(value.value) && value.value[0]?.address) return value.value[0].address;\n  if (value.address) return value.address;\n  if (Array.isArray(value) && value[0]) return firstAddress(value[0]);\n  return \"\";\n}\nfunction stripHtml(value) {\n  return String(value || \"\")\n    .replace(/<style[\\s\\S]*?<\\/style>/gi, \" \")\n    .replace(/<script[\\s\\S]*?<\\/script>/gi, \" \")\n    .replace(/<[^>]+>/g, \" \")\n    .replace(/&nbsp;/g, \" \")\n    .replace(/&amp;/g, \"&\")\n    .replace(/\\s+/g, \" \")\n    .trim();\n}\nfunction payloadFromEmail(item, index) {\n  const j = item.json || {};\n  const headers = j.headers || j.headerLines || {};\n  const receivedAt = j.date || j.receivedDate || j.internalDate || new Date().toISOString();\n  const body = j.text || j.textPlain || j.body || stripHtml(j.html || j.textHtml || j.raw || \"\");\n  const msgId = j.messageId || j.messageID || headerValue(headers, \"message-id\") || `<email-${Date.now()}-${index}@maintenance-triage.local>`;\n  const refs = j.references || headerValue(headers, \"references\") || \"\";\n  return {\n    source: \"email\",\n    from_address: firstAddress(j.from || j.sender || j.replyTo),\n    subject: j.subject || \"(no subject)\",\n    body_raw: body || \"(empty email body)\",\n    received_at: receivedAt,\n    attachment_paths: [],\n    msg_id: msgId,\n    in_reply_to: j.inReplyTo || headerValue(headers, \"in-reply-to\") || null,\n    refs,\n  };\n}\nconst out = [];\nfor (const [index, item] of $input.all().entries()) {\n  const core_payload = payloadFromEmail(item, index);\n  const ingestion_id = `email-${Date.now()}-${index}`;\n  const binary = item.binary || {};\n  const keys = Object.keys(binary).filter((key) => key.startsWith(\"attachment_\") || key === \"data\");\n  if (keys.length === 0) {\n    out.push({ json: { ingestion_id, has_attachment: false, core_payload } });\n    continue;\n  }\n  keys.forEach((key, attachmentIndex) => {\n    const meta = binary[key] || {};\n    const fileName = safeName(meta.fileName, `attachment-${attachmentIndex}.bin`);\n    out.push({\n      json: {\n        ingestion_id,\n        has_attachment: true,\n        attachment_path: `/data/attachments/${ingestion_id}-${attachmentIndex}-${fileName}`,\n        core_payload,\n      },\n      binary: { data: meta },\n    });\n  });\n}\nreturn out;"
+      },
+      "id": "prepare-email-core-payload",
+      "name": "Prepare Email Core Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -800,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "has-email-attachment-condition",
+              "leftValue": "={{ Boolean($json.has_attachment) }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "has-email-attachment",
+      "name": "Has Email Attachment",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -560,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "={{ $json.attachment_path }}",
+        "dataPropertyName": "data",
+        "options": {}
+      },
+      "id": "write-email-attachment",
+      "name": "Write Email Attachment",
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [
+        -320,
+        -120
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const groups = new Map();\nfor (const item of $input.all()) {\n  const j = item.json || {};\n  if (!groups.has(j.ingestion_id)) {\n    groups.set(j.ingestion_id, { ...j.core_payload, attachment_paths: [] });\n  }\n  const payload = groups.get(j.ingestion_id);\n  const path = j.fileName || j.attachment_path;\n  const writeFailed = Boolean(j.error);\n  if (j.has_attachment && path && !writeFailed) payload.attachment_paths.push(path);\n}\nreturn [...groups.values()].map((json) => ({ json }));"
+      },
+      "id": "build-email-core-payload",
+      "name": "Build Email Core Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -80,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "source": "database",
+        "workflowId": "maintenance-triage-core-stage-4",
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "execute-core-workflow",
+      "name": "Execute Core Workflow",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [
+        180,
+        0
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const contexts = $(\"Build Email Core Payload\").all();\nreturn contexts.map((item) => ({\n  json: {\n    msg_id: item.json.msg_id || \"\",\n    outcome: \"created\"\n  }\n}));"
+      },
+      "id": "prepare-email-post-ingest-items",
+      "name": "Prepare Email Post Ingest Items",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "source": "database",
+        "workflowId": "mt-post-ingest-stage-7",
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "execute-post-ingest",
+      "name": "Execute Post Ingest",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [
+        700,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Demo Mailbox IMAP Trigger": {
+      "main": [
+        [
+          {
+            "node": "Prepare Email Core Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Email Core Payload": {
+      "main": [
+        [
+          {
+            "node": "Has Email Attachment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Email Attachment": {
+      "main": [
+        [
+          {
+            "node": "Write Email Attachment",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Email Core Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Email Attachment": {
+      "main": [
+        [
+          {
+            "node": "Build Email Core Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Email Core Payload": {
+      "main": [
+        [
+          {
+            "node": "Execute Core Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Core Workflow": {
+      "main": [
+        [
+          {
+            "node": "Prepare Email Post Ingest Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Email Post Ingest Items": {
+      "main": [
+        [
+          {
+            "node": "Execute Post Ingest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "pinData": {},
+  "meta": {
+    "stage": 7,
+    "generatedBy": "scripts/build-stage-7-workflows.py"
+  },
+  "versionId": "stage-7-generated",
+  "triggerCount": 0,
+  "tags": []
+}

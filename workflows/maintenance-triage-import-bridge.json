@@ -1,0 +1,347 @@
+{
+  "id": "mt-import-bridge-stage-7",
+  "name": "Maintenance Triage Import Bridge",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "path": "stage-7-import",
+        "httpMethod": "POST",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "batch-import-webhook",
+      "name": "Batch Import Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -980,
+        0
+      ],
+      "webhookId": "stage-7-import"
+    },
+    {
+      "parameters": {
+        "resource": "database",
+        "operation": "executeQuery",
+        "query": "WITH cfg AS (\n  SELECT coalesce((SELECT value FROM triage.config WHERE key = 'ingestion'), '{}'::jsonb) AS ingestion\n)\nSELECT\n  coalesce(NULLIF($1::text, '') = ingestion->>'import_token', false) AS authorized,\n  NULLIF($2::text, '')::jsonb AS payload\nFROM cfg;",
+        "options": {
+          "queryReplacement": "={{ [$json.headers?.['x-import-token'] || $json.query?.t || '', JSON.stringify($json.body || $json)] }}"
+        }
+      },
+      "id": "postgres-validate-import-token",
+      "name": "Postgres Validate Import Token",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -740,
+        0
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "stage1PgLocal",
+          "name": "maintenance-triage-postgres-local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "is-authorized-import-condition",
+              "leftValue": "={{ Boolean($json.authorized) }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "is-authorized-import",
+      "name": "Is Authorized Import",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -500,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const out = [];\nfor (const item of $input.all()) {\n  const payload = typeof item.json.payload === \"string\" ? JSON.parse(item.json.payload) : item.json.payload;\n  out.push({\n    json: {\n      source: \"import\",\n      from_address: payload.from_address || null,\n      subject: payload.subject || \"(no subject)\",\n      body_raw: payload.body_raw || \"(empty imported message)\",\n      received_at: payload.received_at || new Date().toISOString(),\n      attachment_paths: Array.isArray(payload.attachment_paths) ? payload.attachment_paths : [],\n      msg_id: payload.msg_id || `<import-${Date.now()}@maintenance-triage.local>`,\n      in_reply_to: payload.in_reply_to || null,\n      refs: payload.refs || null,\n      import_batch_id: payload.import_batch_id || null,\n      import_item_id: payload.import_item_id || null,\n    }\n  });\n}\nreturn out;"
+      },
+      "id": "normalize-import-payload",
+      "name": "Normalize Import Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -260,
+        -100
+      ]
+    },
+    {
+      "parameters": {
+        "source": "database",
+        "workflowId": "maintenance-triage-core-stage-4",
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "execute-core-workflow",
+      "name": "Execute Core Workflow",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -100
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const contexts = $(\"Normalize Import Payload\").all();\nreturn contexts.map((item) => ({\n  json: {\n    msg_id: item.json.msg_id || \"\",\n    outcome: \"created\"\n  }\n}));"
+      },
+      "id": "prepare-import-post-ingest-items",
+      "name": "Prepare Import Post Ingest Items",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        260,
+        -100
+      ]
+    },
+    {
+      "parameters": {
+        "source": "database",
+        "workflowId": "mt-post-ingest-stage-7",
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "execute-post-ingest",
+      "name": "Execute Post Ingest",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [
+        520,
+        -100
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "return $input.all().map((item) => ({\n  json: {\n    ok: true,\n    ticket_id: item.json.ticket_id || item.json.id || null,\n    ref: item.json.ref || null,\n    priority: item.json.priority || null,\n    outcome: item.json.outcome || item.json.source_outcome || null,\n  }\n}));"
+      },
+      "id": "prepare-import-response",
+      "name": "Prepare Import Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        780,
+        -100
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Cache-Control",
+                "value": "no-store"
+              }
+            ]
+          }
+        }
+      },
+      "id": "respond-import-ok",
+      "name": "Respond Import OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1040,
+        -100
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "return [{ json: { ok: false, error: 'not_found' } }];"
+      },
+      "id": "prepare-import-not-found",
+      "name": "Prepare Import Not Found",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -260,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseCode": 404,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Cache-Control",
+                "value": "no-store"
+              }
+            ]
+          }
+        }
+      },
+      "id": "respond-import-not-found",
+      "name": "Respond Import Not Found",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        0,
+        140
+      ]
+    }
+  ],
+  "connections": {
+    "Batch Import Webhook": {
+      "main": [
+        [
+          {
+            "node": "Postgres Validate Import Token",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Validate Import Token": {
+      "main": [
+        [
+          {
+            "node": "Is Authorized Import",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Authorized Import": {
+      "main": [
+        [
+          {
+            "node": "Normalize Import Payload",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Import Not Found",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Import Payload": {
+      "main": [
+        [
+          {
+            "node": "Execute Core Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Core Workflow": {
+      "main": [
+        [
+          {
+            "node": "Prepare Import Post Ingest Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Import Post Ingest Items": {
+      "main": [
+        [
+          {
+            "node": "Execute Post Ingest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Post Ingest": {
+      "main": [
+        [
+          {
+            "node": "Prepare Import Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Import Response": {
+      "main": [
+        [
+          {
+            "node": "Respond Import OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Import Not Found": {
+      "main": [
+        [
+          {
+            "node": "Respond Import Not Found",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "pinData": {},
+  "meta": {
+    "stage": 7,
+    "generatedBy": "scripts/build-stage-7-workflows.py"
+  },
+  "versionId": "stage-7-generated",
+  "triggerCount": 0,
+  "tags": []
+}

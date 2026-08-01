@@ -48,6 +48,7 @@ services:
       - "127.0.0.1:${N8N_PORT:-5678}:5678"
     volumes:
       - n8n-data:/home/node/.n8n
+      - ./data:/data
 
   greenmail:
     image: ${GREENMAIL_IMAGE:-greenmail/standalone:2.1.10}

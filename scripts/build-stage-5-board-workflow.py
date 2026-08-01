@@ -233,6 +233,9 @@ def build_board():
           'human_only', human_only,
           'trade', trade,
           'unit_identifier', unit_identifier,
+          'unit_match_status', unit_match_status,
+          'unit_match_display', unit_match_display,
+          'unit_match_reason', unit_match_reason,
           'tenant_name', tenant_name,
           'tenant_contact', tenant_contact,
           'issue_summary', issue_summary,
@@ -419,7 +422,8 @@ def build_board():
         ["Summary", model.issue_summary || ticket.issue_summary || "Not stated"],
         ["Why", model.priority_reason || ticket.priority_reason || "Not stated"],
         ["Trade", model.trade || ticket.trade || "UNKNOWN"],
-        ["Unit", model.unit_identifier || ticket.unit_identifier || "UNIT NOT STATED"],
+        ["Unit", ticket.unit_match_display || model.unit_identifier || ticket.unit_identifier || "UNIT NOT STATED"],
+        ["Roster match", ticket.unit_match_status || "Not checked"],
         ["Confidence", model.confidence || ticket.confidence || "Not stated"],
         ["Safety signals", signals.length ? signals.join(", ") : "None"],
         ["Missing info", missing.length ? missing.join(", ") : "None"],
@@ -461,7 +465,8 @@ def build_board():
       const safety = listValue(ticket.safety_signals).filter((item) => item !== "NONE");
       const stamp = stampText(ticket);
       const clockClass = Number(ticket.due_seconds || 0) < 0 ? "clock breach" : "clock";
-      const unit = ticket.unit_identifier || "UNIT NOT STATED";
+      const unit = ticket.unit_match_display || ticket.unit_identifier || "UNIT NOT STATED";
+      const unitStatus = ticket.unit_match_status || "";
       return `
         <article class="card ${esc(String(ticket.priority || "ROUTINE").toLowerCase())} ${ticket.overdue ? "is-overdue" : ""}" aria-labelledby="card-${esc(ticket.ref)}">
           <div class="perforation" aria-hidden="true"></div>
@@ -482,6 +487,7 @@ def build_board():
             ${ticket.confidence && ticket.confidence !== "HIGH" ? `<span class="chip warn">Confidence ${esc(ticket.confidence)}</span>` : ""}
             ${missing.length ? chipList(missing.map((item) => `Missing ${item}`), "warn") : ""}
             ${safety.length ? chipList(safety.map((item) => `Safety ${item}`), "danger") : ""}
+            ${unitStatus && unitStatus !== "EXACT" ? `<span class="chip warn">Roster ${esc(unitStatus.replace(/_/g, " "))}</span>` : ""}
             ${Number(ticket.attachment_count || 0) > 0 ? `<span class="chip">Attachments ${esc(ticket.attachment_count)}</span>` : ""}
           </div>
           ${ticket.human_only || ticket.accommodation_or_legal_flag ? `<div class="human-band">HUMAN DECISION REQUIRED - no reply written</div>` : ""}
@@ -534,7 +540,7 @@ def build_board():
           <div>
             <p class="eyebrow">Ticket detail</p>
             <h1>${esc(selectedTicket.ref)} - ${esc(selectedTicket.issue_summary || selectedTicket.subject || "Maintenance request")}</h1>
-            <p class="subtle">${esc(priorityLabel(selectedTicket.priority))} / ${esc(selectedTicket.unit_identifier || "UNIT NOT STATED")} / ${esc(dateLabel(selectedTicket.received_at))}</p>
+            <p class="subtle">${esc(priorityLabel(selectedTicket.priority))} / ${esc(selectedTicket.unit_match_display || selectedTicket.unit_identifier || "UNIT NOT STATED")} / ${esc(dateLabel(selectedTicket.received_at))}</p>
           </div>
           <a class="back-link" href="${esc(boardHref(""))}">Back to board</a>
         </header>
@@ -545,8 +551,10 @@ def build_board():
             <div class="chips detail-chips">
               <span class="chip">${esc(priorityLabel(selectedTicket.priority))}</span>
               ${selectedTicket.overdue ? `<span class="chip danger">OVERDUE</span>` : ""}
+              ${selectedTicket.unit_match_status ? `<span class="chip ${selectedTicket.unit_match_status === "EXACT" ? "" : "warn"}">Roster ${esc(String(selectedTicket.unit_match_status).replace(/_/g, " "))}</span>` : ""}
               ${missing.length ? chipList(missing.map((item) => `Missing ${item}`), "warn") : ""}
             </div>
+            ${selectedTicket.unit_match_reason ? `<p class="subtle">${esc(selectedTicket.unit_match_reason)}</p>` : ""}
           </section>
           <section class="panel">
             <h2>Original message</h2>
