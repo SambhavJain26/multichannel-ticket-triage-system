@@ -80,6 +80,10 @@ Known n8n gotchas to account for:
 - AI structured output may be wrapped under `output`; downstream expressions should handle wrapped and direct JSON shapes.
 - Form Trigger workflows should use the Form completion step, not Respond to Webhook.
 - Telegram callback webhooks require a reachable HTTPS tunnel during local testing. Import callback workflows freely, but publish/activate Telegram Trigger workflows only after real chat IDs and `N8N_WEBHOOK_URL` are set.
+- Telegram Trigger node names should avoid spaces in local n8n `2.29.10`; space-bearing trigger names can register webhook paths that do not match Telegram's configured callback path.
+- Telegram inline keyboards should be represented as explicit fixed-collection rows/buttons in the Telegram node. Do not pass the whole `inlineKeyboard` object as a single expression; it can send a plain text message with no buttons.
+- Telegram `answerQuery` responses do not preserve the upstream approval/context payload. Reattach the approval result before downstream edit-message or audit nodes need chat/message IDs.
+- Alert recording must never regress handled tickets. Successful re-alerts can update alert metadata, but `ACKED`, `ACK_SENT`, and `HELD` statuses must not be overwritten back to `ALERTED`.
 
 ## Testing And Verification
 

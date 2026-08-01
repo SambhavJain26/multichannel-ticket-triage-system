@@ -247,36 +247,17 @@ def build_alert_dispatch():
       const parsed = parseJson(ticket.safety_signals, []);
       return Array.isArray(parsed) ? parsed.filter(v => v && v !== "NONE").map(String) : [];
     }
-    function button(label, data) {
-      return { text: label, additionalFields: { callback_data: data } };
-    }
-    function actionButtons(ticket) {
-      if (ticket.priority === "EMERGENCY") {
-        return {
-          rows: [
-            { row: { buttons: [
-              button("Approve reply", `act:${ticket.id}:approve`),
-              button("Hold", `act:${ticket.id}:hold`),
-            ] } },
-            { row: { buttons: [
-              button("Not emergency", `act:${ticket.id}:not_emergency`),
-            ] } },
-          ],
-        };
-      }
-      if (ticket.priority === "URGENT") {
-        return {
-          rows: [
-            { row: { buttons: [button("Approve reply", `act:${ticket.id}:approve`)] } },
-          ],
-        };
-      }
-      return {};
-    }
     function boardLink(board, ticket) {
       const token = board?.token || "";
       if (!token) return "Board token missing";
-      return `http://localhost:5678/webhook/board?t=${encodeURIComponent(token)}&ref=${encodeURIComponent(ticket.ref)}`;
+      const rawBase = board.public_base_url || board.base_url || board.url || "http://localhost:5678";
+      const base = String(rawBase).replace(/\/+$/, "");
+      return `${base}/webhook/board?t=${encodeURIComponent(token)}&ref=${encodeURIComponent(ticket.ref)}`;
+    }
+    function buttonProfile(ticket) {
+      if (ticket.priority === "EMERGENCY") return "emergency";
+      if (ticket.priority === "URGENT") return "urgent";
+      return "review";
     }
     function messageFor(ticket, kind, board, company) {
       const unit = ticket.unit_identifier || "UNIT NOT STATED";
@@ -291,7 +272,7 @@ def build_alert_dispatch():
         `Target: ${target}`,
         override.trim(),
         `Tenant words: "${tenant}"`,
-        `Board: ${boardLink(board, ticket)}`,
+        "Board: open from the button below",
       ].filter(Boolean).map(escHtml).join("\n");
     }
 
@@ -338,6 +319,11 @@ def build_alert_dispatch():
         shouldAlert = false;
         reason = "routine_human_only_no_alert";
       }
+      if (["ACKED", "ACK_SENT", "HELD"].includes(ticket.status) || ticket.out_msg_id) {
+        shouldAlert = false;
+        outcome = "skipped";
+        reason = "already_handled";
+      }
       if (rateLimited && shouldAlert) {
         shouldAlert = false;
         outcome = "rate_limited";
@@ -355,8 +341,7 @@ def build_alert_dispatch():
       const chatId = contacts.primary_chat_id || contacts.operator_chat_id || "";
       const canSendReal = outcome === "send_real" && !isPlaceholder(chatId);
       const text = messageFor(ticket, kind || "NOTICE", board, company);
-      const inlineKeyboard = actionButtons(ticket);
-      const hasButtons = inlineKeyboard.rows && inlineKeyboard.rows.length > 0;
+      const boardUrl = boardLink(board, ticket);
       return {
         json: {
           ticket_id: ticket.id,
@@ -370,8 +355,8 @@ def build_alert_dispatch():
           should_send_real: canSendReal,
           message_text: text,
           silent,
-          reply_markup: hasButtons ? "inlineKeyboard" : "none",
-          inline_keyboard: hasButtons ? inlineKeyboard : {},
+          button_profile: buttonProfile(ticket),
+          board_url: boardUrl,
           telegram_message_id: testMode.mock_message_id || null,
           alert_error: outcome === "failed" ? "simulated Telegram alert failure" : (outcome === "send_real" && isPlaceholder(chatId) ? "Telegram chat ID is not configured" : null),
           detail: {
@@ -382,7 +367,7 @@ def build_alert_dispatch():
             safety_signals: safetySignals,
             silent,
             rate_limited: rateLimited,
-            board_url: boardLink(board, ticket),
+            board_url: boardUrl,
             mock: testMode.mock_telegram === true,
           },
         },
@@ -404,11 +389,18 @@ def build_alert_dispatch():
     updated AS (
       UPDATE triage.tickets t
       SET
-        status = CASE WHEN i.outcome IN ('mocked', 'sent') THEN 'ALERTED' ELSE t.status END,
+        status = CASE
+          WHEN i.outcome IN ('mocked', 'sent') AND t.status NOT IN ('ACKED', 'ACK_SENT', 'HELD') THEN 'ALERTED'
+          ELSE t.status
+        END,
         alerted_at = CASE WHEN i.outcome IN ('mocked', 'sent') THEN now() ELSE t.alerted_at END,
         telegram_chat_id = CASE WHEN i.outcome IN ('mocked', 'sent') THEN i.chat_id ELSE t.telegram_chat_id END,
         telegram_msg_id = CASE WHEN i.outcome IN ('mocked', 'sent') THEN i.telegram_message_id ELSE t.telegram_msg_id END,
-        last_alert_error = CASE WHEN i.outcome = 'failed' THEN i.alert_error ELSE t.last_alert_error END
+        last_alert_error = CASE
+          WHEN i.outcome = 'failed' THEN i.alert_error
+          WHEN i.outcome IN ('mocked', 'sent') THEN NULL
+          ELSE t.last_alert_error
+        END
       FROM input_values i
       WHERE t.id = i.ticket_id
       RETURNING t.id
@@ -434,8 +426,21 @@ def build_alert_dispatch():
     FROM input_values i;
     """
 
-    attach_telegram_js = r"""
-    const contexts = $("Prepare Alert Action").all();
+    real_emergency_filter_js = r"""
+    return $input.all().filter(item => item.json.button_profile === "emergency");
+    """
+
+    real_urgent_filter_js = r"""
+    return $input.all().filter(item => item.json.button_profile === "urgent");
+    """
+
+    real_review_filter_js = r"""
+    return $input.all().filter(item => item.json.button_profile === "review");
+    """
+
+    def attach_telegram_js(source_node_name):
+        return r"""
+    const contexts = $("__SOURCE_NODE__").all();
     return $input.all().map((item, index) => {
       const ctx = contexts[index].json;
       const response = item.json || {};
@@ -450,23 +455,49 @@ def build_alert_dispatch():
         },
       };
     });
-    """
+    """.replace("__SOURCE_NODE__", source_node_name)
 
     nodes = [
         node("Alert Dispatch Input", "n8n-nodes-base.executeWorkflowTrigger", 1.2, [-980, 0], {"inputSource": "passthrough", "returnOutput": "allRuns"}),
         pg_node("Postgres Load Alert Context", [-760, 0], load_query, "={{ [$json.ticket_id || $json.id || '', JSON.stringify($json.test_mode || {})] }}"),
         code_node("Prepare Alert Action", [-520, 0], prepare_js),
         if_node("Should Send Real Telegram", [-280, 0], "={{ $json.should_send_real }}"),
+        code_node("Emergency Real Alert Items", [-40, -280], real_emergency_filter_js),
         telegram_node(
-            "Telegram Send Alert",
-            [-20, -120],
+            "Telegram Send Emergency Alert",
+            [220, -280],
             {
                 "resource": "message",
                 "operation": "sendMessage",
                 "chatId": "={{ $json.chat_id }}",
                 "text": "={{ $json.message_text }}",
-                "replyMarkup": "={{ $json.reply_markup }}",
-                "inlineKeyboard": "={{ $json.inline_keyboard }}",
+                "replyMarkup": "inlineKeyboard",
+                "inlineKeyboard": {
+                    "rows": [
+                        {
+                            "row": {
+                                "buttons": [
+                                    {"text": "Approve reply", "additionalFields": {"callback_data": "={{ 'act:' + $json.ticket_id + ':approve' }}"}},
+                                    {"text": "Hold", "additionalFields": {"callback_data": "={{ 'act:' + $json.ticket_id + ':hold' }}"}},
+                                ]
+                            }
+                        },
+                        {
+                            "row": {
+                                "buttons": [
+                                    {"text": "Not emergency", "additionalFields": {"callback_data": "={{ 'act:' + $json.ticket_id + ':not_emergency' }}"}},
+                                ]
+                            }
+                        },
+                        {
+                            "row": {
+                                "buttons": [
+                                    {"text": "Open board", "additionalFields": {"url": "={{ $json.board_url }}"}},
+                                ]
+                            }
+                        },
+                    ]
+                },
                 "additionalFields": {
                     "appendAttribution": False,
                     "disable_notification": "={{ $json.silent }}",
@@ -475,8 +506,69 @@ def build_alert_dispatch():
                 },
             },
         ),
-        code_node("Attach Telegram Send Result", [220, -120], attach_telegram_js),
-        pg_node("Postgres Record Real Alert", [460, -120], record_query, "={{ [$json.ticket_id, $json.outcome, $json.action, $json.chat_id || '', $json.telegram_message_id || '', $json.alert_error || '', JSON.stringify($json.detail || {})] }}"),
+        code_node("Attach Emergency Telegram Result", [480, -280], attach_telegram_js("Emergency Real Alert Items")),
+        code_node("Urgent Real Alert Items", [-40, -100], real_urgent_filter_js),
+        telegram_node(
+            "Telegram Send Urgent Alert",
+            [220, -100],
+            {
+                "resource": "message",
+                "operation": "sendMessage",
+                "chatId": "={{ $json.chat_id }}",
+                "text": "={{ $json.message_text }}",
+                "replyMarkup": "inlineKeyboard",
+                "inlineKeyboard": {
+                    "rows": [
+                        {
+                            "row": {
+                                "buttons": [
+                                    {"text": "Approve reply", "additionalFields": {"callback_data": "={{ 'act:' + $json.ticket_id + ':approve' }}"}},
+                                    {"text": "Open board", "additionalFields": {"url": "={{ $json.board_url }}"}},
+                                ]
+                            }
+                        },
+                    ]
+                },
+                "additionalFields": {
+                    "appendAttribution": False,
+                    "disable_notification": "={{ $json.silent }}",
+                    "disable_web_page_preview": True,
+                    "parse_mode": "HTML",
+                },
+            },
+        ),
+        code_node("Attach Urgent Telegram Result", [480, -100], attach_telegram_js("Urgent Real Alert Items")),
+        code_node("Review Real Alert Items", [-40, 80], real_review_filter_js),
+        telegram_node(
+            "Telegram Send Review Alert",
+            [220, 80],
+            {
+                "resource": "message",
+                "operation": "sendMessage",
+                "chatId": "={{ $json.chat_id }}",
+                "text": "={{ $json.message_text }}",
+                "replyMarkup": "inlineKeyboard",
+                "inlineKeyboard": {
+                    "rows": [
+                        {
+                            "row": {
+                                "buttons": [
+                                    {"text": "Open board", "additionalFields": {"url": "={{ $json.board_url }}"}},
+                                ]
+                            }
+                        },
+                    ]
+                },
+                "additionalFields": {
+                    "appendAttribution": False,
+                    "disable_notification": "={{ $json.silent }}",
+                    "disable_web_page_preview": True,
+                    "parse_mode": "HTML",
+                },
+            },
+        ),
+        code_node("Attach Review Telegram Result", [480, 80], attach_telegram_js("Review Real Alert Items")),
+        pg_node("Postgres Record Real Alert", [720, -100], record_query, "={{ [$json.ticket_id, $json.outcome, $json.action, $json.chat_id || '', $json.telegram_message_id || '', $json.alert_error || '', JSON.stringify($json.detail || {})] }}"),
         pg_node("Postgres Record Mock Or Skipped Alert", [0, 140], record_query, "={{ [$json.ticket_id || 0, $json.outcome, $json.action, $json.chat_id || '', $json.telegram_message_id || '', $json.alert_error || '', JSON.stringify($json.detail || {})] }}"),
     ]
     connections = {
@@ -485,12 +577,23 @@ def build_alert_dispatch():
         "Prepare Alert Action": {"main": [[{"node": "Should Send Real Telegram", "type": "main", "index": 0}]]},
         "Should Send Real Telegram": {
             "main": [
-                [{"node": "Telegram Send Alert", "type": "main", "index": 0}],
+                [
+                    {"node": "Emergency Real Alert Items", "type": "main", "index": 0},
+                    {"node": "Urgent Real Alert Items", "type": "main", "index": 0},
+                    {"node": "Review Real Alert Items", "type": "main", "index": 0},
+                ],
                 [{"node": "Postgres Record Mock Or Skipped Alert", "type": "main", "index": 0}],
             ]
         },
-        "Telegram Send Alert": {"main": [[{"node": "Attach Telegram Send Result", "type": "main", "index": 0}]]},
-        "Attach Telegram Send Result": {"main": [[{"node": "Postgres Record Real Alert", "type": "main", "index": 0}]]},
+        "Emergency Real Alert Items": {"main": [[{"node": "Telegram Send Emergency Alert", "type": "main", "index": 0}]]},
+        "Telegram Send Emergency Alert": {"main": [[{"node": "Attach Emergency Telegram Result", "type": "main", "index": 0}]]},
+        "Attach Emergency Telegram Result": {"main": [[{"node": "Postgres Record Real Alert", "type": "main", "index": 0}]]},
+        "Urgent Real Alert Items": {"main": [[{"node": "Telegram Send Urgent Alert", "type": "main", "index": 0}]]},
+        "Telegram Send Urgent Alert": {"main": [[{"node": "Attach Urgent Telegram Result", "type": "main", "index": 0}]]},
+        "Attach Urgent Telegram Result": {"main": [[{"node": "Postgres Record Real Alert", "type": "main", "index": 0}]]},
+        "Review Real Alert Items": {"main": [[{"node": "Telegram Send Review Alert", "type": "main", "index": 0}]]},
+        "Telegram Send Review Alert": {"main": [[{"node": "Attach Review Telegram Result", "type": "main", "index": 0}]]},
+        "Attach Review Telegram Result": {"main": [[{"node": "Postgres Record Real Alert", "type": "main", "index": 0}]]},
     }
     return workflow_base(ALERT_ID, "Maintenance Triage Alert Dispatch", nodes, connections)
 
@@ -529,7 +632,8 @@ def build_approval_action():
         NULLIF($3::text, '') AS action_name,
         NULLIF($4::text, '') AS actor,
         NULLIF($5::text, '') AS telegram_chat_id,
-        NULLIF($6::text, '')::bigint AS telegram_message_id
+        NULLIF($6::text, '')::bigint AS telegram_message_id,
+        NULLIF($7::text, '') AS callback_query_id
     ),
     cfg AS (
       SELECT
@@ -606,6 +710,7 @@ def build_approval_action():
       i.actor,
       i.telegram_chat_id,
       i.telegram_message_id,
+      i.callback_query_id,
       to_jsonb(f) AS ticket,
       cfg.outbound_email,
       cfg.company,
@@ -768,7 +873,7 @@ def build_approval_action():
     nodes = [
         node("Approval Action Input", "n8n-nodes-base.executeWorkflowTrigger", 1.2, [-1180, 0], {"inputSource": "passthrough", "returnOutput": "allRuns"}),
         code_node("Normalize Approval Action", [-960, 0], normalize_js),
-        pg_node("Postgres Approval Gate", [-720, 0], action_query, "={{ [$json.valid, $json.ticket_id || '', $json.action_name || '', $json.actor || '', $json.telegram_chat_id || '', $json.telegram_message_id || ''] }}"),
+        pg_node("Postgres Approval Gate", [-720, 0], action_query, "={{ [$json.valid, $json.ticket_id || '', $json.action_name || '', $json.actor || '', $json.telegram_chat_id || '', $json.telegram_message_id || '', $json.callback_query_id || ''] }}"),
         code_node("Prepare Email Payload", [-480, 0], prepare_email_js),
         if_node("Should Send Approved Email", [-240, 0], "={{ $json.should_send_email }}"),
         email_node("SMTP Send Approved Reply", [20, -120]),
@@ -814,9 +919,23 @@ def build_callback():
     });
     """
 
+    attach_answer_js = r"""
+    const contexts = $("Execute Approval Action").all();
+    return $input.all().map((item, index) => {
+      const ctx = contexts[index]?.json || {};
+      const response = item.json || {};
+      return {
+        json: {
+          ...ctx,
+          callback_answer_error: response.error || null,
+        },
+      };
+    });
+    """
+
     nodes = [
         node(
-            "Telegram Callback Trigger",
+            "TelegramCallbackTrigger",
             "n8n-nodes-base.telegramTrigger",
             1.3,
             [-960, 0],
@@ -840,10 +959,11 @@ def build_callback():
                 "additionalFields": {"text": "={{ $json.answer_text }}", "show_alert": False},
             },
         ),
-        if_node("Has Telegram Message To Edit", [0, 0], "={{ Boolean($json.telegram_chat_id && $json.telegram_message_id) }}"),
+        code_node("Attach Callback Answer Result", [0, 0], attach_answer_js),
+        if_node("Has Telegram Message To Edit", [240, 0], "={{ Boolean($json.telegram_chat_id && $json.telegram_message_id) }}"),
         telegram_node(
             "Telegram Edit Alert Message",
-            [240, -100],
+            [480, -100],
             {
                 "resource": "message",
                 "operation": "editMessageText",
@@ -857,10 +977,11 @@ def build_callback():
         ),
     ]
     connections = {
-        "Telegram Callback Trigger": {"main": [[{"node": "Normalize Telegram Callback", "type": "main", "index": 0}]]},
+        "TelegramCallbackTrigger": {"main": [[{"node": "Normalize Telegram Callback", "type": "main", "index": 0}]]},
         "Normalize Telegram Callback": {"main": [[{"node": "Execute Approval Action", "type": "main", "index": 0}]]},
         "Execute Approval Action": {"main": [[{"node": "Telegram Answer Callback", "type": "main", "index": 0}]]},
-        "Telegram Answer Callback": {"main": [[{"node": "Has Telegram Message To Edit", "type": "main", "index": 0}]]},
+        "Telegram Answer Callback": {"main": [[{"node": "Attach Callback Answer Result", "type": "main", "index": 0}]]},
+        "Attach Callback Answer Result": {"main": [[{"node": "Has Telegram Message To Edit", "type": "main", "index": 0}]]},
         "Has Telegram Message To Edit": {"main": [[{"node": "Telegram Edit Alert Message", "type": "main", "index": 0}], []]},
     }
     return workflow_base(CALLBACK_ID, "Maintenance Triage Telegram Callback", nodes, connections)
