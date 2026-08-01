@@ -288,7 +288,7 @@ def build_post_ingest():
     return $input.all().map((item) => ({
       json: {
         ...item.json,
-        test_mode: item.json.test_mode || { mock_telegram: true, force_business_hours: true }
+        test_mode: item.json.test_mode || {}
       }
     }));
     """
@@ -316,16 +316,19 @@ def build_post_ingest():
     return workflow_base(POST_INGEST_ID, "Maintenance Triage Post Ingest", nodes, connections)
 
 
-def post_ingest_items_js(source_node_name):
+def post_ingest_items_js(source_node_name, default_test_mode=None):
+    test_mode = json.dumps(default_test_mode) if default_test_mode is not None else "null"
     return f"""
+    const defaultTestMode = __DEFAULT_TEST_MODE__;
     const contexts = $("__SOURCE__").all();
     return contexts.map((item) => ({{
       json: {{
         msg_id: item.json.msg_id || "",
-        outcome: "created"
+        outcome: "created",
+        test_mode: item.json.test_mode || defaultTestMode || undefined
       }}
     }}));
-    """.replace("__SOURCE__", source_node_name)
+    """.replace("__SOURCE__", source_node_name).replace("__DEFAULT_TEST_MODE__", test_mode)
 
 
 ATTACHMENT_PREP_JS = r"""
@@ -543,7 +546,7 @@ def build_form_ingest():
     ]
     nodes = [
         node(
-            "Tenant Report Form",
+            "TenantReportForm",
             "n8n-nodes-base.formTrigger",
             2.6,
             [-1120, 0],
@@ -579,7 +582,7 @@ def build_form_ingest():
         ),
     ]
     connections = {
-        "Tenant Report Form": {"main": [[{"node": "Prepare Form Core Payload", "type": "main", "index": 0}]]},
+        "TenantReportForm": {"main": [[{"node": "Prepare Form Core Payload", "type": "main", "index": 0}]]},
         "Prepare Form Core Payload": {"main": [[{"node": "Has Form Attachment", "type": "main", "index": 0}]]},
         "Has Form Attachment": {
             "main": [
@@ -627,7 +630,7 @@ def build_fixture_fire():
         code_node("Load Stage 7 Demo Fixtures", [-480, 0], load_js),
         node("Demo Stagger", "n8n-nodes-base.wait", 1.1, [-240, 0], {"amount": 2, "unit": "seconds"}),
         execute_workflow_node("Execute Core Workflow", [20, 0], CORE_ID, always_output=True),
-        code_node("Prepare Fixture Post Ingest Items", [280, 0], post_ingest_items_js("Load Stage 7 Demo Fixtures")),
+        code_node("Prepare Fixture Post Ingest Items", [280, 0], post_ingest_items_js("Load Stage 7 Demo Fixtures", {"mock_telegram": True, "force_business_hours": True})),
         execute_workflow_node("Execute Post Ingest", [540, 0], POST_INGEST_ID),
     ]
     connections = {
@@ -667,6 +670,7 @@ def build_import_bridge():
           refs: payload.refs || null,
           import_batch_id: payload.import_batch_id || null,
           import_item_id: payload.import_item_id || null,
+          test_mode: payload.test_mode || { mock_telegram: true, force_business_hours: true },
         }
       });
     }

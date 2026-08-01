@@ -131,7 +131,7 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "const contexts = $(\"Build Email Core Payload\").all();\nreturn contexts.map((item) => ({\n  json: {\n    msg_id: item.json.msg_id || \"\",\n    outcome: \"created\"\n  }\n}));"
+        "jsCode": "const defaultTestMode = null;\nconst contexts = $(\"Build Email Core Payload\").all();\nreturn contexts.map((item) => ({\n  json: {\n    msg_id: item.json.msg_id || \"\",\n    outcome: \"created\",\n    test_mode: item.json.test_mode || defaultTestMode || undefined\n  }\n}));"
       },
       "id": "prepare-email-post-ingest-items",
       "name": "Prepare Email Post Ingest Items",

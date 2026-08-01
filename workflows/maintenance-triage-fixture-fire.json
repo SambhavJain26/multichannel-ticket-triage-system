@@ -66,7 +66,7 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "const contexts = $(\"Load Stage 7 Demo Fixtures\").all();\nreturn contexts.map((item) => ({\n  json: {\n    msg_id: item.json.msg_id || \"\",\n    outcome: \"created\"\n  }\n}));"
+        "jsCode": "const defaultTestMode = {\"mock_telegram\": true, \"force_business_hours\": true};\nconst contexts = $(\"Load Stage 7 Demo Fixtures\").all();\nreturn contexts.map((item) => ({\n  json: {\n    msg_id: item.json.msg_id || \"\",\n    outcome: \"created\",\n    test_mode: item.json.test_mode || defaultTestMode || undefined\n  }\n}));"
       },
       "id": "prepare-fixture-post-ingest-items",
       "name": "Prepare Fixture Post Ingest Items",

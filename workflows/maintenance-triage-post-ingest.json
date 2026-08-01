@@ -45,7 +45,7 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "return $input.all().map((item) => ({\n  json: {\n    ...item.json,\n    test_mode: item.json.test_mode || { mock_telegram: true, force_business_hours: true }\n  }\n}));"
+        "jsCode": "return $input.all().map((item) => ({\n  json: {\n    ...item.json,\n    test_mode: item.json.test_mode || {}\n  }\n}));"
       },
       "id": "prepare-alert-dispatch-input",
       "name": "Prepare Alert Dispatch Input",

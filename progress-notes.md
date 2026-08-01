@@ -4,7 +4,7 @@ Read this file first at the start of every session.
 
 ## Current Status
 
-Stage 6 alerts, approval gate, and outbound email is implemented and verified in hybrid mode. Docker Compose runs local n8n, Postgres, and GreenMail. The `triage` Postgres schema, config seed, 30-fixture corpus, Stage 3 OpenAI harness, Stage 4 reusable core workflow, Stage 4 verification driver, Stage 5 read-only board workflow, and Stage 6 alert/approval workflows exist. Telegram live callback verification has also passed once with a local Cloudflare Tunnel, a locally captured real chat ID, and GreenMail delivery. The tunnel URL and chat ID remain local configuration and are not committed.
+Stage 7 ingestion is implemented and live-tested with a single Gmail/Workspace mailbox using IMAP intake and SMTP sending. Docker Compose runs local n8n, Postgres, and GreenMail. The `triage` Postgres schema, config seed, 30-fixture corpus, Stage 3 OpenAI harness, Stage 4 reusable core workflow, Stage 5 read-only board workflow, Stage 6 alert/approval workflows, and Stage 7 email/form/fixture/import connectors exist. Live Gmail SMTP self-send, live Gmail IMAP ingestion, roster matching, board rendering, and real Telegram alert dispatch have passed once through the current Cloudflare Tunnel. Tunnel URL, chat ID, and mailbox secrets remain local configuration and are not committed.
 
 The staged plan is saved in `build-plan.md`.
 
@@ -18,7 +18,7 @@ The staged plan is saved in `build-plan.md`.
 | 4 | Core Triage Sub-Workflow | Implemented for demo gate | Importable n8n core sub-workflow and local Stage 4 driver exist. Core normalizes, dedupes/threads, calls OpenAI Responses via HTTP Request, applies deterministic safety rules, persists tickets/events, drafts when allowed, and supports mock/error test modes. |
 | 5 | Board and Detail View | Implemented | Read-only token-protected n8n board webhook renders priority cards and detail view from stored tickets/events. |
 | 6 | Alerts, Approval Gate, and Outbound Email | Implemented | Hybrid validation passed: mock Telegram dispatch/callback behavior plus real GreenMail SMTP approved reply. Live Telegram alert, approve callback, message edit, and GreenMail delivery passed once through a Cloudflare Tunnel. |
-| 7 | Ingestion Paths and Follow-Up Importer | Implemented structurally; live mailbox pending | Real Gmail/Workspace IMAP+SMTP credential path is built. Fixture and batch-import bridge paths verified. Live email/form publishing waits on the demo mailbox app password. |
+| 7 | Ingestion Paths and Follow-Up Importer | Implemented and live-tested | Real Gmail/Workspace IMAP+SMTP credential path is active. Fixture, batch-import, live email, roster matching, board, and real Telegram alert paths verified. |
 | 8 | Digest, Aging, Heartbeat, and Demo Hardening | Not started | Final reliability and demo-readiness pass. |
 
 ## Planning Decisions Already Made
@@ -62,6 +62,10 @@ The staged plan is saved in `build-plan.md`.
 - Stage 6 callback correction: Telegram `answerQuery` does not preserve the approval-action JSON for downstream nodes. The callback workflow reattaches the approval context before editing the Telegram message.
 - Stage 6 status correction: alert recording must not regress already handled tickets back to `ALERTED`. Handled tickets are skipped, and successful alerts clear stale `last_alert_error`.
 - Stage 7 connector correction: the Stage 4 core workflow can write tickets successfully while returning no downstream items through Execute Sub-workflow because its result branches are routed. Stage 7 connectors now treat the core as a database-writing side effect, then reselect tickets by `msg_id` for roster matching and alert dispatch.
+- Stage 7 live trigger correction: publishing the real Gmail IMAP trigger against an inbox with existing unread mail immediately ingests those messages. Use a dedicated mailbox, or clear/archive unrelated unread mail before publishing live triggers.
+- Stage 7 live alert correction: Telegram inline button URLs must be public HTTPS URLs. Set `triage.config.board.public_base_url` to the current tunnel URL before running real Telegram alert tests; otherwise the alert can fail with a localhost board URL.
+- Stage 7 Form Trigger correction: local n8n `2.29.10` registers the imported form under a workflow/node-prefixed form path. The current local form URL is `http://localhost:5678/form/mt-form-ingest-stage-7/tenantreportform/report-issue`, not `/form/report-issue`.
+- n8n CLI correction: running `n8n execute` in a one-off container can collide with the running n8n task broker on port `5679`. Stop the n8n service, run the one-off execution, then start n8n again.
 - `AGENTS.md` was rewritten using lessons from a similar local n8n AI automation project, adapted for maintenance triage: read order, local service rules, n8n workflow gotchas, fixture expectations, security rules, and completion/documentation discipline.
 - User requested a durable rule to commit and push after every completed task. `AGENTS.md` now requires committing and pushing to `main` after task completion, while still avoiding secrets/local data/generated temp output.
 
@@ -98,6 +102,12 @@ The staged plan is saved in `build-plan.md`.
 - 2026-08-01: Imported Stage 7 non-live workflows. `Maintenance Triage Fixture Fire` initially exposed that Execute Sub-workflow returned no downstream items from the multi-branch Stage 4 core despite creating tickets; fixed Stage 7 connectors to reselect created tickets by `msg_id`.
 - 2026-08-01: Reran Stage 7 fixture-fire after the connector fix. It created 6 tickets, recorded 6 `unit_matched` events, produced mock alert/skipped alert outcomes through Stage 6 alert dispatch, and populated roster displays including exact, not-stated, and near-miss states.
 - 2026-08-01: Ran Stage 7 batch importer smoke test through the published import bridge using two local `.txt` samples. It created imported tickets `MR-0007` and `MR-0008`, generated `data/import-batches/e17fcaa3-c825-4766-bbd1-183cde9a713c/report.html`, and generated a matching `review.csv`. Confirmed the board returned HTTP 200 and rendered roster text. Live mailbox preflight correctly failed because `maintenance-triage-demo-imap-domain` and `maintenance-triage-demo-smtp-domain` have not been imported yet.
+- 2026-08-01: User created the real Gmail/Workspace n8n credentials `maintenance-triage-demo-imap-domain` and `maintenance-triage-demo-smtp-domain` for `worksambhav26@gmail.com`. Cleaned local n8n down to 11 active main workflows and 5 required credentials, removing old manual driver/capture workflows and GreenMail IMAP/SMTP credentials.
+- 2026-08-01: Published Stage 7 live email/form triggers and ran `.\scripts\check-stage-7-live-prereqs.ps1`; it passed. Initial live activation proved Gmail IMAP access but also consumed unrelated unread inbox mail, so local demo triage data was reset before controlled live tests.
+- 2026-08-01: Ran live SMTP self-send through n8n credential `maintenance-triage-demo-smtp-domain`; Gmail accepted the message. IMAP ingested the first controlled test as `MR-0001`, classified it `EMERGENCY`, matched `2B - Maple Court`, and mocked Telegram because Stage 7 post-ingest still defaulted to test mode.
+- 2026-08-01: Fixed Stage 7 post-ingest defaults so live email/form routes use real alert dispatch, while fixture-fire and batch import remain mocked by default. Regenerated and imported Stage 7 workflows.
+- 2026-08-01: A second live SMTP/IMAP test became `MR-0002` and attempted real Telegram, but failed because the board button URL fell back to `http://localhost:5678`. Set local `triage.config.board.public_base_url` to the current Cloudflare Tunnel URL.
+- 2026-08-01: A third live SMTP/IMAP test became `MR-0003`; it was `source=email`, `priority=EMERGENCY`, `unit_match_status=EXACT`, `unit_match_display=2B - Maple Court`, status `ALERTED`, and recorded `telegram_alert_sent` with Telegram message id `10`. The local board detail URL returned HTTP 200 and rendered `MR-0003` with roster text.
 
 ## Outstanding Risks To Recheck During Build
 
@@ -108,4 +118,4 @@ The staged plan is saved in `build-plan.md`.
 - Tunnel reliability and URL stability must be verified before Telegram callback testing.
 - n8n production hosting has licensing nuance; production should use a client-owned VPS unless n8n confirms another arrangement in writing.
 - Email deliverability from demo and production domains must be handled explicitly before showing tenant replies.
-- Stage 7 live acceptance still requires importing the real Gmail/Workspace app password into n8n and publishing live email/form triggers. Run `.\scripts\import-demo-mail-credentials.ps1 -EmailAddress <mailbox>`, then `.\scripts\import-stage-7-workflows.ps1 -PublishLiveTriggers`, then `.\scripts\check-stage-7-live-prereqs.ps1`.
+- The live Gmail mailbox should stay dedicated to demo traffic; unrelated unread messages can be ingested when the IMAP trigger is active.

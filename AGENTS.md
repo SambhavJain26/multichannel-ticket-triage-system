@@ -77,10 +77,14 @@ Known n8n gotchas to account for:
 - Optional Postgres update/cleanup nodes need `alwaysOutputData` if downstream nodes must continue after zero rows.
 - Postgres nodes that update then reselect rows must return every field later expressions use.
 - Execute Sub-workflow nodes may produce no downstream items when the called workflow exits through multiple routed branches. For ingestion connectors, treat the core workflow as a database-writing side effect and reselect tickets by stable identifiers such as `msg_id` before post-processing.
+- Publishing a live Gmail IMAP trigger against an inbox with unrelated unread mail can ingest those messages immediately. Use a dedicated mailbox or clear/archive unrelated unread mail before publishing live triggers.
 - Form Trigger submissions can render fields as `field-0`; normalize form payloads before SQL or AI steps.
+- Imported Form Trigger workflows in local n8n `2.29.10` may register under a workflow/node-prefixed form path rather than the clean configured path. Query `webhook_entity` or test the registered `/form/...` path after import.
 - AI structured output may be wrapped under `output`; downstream expressions should handle wrapped and direct JSON shapes.
 - Form Trigger workflows should use the Form completion step, not Respond to Webhook.
+- One-off `n8n execute` commands can collide with the running task broker on port `5679`. Stop the n8n service before CLI execution and restart it afterward when using this local Compose setup.
 - Telegram callback webhooks require a reachable HTTPS tunnel during local testing. Import callback workflows freely, but publish/activate Telegram Trigger workflows only after real chat IDs and `N8N_WEBHOOK_URL` are set.
+- Telegram inline keyboard URL buttons require valid public HTTP(S) URLs. For live local Telegram tests, set `triage.config.board.public_base_url` to the current HTTPS tunnel URL before sending real alerts.
 - Telegram Trigger node names should avoid spaces in local n8n `2.29.10`; space-bearing trigger names can register webhook paths that do not match Telegram's configured callback path.
 - Telegram inline keyboards should be represented as explicit fixed-collection rows/buttons in the Telegram node. Do not pass the whole `inlineKeyboard` object as a single expression; it can send a plain text message with no buttons.
 - Telegram `answerQuery` responses do not preserve the upstream approval/context payload. Reattach the approval result before downstream edit-message or audit nodes need chat/message IDs.

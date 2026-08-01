@@ -16,8 +16,8 @@
           "buttonLabel": "Submit"
         }
       },
-      "id": "tenant-report-form",
-      "name": "Tenant Report Form",
+      "id": "tenantreportform",
+      "name": "TenantReportForm",
       "type": "n8n-nodes-base.formTrigger",
       "typeVersion": 2.6,
       "position": [
@@ -127,7 +127,7 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "const contexts = $(\"Build Form Core Payload\").all();\nreturn contexts.map((item) => ({\n  json: {\n    msg_id: item.json.msg_id || \"\",\n    outcome: \"created\"\n  }\n}));"
+        "jsCode": "const defaultTestMode = null;\nconst contexts = $(\"Build Form Core Payload\").all();\nreturn contexts.map((item) => ({\n  json: {\n    msg_id: item.json.msg_id || \"\",\n    outcome: \"created\",\n    test_mode: item.json.test_mode || defaultTestMode || undefined\n  }\n}));"
       },
       "id": "prepare-form-post-ingest-items",
       "name": "Prepare Form Post Ingest Items",
@@ -177,7 +177,7 @@
     }
   ],
   "connections": {
-    "Tenant Report Form": {
+    "TenantReportForm": {
       "main": [
         [
           {

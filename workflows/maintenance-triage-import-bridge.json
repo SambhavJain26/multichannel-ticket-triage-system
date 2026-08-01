@@ -80,7 +80,7 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "const out = [];\nfor (const item of $input.all()) {\n  const payload = typeof item.json.payload === \"string\" ? JSON.parse(item.json.payload) : item.json.payload;\n  out.push({\n    json: {\n      source: \"import\",\n      from_address: payload.from_address || null,\n      subject: payload.subject || \"(no subject)\",\n      body_raw: payload.body_raw || \"(empty imported message)\",\n      received_at: payload.received_at || new Date().toISOString(),\n      attachment_paths: Array.isArray(payload.attachment_paths) ? payload.attachment_paths : [],\n      msg_id: payload.msg_id || `<import-${Date.now()}@maintenance-triage.local>`,\n      in_reply_to: payload.in_reply_to || null,\n      refs: payload.refs || null,\n      import_batch_id: payload.import_batch_id || null,\n      import_item_id: payload.import_item_id || null,\n    }\n  });\n}\nreturn out;"
+        "jsCode": "const out = [];\nfor (const item of $input.all()) {\n  const payload = typeof item.json.payload === \"string\" ? JSON.parse(item.json.payload) : item.json.payload;\n  out.push({\n    json: {\n      source: \"import\",\n      from_address: payload.from_address || null,\n      subject: payload.subject || \"(no subject)\",\n      body_raw: payload.body_raw || \"(empty imported message)\",\n      received_at: payload.received_at || new Date().toISOString(),\n      attachment_paths: Array.isArray(payload.attachment_paths) ? payload.attachment_paths : [],\n      msg_id: payload.msg_id || `<import-${Date.now()}@maintenance-triage.local>`,\n      in_reply_to: payload.in_reply_to || null,\n      refs: payload.refs || null,\n      import_batch_id: payload.import_batch_id || null,\n      import_item_id: payload.import_item_id || null,\n      test_mode: payload.test_mode || { mock_telegram: true, force_business_hours: true },\n    }\n  });\n}\nreturn out;"
       },
       "id": "normalize-import-payload",
       "name": "Normalize Import Payload",
@@ -114,7 +114,7 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "const contexts = $(\"Normalize Import Payload\").all();\nreturn contexts.map((item) => ({\n  json: {\n    msg_id: item.json.msg_id || \"\",\n    outcome: \"created\"\n  }\n}));"
+        "jsCode": "const defaultTestMode = null;\nconst contexts = $(\"Normalize Import Payload\").all();\nreturn contexts.map((item) => ({\n  json: {\n    msg_id: item.json.msg_id || \"\",\n    outcome: \"created\",\n    test_mode: item.json.test_mode || defaultTestMode || undefined\n  }\n}));"
       },
       "id": "prepare-import-post-ingest-items",
       "name": "Prepare Import Post Ingest Items",
