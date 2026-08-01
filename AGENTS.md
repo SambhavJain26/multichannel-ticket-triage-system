@@ -67,6 +67,9 @@ Use n8n credentials by name only. Never hardcode OpenAI keys, Telegram tokens, m
 Known n8n gotchas to account for:
 
 - Active webhooks may use the active workflow snapshot, not the editor draft.
+- Imported Webhook nodes in local n8n `2.29.10` need a fixed top-level `webhookId` when the production URL must be a clean path such as `/webhook/board`; otherwise n8n may register a workflow/node-prefixed path.
+- After importing and publishing a new active webhook workflow, restart n8n or otherwise reload active workflows before testing the production `/webhook/...` URL.
+- Respond to Webhook `options.responseCode` expressions may not be reliable in local n8n `2.29.10`; prefer separate Respond nodes with literal status codes when 404/200 behavior is important.
 - After import or activation, verify with a real execution, database row, or validation script.
 - Code nodes may be sandboxed; do not assume `process.env` exists.
 - Optional Postgres update/cleanup nodes need `alwaysOutputData` if downstream nodes must continue after zero rows.

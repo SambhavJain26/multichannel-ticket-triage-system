@@ -1,0 +1,218 @@
+{
+  "id": "maintenance-triage-board-stage-5",
+  "name": "Maintenance Triage Board",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "path": "board",
+        "httpMethod": "GET",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "board-webhook",
+      "name": "Board Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -560,
+        0
+      ],
+      "webhookId": "board"
+    },
+    {
+      "parameters": {
+        "resource": "database",
+        "operation": "executeQuery",
+        "query": "WITH input_values AS (\n  SELECT NULLIF($1::text, '') AS token, upper(NULLIF($2::text, '')) AS requested_ref\n),\nconfig AS (\n  SELECT\n    coalesce((SELECT value FROM triage.config WHERE key = 'board'), '{}'::jsonb) AS board,\n    coalesce((SELECT value FROM triage.config WHERE key = 'company'), '{}'::jsonb) AS company,\n    coalesce((SELECT value FROM triage.config WHERE key = 'overdue_days'), '{}'::jsonb) AS overdue_days\n),\nsettings AS (\n  SELECT\n    board,\n    company,\n    overdue_days,\n    coalesce((board->>'recent_hours')::int, 48) AS recent_hours,\n    least(greatest(coalesce((board->>'max_cards')::int, 60), 1), 200) AS max_cards,\n    coalesce(company->>'name', 'Demo Property Management') AS company_name,\n    coalesce(company->>'timezone', 'America/Chicago') AS company_timezone,\n    coalesce((SELECT token FROM input_values) = (board->>'token'), false) AS authorized\n  FROM config\n),\nboard_rows AS (\n  SELECT\n    t.*,\n    extract(epoch FROM (now() - t.received_at))::int AS age_seconds,\n    extract(epoch FROM (t.sla_due_at - now()))::int AS due_seconds,\n    (\n      t.priority IN ('ROUTINE', 'URGENT')\n      AND t.closed_at IS NULL\n      AND t.status <> 'CLOSED'\n      AND t.received_at < now() - make_interval(days => coalesce((s.overdue_days->>t.priority)::int, 999999))\n    ) AS overdue,\n    CASE\n      WHEN t.priority = 'EMERGENCY' THEN 4\n      WHEN t.priority = 'NEEDS_REVIEW' THEN 3\n      WHEN t.priority = 'URGENT' THEN 2\n      ELSE 1\n    END AS priority_rank\n  FROM triage.tickets t\n  CROSS JOIN settings s\n  WHERE s.authorized\n    AND (\n      (t.closed_at IS NULL AND t.status <> 'CLOSED' AND t.priority IN ('EMERGENCY', 'URGENT', 'NEEDS_REVIEW'))\n      OR (\n        t.closed_at IS NULL\n        AND t.status <> 'CLOSED'\n        AND t.priority IN ('ROUTINE', 'URGENT')\n        AND t.received_at < now() - make_interval(days => coalesce((s.overdue_days->>t.priority)::int, 999999))\n      )\n      OR t.received_at >= now() - make_interval(hours => s.recent_hours)\n    )\n  ORDER BY priority_rank DESC, overdue DESC, t.received_at DESC\n  LIMIT (SELECT max_cards FROM settings)\n),\nselected_ticket AS (\n  SELECT\n    t.*,\n    extract(epoch FROM (now() - t.received_at))::int AS age_seconds,\n    extract(epoch FROM (t.sla_due_at - now()))::int AS due_seconds,\n    (\n      t.priority IN ('ROUTINE', 'URGENT')\n      AND t.closed_at IS NULL\n      AND t.status <> 'CLOSED'\n      AND t.received_at < now() - make_interval(days => coalesce((s.overdue_days->>t.priority)::int, 999999))\n    ) AS overdue\n  FROM triage.tickets t\n  CROSS JOIN settings s\n  CROSS JOIN input_values i\n  WHERE s.authorized\n    AND i.requested_ref IS NOT NULL\n    AND t.ref = i.requested_ref\n  LIMIT 1\n),\nselected_events AS (\n  SELECT e.*\n  FROM triage.events e\n  JOIN selected_ticket t ON t.id = e.ticket_id\n  ORDER BY e.at\n),\nboard_json AS (\n  SELECT coalesce(jsonb_agg(\n    jsonb_build_object(\n      'ref', ref,\n      'source', source,\n      'received_at', received_at,\n      'from_address', from_address,\n      'subject', subject,\n      'body_clean', body_clean,\n      'attachment_count', attachment_count,\n      'attachment_paths', attachment_paths,\n      'model_json', model_json,\n      'model_priority', model_priority,\n      'model_name', model_name,\n      'is_maintenance_request', is_maintenance_request,\n      'request_type', request_type,\n      'priority', priority,\n      'priority_reason', priority_reason,\n      'override_applied', override_applied,\n      'override_reason', override_reason,\n      'human_only', human_only,\n      'trade', trade,\n      'unit_identifier', unit_identifier,\n      'tenant_name', tenant_name,\n      'tenant_contact', tenant_contact,\n      'issue_summary', issue_summary,\n      'safety_signals', safety_signals,\n      'accommodation_or_legal_flag', accommodation_or_legal_flag,\n      'accommodation_or_legal_reason', accommodation_or_legal_reason,\n      'missing_info', missing_info,\n      'confidence', confidence,\n      'ambiguity_note', ambiguity_note,\n      'language', language,\n      'draft_subject', draft_subject,\n      'draft_body', draft_body,\n      'vendor_note', vendor_note,\n      'clarifying_qs', clarifying_qs,\n      'status', status,\n      'sla_due_at', sla_due_at,\n      'age_seconds', age_seconds,\n      'due_seconds', due_seconds,\n      'overdue', overdue\n    )\n    ORDER BY priority_rank DESC, overdue DESC, received_at DESC\n  ), '[]'::jsonb) AS tickets\n  FROM board_rows\n),\nselected_json AS (\n  SELECT to_jsonb(t) AS ticket\n  FROM selected_ticket t\n),\nevents_json AS (\n  SELECT coalesce(jsonb_agg(to_jsonb(e) ORDER BY e.at), '[]'::jsonb) AS events\n  FROM selected_events e\n),\ncounts AS (\n  SELECT jsonb_build_object(\n    'needs_you_now', count(*) FILTER (WHERE priority IN ('EMERGENCY', 'NEEDS_REVIEW')),\n    'open', count(*) FILTER (WHERE closed_at IS NULL AND status <> 'CLOSED'),\n    'overdue', count(*) FILTER (WHERE overdue)\n  ) AS value\n  FROM board_rows\n)\nSELECT\n  s.authorized,\n  CASE\n    WHEN NOT s.authorized THEN 404\n    WHEN i.requested_ref IS NOT NULL AND NOT EXISTS (SELECT 1 FROM selected_ticket) THEN 404\n    ELSE 200\n  END AS status_code,\n  CASE WHEN i.requested_ref IS NULL THEN 'board' ELSE 'detail' END AS page,\n  CASE WHEN s.authorized THEN i.token ELSE NULL END AS request_token,\n  i.requested_ref,\n  now() AS server_now,\n  s.company_name,\n  s.company_timezone,\n  s.recent_hours,\n  s.max_cards,\n  CASE WHEN s.authorized THEN (SELECT tickets FROM board_json) ELSE '[]'::jsonb END AS tickets,\n  CASE WHEN s.authorized THEN (SELECT value FROM counts) ELSE '{}'::jsonb END AS counts,\n  CASE WHEN s.authorized THEN (SELECT ticket FROM selected_json) ELSE NULL END AS selected_ticket,\n  CASE WHEN s.authorized THEN (SELECT events FROM events_json) ELSE '[]'::jsonb END AS events\nFROM settings s\nCROSS JOIN input_values i;",
+        "options": {
+          "queryReplacement": "={{ [$json.query?.t || '', $json.query?.ref || ''] }}"
+        }
+      },
+      "id": "postgres-load-board-data",
+      "name": "Postgres Load Board Data",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -300,
+        0
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "stage1PgLocal",
+          "name": "maintenance-triage-postgres-local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const row = $input.first().json;\n\nfunction parseJson(value, fallback) {\n  if (value === null || value === undefined || value === \"\") return fallback;\n  if (typeof value === \"string\") {\n    try { return JSON.parse(value); } catch (error) { return fallback; }\n  }\n  return value;\n}\n\nconst authorized = row.authorized === true || row.authorized === \"true\";\nconst statusCode = Number(row.status_code || (authorized ? 200 : 404));\nconst page = row.page || \"board\";\nconst token = row.request_token || \"\";\nconst requestedRef = row.requested_ref || \"\";\nconst companyName = row.company_name || \"Demo Property Management\";\nconst companyTimezone = row.company_timezone || \"America/Chicago\";\nconst recentHours = Number(row.recent_hours || 48);\nconst maxCards = Number(row.max_cards || 60);\nconst tickets = Array.isArray(parseJson(row.tickets, [])) ? parseJson(row.tickets, []) : [];\nconst counts = parseJson(row.counts, {});\nconst selectedTicket = parseJson(row.selected_ticket, null);\nconst events = Array.isArray(parseJson(row.events, [])) ? parseJson(row.events, []) : [];\n\nfunction esc(value) {\n  return String(value ?? \"\")\n    .replace(/&/g, \"&amp;\")\n    .replace(/</g, \"&lt;\")\n    .replace(/>/g, \"&gt;\")\n    .replace(/\"/g, \"&quot;\")\n    .replace(/'/g, \"&#39;\");\n}\n\nfunction prettyJson(value) {\n  const parsed = parseJson(value, value);\n  return esc(JSON.stringify(parsed ?? {}, null, 2));\n}\n\nfunction listValue(value) {\n  const parsed = parseJson(value, []);\n  if (!Array.isArray(parsed) || parsed.length === 0) return [];\n  return parsed.filter((item) => item !== null && item !== undefined && String(item).trim() !== \"\");\n}\n\nfunction minutesLabel(seconds) {\n  const abs = Math.abs(Number(seconds || 0));\n  if (abs < 60) return `${abs}s`;\n  if (abs < 3600) return `${Math.round(abs / 60)}m`;\n  if (abs < 86400) return `${Math.round(abs / 3600)}h`;\n  return `${Math.round(abs / 86400)}d`;\n}\n\nfunction ageLabel(seconds) {\n  return `${minutesLabel(seconds)} ago`;\n}\n\nfunction dueLabel(seconds) {\n  const value = Number(seconds || 0);\n  if (value < 0) return `${minutesLabel(value)} past target`;\n  return `${minutesLabel(value)} left`;\n}\n\nfunction dateLabel(value) {\n  if (!value) return \"Not set\";\n  const date = new Date(value);\n  if (Number.isNaN(date.getTime())) return String(value);\n  return date.toLocaleString(\"en-US\", {\n    month: \"short\",\n    day: \"numeric\",\n    hour: \"numeric\",\n    minute: \"2-digit\",\n  });\n}\n\nfunction boardHref(ref) {\n  const suffix = ref ? `&ref=${encodeURIComponent(ref)}` : \"\";\n  return `/webhook/board?t=${encodeURIComponent(token)}${suffix}`;\n}\n\nfunction priorityLabel(priority) {\n  if (priority === \"NEEDS_REVIEW\") return \"Needs review\";\n  return String(priority || \"ROUTINE\").replace(/_/g, \" \").toLowerCase().replace(/\\b\\w/g, (c) => c.toUpperCase());\n}\n\nfunction replyStatus(ticket) {\n  if (ticket.status === \"ACK_SENT\") return \"Reply sent\";\n  if (ticket.human_only || ticket.accommodation_or_legal_flag) return \"Human decision required - no reply written\";\n  if (ticket.priority === \"NEEDS_REVIEW\") return \"Needs human review - no reply written\";\n  if (ticket.draft_body) return \"Reply written - waiting for you\";\n  return \"No reply written\";\n}\n\nfunction stampText(ticket) {\n  if (ticket.override_applied && ticket.override_reason) {\n    return `OVERRIDE - ${String(ticket.override_reason).replace(/^safety keyword:\\s*/i, \"\").toUpperCase()}`;\n  }\n  if (ticket.overdue) return \"OVERDUE\";\n  return \"\";\n}\n\nfunction rulesVerdict(ticket) {\n  if (!ticket) return \"\";\n  const modelPriority = ticket.model_priority || ticket.model_json?.priority || \"UNKNOWN\";\n  if (ticket.override_applied && ticket.override_reason) {\n    return `Model said ${modelPriority}. Rule ${ticket.override_reason} raised it to ${ticket.priority}.`;\n  }\n  if (ticket.priority === \"NEEDS_REVIEW\" && ticket.priority_reason) {\n    return `System marked this NEEDS_REVIEW because ${ticket.priority_reason}.`;\n  }\n  return `Model said ${modelPriority}. No deterministic safety override changed the priority.`;\n}\n\nfunction chipList(items, cls = \"\") {\n  return items.map((item) => `<span class=\"chip ${cls}\">${esc(item)}</span>`).join(\"\");\n}\n\nfunction renderCard(ticket) {\n  const missing = listValue(ticket.missing_info);\n  const safety = listValue(ticket.safety_signals).filter((item) => item !== \"NONE\");\n  const stamp = stampText(ticket);\n  const clockClass = Number(ticket.due_seconds || 0) < 0 ? \"clock breach\" : \"clock\";\n  const unit = ticket.unit_identifier || \"UNIT NOT STATED\";\n  return `\n    <article class=\"card ${esc(String(ticket.priority || \"ROUTINE\").toLowerCase())} ${ticket.overdue ? \"is-overdue\" : \"\"}\" aria-labelledby=\"card-${esc(ticket.ref)}\">\n      <div class=\"perforation\" aria-hidden=\"true\"></div>\n      ${stamp ? `<div class=\"stamp\">${esc(stamp)}</div>` : \"\"}\n      <div class=\"card-top\">\n        <a class=\"ref\" id=\"card-${esc(ticket.ref)}\" href=\"${esc(boardHref(ticket.ref))}\">${esc(ticket.ref)}</a>\n        <span class=\"band\">${esc(priorityLabel(ticket.priority))}</span>\n      </div>\n      <h2>${esc(ticket.issue_summary || ticket.subject || \"Maintenance request needs review\")}</h2>\n      <div class=\"meta-grid\">\n        <span><b>Unit</b>${esc(unit)}</span>\n        <span><b>Trade</b>${esc(ticket.trade || \"UNKNOWN\")}</span>\n        <span><b>Source</b>${esc(ticket.source || \"unknown\")}</span>\n        <span><b>Age</b>${esc(ageLabel(ticket.age_seconds))}</span>\n      </div>\n      <div class=\"${clockClass}\">Response target: ${esc(dueLabel(ticket.due_seconds))}</div>\n      <div class=\"chips\">\n        ${ticket.confidence && ticket.confidence !== \"HIGH\" ? `<span class=\"chip warn\">Confidence ${esc(ticket.confidence)}</span>` : \"\"}\n        ${missing.length ? chipList(missing.map((item) => `Missing ${item}`), \"warn\") : \"\"}\n        ${safety.length ? chipList(safety.map((item) => `Safety ${item}`), \"danger\") : \"\"}\n        ${Number(ticket.attachment_count || 0) > 0 ? `<span class=\"chip\">Attachments ${esc(ticket.attachment_count)}</span>` : \"\"}\n      </div>\n      ${ticket.human_only || ticket.accommodation_or_legal_flag ? `<div class=\"human-band\">HUMAN DECISION REQUIRED - no reply written</div>` : \"\"}\n      <p class=\"reply\">${esc(replyStatus(ticket))}</p>\n    </article>\n  `;\n}\n\nfunction renderBoard() {\n  const countNow = Number(counts.needs_you_now || 0);\n  const countOpen = Number(counts.open || 0);\n  const countOverdue = Number(counts.overdue || 0);\n  const cards = tickets.length\n    ? `<section class=\"cards\" aria-label=\"Maintenance requests\">${tickets.map(renderCard).join(\"\")}</section>`\n    : `<section class=\"empty\" aria-label=\"Empty board\"><h2>Nothing waiting.</h2><p>New requests appear here within seconds of arriving.</p></section>`;\n  return `\n    <header class=\"page-head\">\n      <div>\n        <p class=\"eyebrow\">Maintenance board</p>\n        <h1>${esc(companyName)}</h1>\n        <p class=\"subtle\">Open safety items plus recent requests from the last ${esc(recentHours)} hours. Limited to ${esc(maxCards)} cards.</p>\n      </div>\n      <dl class=\"counters\" aria-label=\"Board summary\">\n        <div><dt>Needs you now</dt><dd>${esc(countNow)}</dd></div>\n        <div><dt>Open</dt><dd>${esc(countOpen)}</dd></div>\n        <div><dt>Overdue</dt><dd>${esc(countOverdue)}</dd></div>\n      </dl>\n    </header>\n    ${cards}\n  `;\n}\n\nfunction renderDetail() {\n  if (!selectedTicket) {\n    return `\n      <header class=\"page-head\">\n        <div>\n          <p class=\"eyebrow\">Maintenance board</p>\n          <h1>Reference not found</h1>\n          <p class=\"subtle\">No ticket exists for ${esc(requestedRef)}.</p>\n        </div>\n      </header>\n      <section class=\"empty\"><a class=\"back-link\" href=\"${esc(boardHref(\"\"))}\">Back to board</a></section>\n    `;\n  }\n  const missing = listValue(selectedTicket.missing_info);\n  const clarifying = listValue(selectedTicket.clarifying_qs);\n  return `\n    <header class=\"page-head detail-head\">\n      <div>\n        <p class=\"eyebrow\">Ticket detail</p>\n        <h1>${esc(selectedTicket.ref)} - ${esc(selectedTicket.issue_summary || selectedTicket.subject || \"Maintenance request\")}</h1>\n        <p class=\"subtle\">${esc(priorityLabel(selectedTicket.priority))} / ${esc(selectedTicket.unit_identifier || \"UNIT NOT STATED\")} / ${esc(dateLabel(selectedTicket.received_at))}</p>\n      </div>\n      <a class=\"back-link\" href=\"${esc(boardHref(\"\"))}\">Back to board</a>\n    </header>\n    <main class=\"detail-grid\" id=\"content\">\n      <section class=\"panel\">\n        <h2>Why it sorted here</h2>\n        <p class=\"verdict\">${esc(rulesVerdict(selectedTicket))}</p>\n        <div class=\"chips detail-chips\">\n          <span class=\"chip\">${esc(priorityLabel(selectedTicket.priority))}</span>\n          ${selectedTicket.overdue ? `<span class=\"chip danger\">OVERDUE</span>` : \"\"}\n          ${missing.length ? chipList(missing.map((item) => `Missing ${item}`), \"warn\") : \"\"}\n        </div>\n      </section>\n      <section class=\"panel\">\n        <h2>Original message</h2>\n        <pre class=\"message\">${esc(selectedTicket.body_clean || selectedTicket.body_raw || \"\")}</pre>\n      </section>\n      <section class=\"panel\">\n        <h2>The reply, waiting for you</h2>\n        ${selectedTicket.draft_subject ? `<h3>${esc(selectedTicket.draft_subject)}</h3>` : \"\"}\n        ${selectedTicket.draft_body ? `<pre class=\"message\">${esc(selectedTicket.draft_body)}</pre>` : `<p class=\"subtle\">No tenant reply was written for this ticket.</p>`}\n        ${clarifying.length ? `<h3>Clarifying questions</h3><ul>${clarifying.map((q) => `<li>${esc(q)}</li>`).join(\"\")}</ul>` : \"\"}\n      </section>\n      <section class=\"panel\">\n        <h2>Vendor note</h2>\n        ${selectedTicket.vendor_note ? `<pre class=\"message\">${esc(selectedTicket.vendor_note)}</pre>` : `<p class=\"subtle\">No vendor note was written.</p>`}\n      </section>\n      <section class=\"panel wide\">\n        <h2>Model JSON</h2>\n        <pre class=\"json\">${prettyJson(selectedTicket.model_json)}</pre>\n      </section>\n      <section class=\"panel wide\">\n        <h2>Event trail</h2>\n        ${events.length ? `<ol class=\"events\">${events.map((event) => `\n          <li>\n            <time>${esc(dateLabel(event.at))}</time>\n            <strong>${esc(event.actor)} / ${esc(event.action)}</strong>\n            <pre>${prettyJson(event.detail)}</pre>\n          </li>\n        `).join(\"\")}</ol>` : `<p class=\"subtle\">No events recorded.</p>`}\n      </section>\n    </main>\n  `;\n}\n\nfunction renderNotFound() {\n  return `\n    <header class=\"page-head\">\n      <div>\n        <p class=\"eyebrow\">Maintenance board</p>\n        <h1>Not found</h1>\n        <p class=\"subtle\">The board link is missing or invalid.</p>\n      </div>\n    </header>\n  `;\n}\n\nconst styles = `\n  :root {\n    --ink: #24211c;\n    --muted: #6a6257;\n    --paper: #f2efe6;\n    --card: #fffaf0;\n    --desk: #e4dfd2;\n    --line: #c8bca8;\n    --red: #9f2d26;\n    --amber: #8a5b1e;\n    --green: #355f4b;\n    --blue: #2c5367;\n  }\n  * { box-sizing: border-box; }\n  html { background: var(--desk); color: var(--ink); font-family: Georgia, \"Times New Roman\", serif; line-height: 1.5; }\n  body { margin: 0; min-width: 320px; }\n  a { color: inherit; }\n  a:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; }\n  .skip { position: absolute; left: -999px; top: 12px; background: var(--ink); color: var(--card); padding: 8px 12px; z-index: 10; }\n  .skip:focus { left: 12px; }\n  .shell { width: min(1120px, calc(100% - 32px)); margin: 0 auto; padding: 28px 0 48px; }\n  .page-head { display: grid; grid-template-columns: 1fr; gap: 20px; align-items: end; margin-bottom: 24px; border-bottom: 1px solid var(--line); padding-bottom: 20px; }\n  .detail-head { align-items: center; }\n  .eyebrow { margin: 0 0 4px; color: var(--muted); font: 700 12px/1.2 ui-monospace, SFMono-Regular, Consolas, monospace; text-transform: uppercase; letter-spacing: 0; }\n  h1 { margin: 0; font-size: clamp(26px, 3vw, 36px); line-height: 1.1; letter-spacing: 0; }\n  h2 { margin: 0 0 10px; font-size: 20px; line-height: 1.2; letter-spacing: 0; }\n  h3 { margin: 12px 0 6px; font-size: 16px; }\n  .subtle { margin: 8px 0 0; color: var(--muted); max-width: 72ch; }\n  .counters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 0; }\n  .counters div { border: 1px solid var(--line); background: rgba(255,250,240,.55); padding: 10px; min-height: 70px; }\n  .counters dt { color: var(--muted); font: 700 12px/1.2 ui-monospace, SFMono-Regular, Consolas, monospace; text-transform: uppercase; }\n  .counters dd { margin: 4px 0 0; font: 700 28px/1 ui-monospace, SFMono-Regular, Consolas, monospace; }\n  .cards { display: grid; gap: 16px; }\n  .card { position: relative; overflow: hidden; background: var(--card); border: 1px solid var(--line); border-radius: 4px; padding: 18px; animation: enter 200ms ease-out both; }\n  .card.emergency { border-left: 8px solid var(--red); }\n  .card.needs_review { border-left: 8px solid var(--amber); }\n  .card.urgent { border-left: 8px solid var(--blue); }\n  .card.routine { border-left: 8px solid var(--green); }\n  .card.is-overdue { box-shadow: inset 0 0 0 2px rgba(159,45,38,.14); }\n  .perforation { position: absolute; left: 0; right: 0; top: 10px; border-top: 1px dashed var(--line); }\n  .stamp { position: absolute; top: 14px; right: 12px; transform: rotate(-3deg); border: 2px solid var(--red); color: var(--red); padding: 4px 8px; font: 800 12px/1 ui-monospace, SFMono-Regular, Consolas, monospace; text-transform: uppercase; background: rgba(255,250,240,.84); max-width: 44%; overflow-wrap: anywhere; }\n  .card-top { display: flex; gap: 12px; align-items: center; justify-content: space-between; margin-bottom: 16px; padding-right: min(45%, 230px); }\n  .ref { font: 800 18px/1 ui-monospace, SFMono-Regular, Consolas, monospace; text-decoration: underline; text-underline-offset: 3px; }\n  .band { color: var(--muted); font: 700 12px/1.2 ui-monospace, SFMono-Regular, Consolas, monospace; text-transform: uppercase; }\n  .card h2 { max-width: 70ch; margin-bottom: 14px; }\n  .meta-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 12px; }\n  .meta-grid span { min-width: 0; color: var(--ink); overflow-wrap: anywhere; }\n  .meta-grid b { display: block; color: var(--muted); font: 700 12px/1.2 ui-monospace, SFMono-Regular, Consolas, monospace; text-transform: uppercase; }\n  .clock { display: inline-block; margin: 0 0 12px; padding: 6px 8px; border: 1px solid var(--line); font: 700 13px/1.2 ui-monospace, SFMono-Regular, Consolas, monospace; }\n  .clock.breach { border-color: var(--red); color: var(--red); }\n  .chips { display: flex; flex-wrap: wrap; gap: 6px; }\n  .chip { border: 1px solid var(--line); border-radius: 999px; padding: 4px 8px; font: 700 12px/1 ui-monospace, SFMono-Regular, Consolas, monospace; color: var(--muted); background: rgba(255,250,240,.6); }\n  .chip.warn { border-color: var(--amber); color: var(--amber); }\n  .chip.danger { border-color: var(--red); color: var(--red); }\n  .human-band { margin-top: 12px; border: 1px solid var(--red); color: var(--red); padding: 8px 10px; font: 800 12px/1.2 ui-monospace, SFMono-Regular, Consolas, monospace; text-transform: uppercase; }\n  .reply { margin: 12px 0 0; color: var(--muted); font-weight: 700; }\n  .empty, .panel { background: var(--card); border: 1px solid var(--line); border-radius: 4px; padding: 20px; }\n  .empty h2 { font-size: 24px; }\n  .back-link { display: inline-flex; align-items: center; min-height: 44px; font: 700 14px/1 ui-monospace, SFMono-Regular, Consolas, monospace; text-transform: uppercase; text-decoration: underline; text-underline-offset: 4px; }\n  .detail-grid { display: grid; gap: 16px; }\n  .panel.wide { grid-column: 1 / -1; }\n  .verdict { margin-top: 0; max-width: 72ch; }\n  .message, .json, .events pre { white-space: pre-wrap; overflow-wrap: anywhere; background: rgba(228,223,210,.5); border: 1px solid var(--line); padding: 12px; margin: 8px 0 0; font: 13px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace; }\n  .json { max-height: 520px; overflow: auto; }\n  .events { list-style: decimal; padding-left: 24px; margin: 0; }\n  .events li { margin-bottom: 14px; }\n  .events time { display: block; color: var(--muted); font: 700 12px/1.3 ui-monospace, SFMono-Regular, Consolas, monospace; }\n  footer { margin-top: 28px; color: var(--muted); font-size: 13px; }\n  @keyframes enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }\n  @media (min-width: 760px) {\n    .page-head { grid-template-columns: 1fr auto; }\n    .counters { min-width: 360px; }\n    .meta-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }\n    .detail-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }\n  }\n  @media (max-width: 560px) {\n    .shell { width: min(100% - 20px, 1120px); padding-top: 18px; }\n    .counters { grid-template-columns: 1fr; }\n    .card { padding: 16px 14px; }\n    .card-top { display: grid; padding-right: 0; margin-top: 34px; }\n    .stamp { left: 12px; right: auto; max-width: calc(100% - 24px); }\n    .meta-grid { grid-template-columns: 1fr; }\n  }\n  @media (prefers-reduced-motion: reduce) {\n    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }\n  }\n`;\n\nconst body = authorized\n  ? (page === \"detail\" ? renderDetail() : renderBoard())\n  : renderNotFound();\nconst refresh = authorized && page === \"board\" && statusCode === 200 ? '<meta http-equiv=\"refresh\" content=\"5\">' : \"\";\nconst title = authorized && page === \"detail\" && selectedTicket\n  ? `${selectedTicket.ref} - Maintenance detail`\n  : `${companyName} - Maintenance board`;\nconst html = `<!doctype html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"utf-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n  ${refresh}\n  <title>${esc(title)}</title>\n  <style>${styles}</style>\n</head>\n<body>\n  <a class=\"skip\" href=\"#content\">Skip to content</a>\n  <main class=\"shell\" id=\"content\">\n    ${body}\n    <footer>Read-only demo board. Response targets are operational targets, not legal deadlines. Timezone: ${esc(companyTimezone)}.</footer>\n  </main>\n</body>\n</html>`;\n\nreturn [{ json: { status_code: statusCode, not_found: statusCode === 404, html } }];"
+      },
+      "id": "render-board-html",
+      "name": "Render Board HTML",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -40,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "should-return-not-found-condition",
+              "leftValue": "={{ $json.not_found }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "should-return-not-found",
+      "name": "Should Return Not Found",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.html }}",
+        "options": {
+          "responseCode": 404,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "text/html; charset=utf-8"
+              },
+              {
+                "name": "Cache-Control",
+                "value": "no-store"
+              }
+            ]
+          }
+        }
+      },
+      "id": "respond-with-not-found-html",
+      "name": "Respond With Not Found HTML",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        480,
+        -100
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.html }}",
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "text/html; charset=utf-8"
+              },
+              {
+                "name": "Cache-Control",
+                "value": "no-store"
+              }
+            ]
+          }
+        }
+      },
+      "id": "respond-with-board-html",
+      "name": "Respond With Board HTML",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        480,
+        100
+      ]
+    }
+  ],
+  "connections": {
+    "Board Webhook": {
+      "main": [
+        [
+          {
+            "node": "Postgres Load Board Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Load Board Data": {
+      "main": [
+        [
+          {
+            "node": "Render Board HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Render Board HTML": {
+      "main": [
+        [
+          {
+            "node": "Should Return Not Found",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Should Return Not Found": {
+      "main": [
+        [
+          {
+            "node": "Respond With Not Found HTML",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond With Board HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "pinData": {},
+  "meta": {
+    "stage": 5,
+    "generatedBy": "scripts/build-stage-5-board-workflow.py"
+  },
+  "versionId": "stage-5-generated",
+  "triggerCount": 0,
+  "tags": []
+}
