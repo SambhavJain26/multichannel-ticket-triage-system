@@ -409,6 +409,49 @@ def build_board():
       return `Model said ${modelPriority}. No deterministic safety override changed the priority.`;
     }
 
+    function modelReadout(ticket) {
+      const model = parseJson(ticket.model_json, {});
+      const signals = listValue(model.safety_signals).filter((item) => item !== "NONE");
+      const missing = listValue(model.missing_info);
+      const rows = [
+        ["Model priority", priorityLabel(model.priority || ticket.model_priority || "UNKNOWN")],
+        ["Final priority", priorityLabel(ticket.priority)],
+        ["Summary", model.issue_summary || ticket.issue_summary || "Not stated"],
+        ["Why", model.priority_reason || ticket.priority_reason || "Not stated"],
+        ["Trade", model.trade || ticket.trade || "UNKNOWN"],
+        ["Unit", model.unit_identifier || ticket.unit_identifier || "UNIT NOT STATED"],
+        ["Confidence", model.confidence || ticket.confidence || "Not stated"],
+        ["Safety signals", signals.length ? signals.join(", ") : "None"],
+        ["Missing info", missing.length ? missing.join(", ") : "None"],
+        ["Human-only reason", model.accommodation_or_legal_reason || ticket.accommodation_or_legal_reason || "None"],
+      ];
+      return `
+        <dl class="readout">
+          ${rows.map(([label, value]) => `<div><dt>${esc(label)}</dt><dd>${esc(value)}</dd></div>`).join("")}
+        </dl>
+      `;
+    }
+
+    function eventSentence(event) {
+      const detail = parseJson(event.detail, {});
+      const action = String(event.action || "");
+      if (action === "ingested") return `Request received from ${detail.source || "source"} and stored.`;
+      if (action === "classified") return `AI classified it as ${detail.priority || "unknown"}; final priority became ${detail.final_priority || "unknown"}.`;
+      if (action === "overridden") return `${detail.override_reason ? `Rule ${detail.override_reason}` : "A safety rule"} changed the priority.`;
+      if (action === "drafted") return "Tenant reply and vendor note were drafted for human review.";
+      if (action === "telegram_alert_mocked") return `Demo alert recorded as ${detail.outcome || "mocked"}.`;
+      if (action === "telegram_alert_sent") return `Telegram alert sent${detail.telegram_message_id ? ` as message ${detail.telegram_message_id}` : ""}.`;
+      if (action === "telegram_alert_failed") return `Telegram alert failed: ${detail.error || "no error text recorded"}.`;
+      if (action === "telegram_alert_skipped") return `Alert skipped: ${detail.reason || "not alertable"}.`;
+      if (action === "telegram_alert_grouped") return "Alert was rate-limited and grouped instead of sent individually.";
+      if (action === "approval_claimed") return `Human selected ${detail.action || "approve"}.`;
+      if (action === "tenant_reply_sent") return `Approved tenant reply sent to ${detail.outbound_to || "configured test inbox"}.`;
+      if (action === "tenant_reply_send_failed") return `Approved reply failed to send: ${detail.error || "no error text recorded"}.`;
+      if (action === "held") return "Human put this request on hold.";
+      if (action === "not_emergency") return "Human marked it not emergency; priority was downgraded to urgent.";
+      return action ? `${action.replace(/_/g, " ")} recorded.` : "Event recorded.";
+    }
+
     function chipList(items, cls = "") {
       return items.map((item) => `<span class="chip ${cls}">${esc(item)}</span>`).join("");
     }
@@ -520,8 +563,12 @@ def build_board():
             ${selectedTicket.vendor_note ? `<pre class="message">${esc(selectedTicket.vendor_note)}</pre>` : `<p class="subtle">No vendor note was written.</p>`}
           </section>
           <section class="panel wide">
-            <h2>Model JSON</h2>
-            <pre class="json">${prettyJson(selectedTicket.model_json)}</pre>
+            <h2>AI readout</h2>
+            ${modelReadout(selectedTicket)}
+            <details class="audit">
+              <summary>Technical audit</summary>
+              <pre class="json">${prettyJson(selectedTicket.model_json)}</pre>
+            </details>
           </section>
           <section class="panel wide">
             <h2>Event trail</h2>
@@ -529,7 +576,11 @@ def build_board():
               <li>
                 <time>${esc(dateLabel(event.at))}</time>
                 <strong>${esc(event.actor)} / ${esc(event.action)}</strong>
-                <pre>${prettyJson(event.detail)}</pre>
+                <p>${esc(eventSentence(event))}</p>
+                <details class="audit">
+                  <summary>Technical detail</summary>
+                  <pre class="json">${prettyJson(event.detail)}</pre>
+                </details>
               </li>
             `).join("")}</ol>` : `<p class="subtle">No events recorded.</p>`}
           </section>
@@ -611,10 +662,18 @@ def build_board():
       .detail-grid { display: grid; gap: 16px; }
       .panel.wide { grid-column: 1 / -1; }
       .verdict { margin-top: 0; max-width: 72ch; }
-      .message, .json, .events pre { white-space: pre-wrap; overflow-wrap: anywhere; background: rgba(228,223,210,.5); border: 1px solid var(--line); padding: 12px; margin: 8px 0 0; font: 13px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace; }
+      .readout { display: grid; gap: 8px; margin: 0; }
+      .readout div { display: grid; gap: 2px; border-bottom: 1px solid rgba(200,188,168,.65); padding: 0 0 8px; }
+      .readout dt { color: var(--muted); font: 700 12px/1.2 ui-monospace, SFMono-Regular, Consolas, monospace; text-transform: uppercase; }
+      .readout dd { margin: 0; overflow-wrap: anywhere; }
+      .message, .json { white-space: pre-wrap; overflow-wrap: anywhere; background: rgba(228,223,210,.5); border: 1px solid var(--line); padding: 12px; margin: 8px 0 0; font: 13px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace; }
       .json { max-height: 520px; overflow: auto; }
+      .audit { margin-top: 14px; border-top: 1px dashed var(--line); padding-top: 10px; }
+      .audit summary { cursor: pointer; color: var(--muted); font: 700 12px/1.2 ui-monospace, SFMono-Regular, Consolas, monospace; text-transform: uppercase; }
+      .audit summary:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; }
       .events { list-style: decimal; padding-left: 24px; margin: 0; }
       .events li { margin-bottom: 14px; }
+      .events p { margin: 6px 0 0; }
       .events time { display: block; color: var(--muted); font: 700 12px/1.3 ui-monospace, SFMono-Regular, Consolas, monospace; }
       footer { margin-top: 28px; color: var(--muted); font-size: 13px; }
       @keyframes enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
