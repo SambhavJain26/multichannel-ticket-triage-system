@@ -76,6 +76,7 @@ Known n8n gotchas to account for:
 - Code nodes may be sandboxed; do not assume `process.env` exists.
 - Optional Postgres update/cleanup nodes need `alwaysOutputData` if downstream nodes must continue after zero rows.
 - Postgres nodes that update then reselect rows must return every field later expressions use.
+- Postgres nodes must also preserve control fields such as `test_mode`, `msg_id`, and source outcome when downstream dispatch depends on them. Do not assume n8n will carry pre-query JSON through a Postgres node.
 - Execute Sub-workflow nodes may produce no downstream items when the called workflow exits through multiple routed branches. For ingestion connectors, treat the core workflow as a database-writing side effect and reselect tickets by stable identifiers such as `msg_id` before post-processing.
 - Publishing a live Gmail IMAP trigger against an inbox with unrelated unread mail can ingest those messages immediately. Use a dedicated mailbox or clear/archive unrelated unread mail before publishing live triggers.
 - Form Trigger submissions can render fields as `field-0`; normalize form payloads before SQL or AI steps.
@@ -90,6 +91,7 @@ Known n8n gotchas to account for:
 - Telegram `answerQuery` responses do not preserve the upstream approval/context payload. Reattach the approval result before downstream edit-message or audit nodes need chat/message IDs.
 - Alert recording must never regress handled tickets. Successful re-alerts can update alert metadata, but `ACKED`, `ACK_SENT`, and `HELD` statuses must not be overwritten back to `ALERTED`.
 - Board and detail pages are manager-facing by default. Render model outputs, rule outcomes, and event details in plain language first; keep raw JSON only behind collapsed technical audit controls.
+- Repeated live-model rehearsal may expose small `gpt-5-nano` variance on demo boundary cases. Prefer narrow deterministic post-model boundaries for known maintenance semantics, and document every boundary in `progress-notes.md`.
 
 ## Testing And Verification
 
@@ -119,6 +121,8 @@ Minimum maintenance fixture scenarios:
 Never commit `.env`, n8n credential exports containing secrets, real tenant data, real client emails, API keys, Telegram tokens, mailbox passwords, tunnel credentials, or production workflow exports containing secrets. Keep examples placeholder-only.
 
 Build reset paths for local demo data only. Never run destructive reset/delete scripts against a client mailbox, client database, or production workflow.
+
+Stage 8 clean snapshots are intended for local clean demo state. Data-only dumps of populated threaded tickets can warn on the self-referential ticket foreign key; test restore before relying on any populated snapshot.
 
 ## Commit And Completion Guidelines
 

@@ -493,11 +493,25 @@ def build_core():
       const wordCount = (text.match(/[a-z0-9]+/g) || []).length;
       const looksUnreadable = /(<html|<div|blockquote|Ã|â|=_nextpart|&&&|\?\?\?)/i.test(message);
       const attachmentOnly = text.includes("see attached") && wordCount <= 8;
+      const unknownTradeWithNoSubstance = model?.trade === "UNKNOWN" && wordCount <= 8;
       return mergedSignals.length === 1 && mergedSignals[0] === "NONE"
         && model?.is_maintenance_request === true
         && model?.request_type === "NEW_ISSUE"
         && missing.includes("ISSUE_DETAIL")
-        && (model?.confidence === "LOW" || model?.trade === "UNKNOWN" || looksUnreadable || attachmentOnly);
+        && (model?.confidence === "LOW" || looksUnreadable || attachmentOnly || unknownTradeWithNoSubstance);
+    }
+    function routineSqueakyDoor(message) {
+      const text = String(message || "").toLowerCase();
+      const squeakOnly = /\b(squeak|squeaky|noisy hinge|hinge noise|door noise)\b/.test(text);
+      const dangerOrAccess = /\b(won'?t|cannot|can'?t|unable|stuck|jammed|block(s|ed|ing)?|close|shut|lock|latch|access|trapped|injur|hurt|security|break-?in|broken)\b/.test(text);
+      return squeakOnly && !dangerOrAccess;
+    }
+    function containedCeilingDrip(message) {
+      const text = String(message || "").toLowerCase();
+      const ceilingDrip = /\b(ceiling|bedroom ceiling|bathroom ceiling)\b[^.!?]{0,80}\b(drip|dripping|leak|leaking)\b|\b(drip|dripping|leak|leaking)\b[^.!?]{0,80}\b(ceiling|bedroom ceiling|bathroom ceiling)\b/.test(text);
+      const contained = /\b(bucket|bowl|towel|pan)\b/.test(text);
+      const emergencyWater = /\b(flood|flooding|water everywhere|pouring|gushing|spreading|downstairs|into the hallway|electrical|outlet|sparking|breaker|collapse|collapsing|ceiling fell|ceiling falling)\b/.test(text);
+      return ceilingDrip && contained && !emergencyWater;
     }
 
     return $input.all().map((item) => {
@@ -523,6 +537,7 @@ def build_core():
       let draftAllowed = false;
       let overrideApplied = ruleSignals.length > 0;
       let overrideReason = ruleSignals.length ? `safety keyword: ${ruleSignals.join(",")}` : null;
+      let priorityReason = reviewReason || "";
 
       if (modelJson) {
         const modelSignals = normalizeSignals(modelJson.safety_signals);
@@ -543,6 +558,15 @@ def build_core():
         humanOnly = Boolean(modelJson.accommodation_or_legal_flag);
         if (humanOnly && ruleSignals.length === 0 && priority !== "NEEDS_REVIEW") {
           priority = "ROUTINE";
+        }
+        priorityReason = reviewReason || modelJson.priority_reason || "";
+        if (ruleSignals.length === 0 && modelJson.is_maintenance_request === true && routineSqueakyDoor(j.body_clean || j.body_raw || "")) {
+          priority = "ROUTINE";
+          priorityReason = "Routine squeaky/noisy door or hinge complaint with no lock, closure, access, injury, or safety detail.";
+        }
+        if (ruleSignals.length === 0 && modelJson.is_maintenance_request === true && priority === "EMERGENCY" && containedCeilingDrip(j.body_clean || j.body_raw || "")) {
+          priority = "URGENT";
+          priorityReason = "Contained ceiling drip with a bucket and no spreading water, collapse, or electrical hazard detail.";
         }
         draftAllowed = priority !== "NEEDS_REVIEW"
           && !humanOnly
@@ -567,6 +591,7 @@ def build_core():
           rule_signals: ruleSignals,
           safety_signals: mergedSignals,
           review_reason: reviewReason,
+          priority_reason: priorityReason,
         }
       };
     });
@@ -715,7 +740,7 @@ def build_core():
       Boolean($json.model_json?.is_maintenance_request),
       $json.model_json?.request_type || '',
       $json.priority,
-      $json.model_json?.priority_reason || $json.review_reason || '',
+      $json.priority_reason || $json.model_json?.priority_reason || $json.review_reason || '',
       Boolean($json.override_applied),
       $json.override_reason || '',
       Boolean($json.human_only),

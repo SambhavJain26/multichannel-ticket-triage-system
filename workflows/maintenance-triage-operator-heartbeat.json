@@ -1,0 +1,255 @@
+{
+  "id": "mt-heartbeat-stage-8",
+  "name": "Maintenance Triage Operator Heartbeat",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "manual-heartbeat-trigger",
+      "name": "Manual Heartbeat Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -960,
+        -120
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 15
+            }
+          ]
+        }
+      },
+      "id": "every-15-minutes-heartbeat",
+      "name": "Every 15 Minutes Heartbeat",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -960,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "database",
+        "operation": "executeQuery",
+        "query": "WITH cfg AS (\n  SELECT\n    coalesce((SELECT value FROM triage.config WHERE key = 'heartbeat'), '{}'::jsonb) AS heartbeat,\n    coalesce((SELECT value FROM triage.config WHERE key = 'contacts'), '{}'::jsonb) AS contacts,\n    coalesce((SELECT value FROM triage.config WHERE key = 'company'), '{}'::jsonb) AS company,\n    coalesce((SELECT value FROM triage.config WHERE key = 'board'), '{}'::jsonb) AS board\n),\nstate AS (\n  SELECT\n    c.*,\n    coalesce(\n      (SELECT max(at) FROM triage.events WHERE action = 'ingested'),\n      nullif(c.heartbeat->>'baseline_at', '')::timestamptz,\n      now()\n    ) AS last_ingested_at,\n    coalesce((c.heartbeat->>'threshold_minutes')::int, 720) AS threshold_minutes,\n    coalesce((c.heartbeat->>'repeat_suppression_minutes')::int, 180) AS repeat_suppression_minutes,\n    nullif(c.heartbeat->>'last_alert_at', '')::timestamptz AS last_alert_at\n  FROM cfg c\n),\ndecision AS (\n  SELECT\n    *,\n    (\n      heartbeat->>'enabled' = 'true'\n      AND now() - last_ingested_at > make_interval(mins => threshold_minutes)\n      AND (\n        last_alert_at IS NULL\n        OR now() - last_alert_at > make_interval(mins => repeat_suppression_minutes)\n      )\n    ) AS should_alert\n  FROM state\n),\nupdated AS (\n  UPDATE triage.config c\n  SET value = c.value\n    || jsonb_build_object('last_checked_at', now())\n    || CASE WHEN d.should_alert THEN jsonb_build_object('last_alert_at', now()) ELSE '{}'::jsonb END\n  FROM decision d\n  WHERE c.key = 'heartbeat'\n  RETURNING c.value\n)\nSELECT\n  d.heartbeat,\n  d.contacts,\n  d.company,\n  d.board,\n  d.last_ingested_at,\n  d.threshold_minutes,\n  d.repeat_suppression_minutes,\n  d.last_alert_at,\n  d.should_alert\nFROM decision d;",
+        "options": {
+          "queryReplacement": "={{ [] }}"
+        }
+      },
+      "id": "postgres-load-heartbeat-state",
+      "name": "Postgres Load Heartbeat State",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -700,
+        0
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "stage1PgLocal",
+          "name": "maintenance-triage-postgres-local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "function parseJson(value, fallback) {\n  if (value === null || value === undefined || value === \"\") return fallback;\n  if (typeof value === \"string\") {\n    try { return JSON.parse(value); } catch (error) { return fallback; }\n  }\n  return value;\n}\nfunction escHtml(value) {\n  return String(value ?? \"\")\n    .replace(/&/g, \"&amp;\")\n    .replace(/</g, \"&lt;\")\n    .replace(/>/g, \"&gt;\");\n}\nfunction boardLink(board) {\n  const token = board?.token || \"\";\n  const rawBase = board?.public_base_url || board?.base_url || board?.url || \"http://localhost:5678\";\n  return `${String(rawBase).replace(/\\/+$/, \"\")}/webhook/board?t=${encodeURIComponent(token)}`;\n}\nreturn $input.all().map((item) => {\n  const contacts = parseJson(item.json.contacts, {});\n  const company = parseJson(item.json.company, {});\n  const board = parseJson(item.json.board, {});\n  const lastIngested = item.json.last_ingested_at ? new Date(item.json.last_ingested_at) : null;\n  const ageMinutes = lastIngested ? Math.round((Date.now() - lastIngested.getTime()) / 60000) : null;\n  const chatId = contacts.operator_chat_id || contacts.primary_chat_id || \"\";\n  const text = [\n    \"OPERATOR HEARTBEAT: maintenance triage intake is quiet\",\n    `Company: ${company.name || \"Demo Property Management\"}`,\n    `Last ingested: ${lastIngested ? lastIngested.toISOString() : \"unknown\"}`,\n    `Quiet for: ${ageMinutes === null ? \"unknown\" : `${ageMinutes} minutes`}`,\n    `Threshold: ${item.json.threshold_minutes ?? 720} minutes`,\n    `Board: ${boardLink(board)}`,\n  ].map(escHtml).join(\"\\n\");\n  return {\n    json: {\n      should_send_heartbeat: item.json.should_alert === true || item.json.should_alert === \"true\",\n      chat_id: chatId,\n      message_text: text,\n    }\n  };\n});"
+      },
+      "id": "prepare-heartbeat-alert",
+      "name": "Prepare Heartbeat Alert",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -460,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "should-send-heartbeat-alert-condition",
+              "leftValue": "={{ Boolean($json.should_send_heartbeat && $json.chat_id) }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "should-send-heartbeat-alert",
+      "name": "Should Send Heartbeat Alert",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $json.chat_id }}",
+        "text": "={{ $json.message_text }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "disable_notification": false,
+          "disable_web_page_preview": true,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "telegram-send-operator-heartbeat",
+      "name": "Telegram Send Operator Heartbeat",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        40,
+        -120
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "stage1TelegramLocal",
+          "name": "maintenance-triage-telegram-bot"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const contexts = $(\"Prepare Heartbeat Alert\").all().filter(item => item.json.should_send_heartbeat);\nreturn $input.all().map((item, index) => {\n  const ctx = contexts[index]?.json || {};\n  const response = item.json || {};\n  return {\n    json: {\n      ...ctx,\n      heartbeat_error: response.error || null,\n      telegram_message_id: response.result?.message_id || response.message_id || null,\n    }\n  };\n});"
+      },
+      "id": "attach-heartbeat-result",
+      "name": "Attach Heartbeat Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        300,
+        -120
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "return $input.all()\n  .filter(item => !item.json.should_send_heartbeat)\n  .map(item => ({ json: { ...item.json, heartbeat_skipped: true } }));"
+      },
+      "id": "return-heartbeat-skipped",
+      "name": "Return Heartbeat Skipped",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        40,
+        140
+      ]
+    }
+  ],
+  "connections": {
+    "Manual Heartbeat Trigger": {
+      "main": [
+        [
+          {
+            "node": "Postgres Load Heartbeat State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Every 15 Minutes Heartbeat": {
+      "main": [
+        [
+          {
+            "node": "Postgres Load Heartbeat State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Load Heartbeat State": {
+      "main": [
+        [
+          {
+            "node": "Prepare Heartbeat Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Heartbeat Alert": {
+      "main": [
+        [
+          {
+            "node": "Should Send Heartbeat Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Should Send Heartbeat Alert": {
+      "main": [
+        [
+          {
+            "node": "Telegram Send Operator Heartbeat",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Return Heartbeat Skipped",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Send Operator Heartbeat": {
+      "main": [
+        [
+          {
+            "node": "Attach Heartbeat Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "pinData": {},
+  "meta": {
+    "stage": 8,
+    "generatedBy": "scripts/build-stage-8-workflows.py"
+  },
+  "versionId": "stage-8-generated",
+  "triggerCount": 0,
+  "tags": []
+}

@@ -170,7 +170,8 @@ WITH input_values AS (
   SELECT
     NULLIF($1::text, '')::bigint AS ticket_id,
     NULLIF($2::text, '') AS source_outcome,
-    NULLIF($3::text, '') AS msg_id
+    NULLIF($3::text, '') AS msg_id,
+    coalesce(NULLIF($4::text, '')::jsonb, '{}'::jsonb) AS test_mode
 ),
 target AS (
   SELECT t.*
@@ -278,6 +279,7 @@ SELECT
   u.unit_match_status,
   u.unit_match_display,
   (SELECT source_outcome FROM input_values) AS source_outcome,
+  (SELECT test_mode FROM input_values) AS test_mode,
   ((SELECT source_outcome FROM input_values) = 'created') AS should_dispatch_alert
 FROM updated u;
 """
@@ -295,7 +297,7 @@ def build_post_ingest():
     result_js = "return $input.all().map(item => ({ json: item.json }));"
     nodes = [
         node("Post Ingest Input", "n8n-nodes-base.executeWorkflowTrigger", 1.2, [-780, 0], {"inputSource": "passthrough", "returnOutput": "allRuns"}),
-        pg_node("Postgres Match Unit Roster", [-540, 0], UNIT_MATCH_QUERY, "={{ [$json.ticket_id || $json.id || '', $json.outcome || 'created', $json.msg_id || ''] }}"),
+        pg_node("Postgres Match Unit Roster", [-540, 0], UNIT_MATCH_QUERY, "={{ [$json.ticket_id || $json.id || '', $json.outcome || 'created', $json.msg_id || '', JSON.stringify($json.test_mode || {})] }}"),
         code_node("Prepare Alert Dispatch Input", [-300, 0], prepare_alert_js),
         if_node("Should Dispatch Alert", [-60, 0], "={{ Boolean($json.should_dispatch_alert) }}"),
         execute_workflow_node("Execute Alert Dispatch", [180, -100], ALERT_ID),

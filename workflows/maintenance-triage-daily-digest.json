@@ -1,0 +1,254 @@
+{
+  "id": "mt-digest-stage-8",
+  "name": "Maintenance Triage Daily Digest",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "manual-digest-trigger",
+      "name": "Manual Digest Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -960,
+        -120
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 7 * * *"
+            }
+          ]
+        }
+      },
+      "id": "daily-0700-digest-schedule",
+      "name": "Daily 0700 Digest Schedule",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -960,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "database",
+        "operation": "executeQuery",
+        "query": "WITH cfg AS (\n  SELECT\n    coalesce((SELECT value FROM triage.config WHERE key = 'digest'), '{}'::jsonb) AS digest,\n    coalesce((SELECT value FROM triage.config WHERE key = 'company'), '{}'::jsonb) AS company,\n    coalesce((SELECT value FROM triage.config WHERE key = 'outbound_email'), '{}'::jsonb) AS outbound_email,\n    coalesce((SELECT value FROM triage.config WHERE key = 'overdue_days'), '{}'::jsonb) AS overdue_days\n),\nopen_rows AS (\n  SELECT t.*\n  FROM triage.tickets t\n  WHERE t.closed_at IS NULL\n    AND t.status <> 'CLOSED'\n),\nopen_emergencies AS (\n  SELECT coalesce(jsonb_agg(to_jsonb(t) ORDER BY t.received_at), '[]'::jsonb) AS rows\n  FROM open_rows t\n  WHERE t.priority = 'EMERGENCY'\n),\nbreached_targets AS (\n  SELECT coalesce(jsonb_agg(to_jsonb(t) ORDER BY t.sla_due_at NULLS LAST, t.received_at), '[]'::jsonb) AS rows\n  FROM open_rows t\n  WHERE t.sla_due_at IS NOT NULL\n    AND t.sla_due_at < now()\n),\noverdue_items AS (\n  SELECT coalesce(jsonb_agg(to_jsonb(t) ORDER BY t.received_at), '[]'::jsonb) AS rows\n  FROM open_rows t\n  CROSS JOIN cfg c\n  WHERE t.priority IN ('ROUTINE', 'URGENT')\n    AND t.received_at < now() - make_interval(days => coalesce((c.overdue_days->>t.priority)::int, 999999))\n),\nyesterday AS (\n  SELECT jsonb_build_object(\n    'total', count(*),\n    'emergency', count(*) FILTER (WHERE priority = 'EMERGENCY'),\n    'urgent', count(*) FILTER (WHERE priority = 'URGENT'),\n    'routine', count(*) FILTER (WHERE priority = 'ROUTINE'),\n    'needs_review', count(*) FILTER (WHERE priority = 'NEEDS_REVIEW'),\n    'ack_sent', count(*) FILTER (WHERE status = 'ACK_SENT')\n  ) AS value\n  FROM triage.tickets\n  WHERE received_at >= date_trunc('day', now()) - interval '1 day'\n    AND received_at < date_trunc('day', now())\n)\nSELECT\n  c.digest,\n  c.company,\n  c.outbound_email,\n  c.overdue_days,\n  now() AS generated_at,\n  (SELECT rows FROM open_emergencies) AS open_emergencies,\n  (SELECT rows FROM breached_targets) AS breached_targets,\n  (SELECT rows FROM overdue_items) AS overdue_items,\n  (SELECT value FROM yesterday) AS yesterday_counts\nFROM cfg c;",
+        "options": {
+          "queryReplacement": "={{ [] }}"
+        }
+      },
+      "id": "postgres-load-digest-context",
+      "name": "Postgres Load Digest Context",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -700,
+        0
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "stage1PgLocal",
+          "name": "maintenance-triage-postgres-local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "function parseJson(value, fallback) {\n  if (value === null || value === undefined || value === \"\") return fallback;\n  if (typeof value === \"string\") {\n    try { return JSON.parse(value); } catch (error) { return fallback; }\n  }\n  return value;\n}\nfunction esc(value) {\n  return String(value ?? \"\")\n    .replace(/&/g, \"&amp;\")\n    .replace(/</g, \"&lt;\")\n    .replace(/>/g, \"&gt;\");\n}\nfunction rows(value) {\n  const parsed = parseJson(value, []);\n  return Array.isArray(parsed) ? parsed : [];\n}\nfunction itemLine(ticket) {\n  const unit = ticket.unit_match_display || ticket.unit_identifier || \"UNIT NOT STATED\";\n  const ref = ticket.ref || \"MR-????\";\n  const summary = ticket.issue_summary || ticket.subject || \"Maintenance request\";\n  const target = ticket.sla_due_at ? new Date(ticket.sla_due_at).toLocaleString(\"en-US\", { month: \"short\", day: \"numeric\", hour: \"numeric\", minute: \"2-digit\" }) : \"No target\";\n  return `<li><b>${esc(ref)}</b> ${esc(ticket.priority)} / ${esc(unit)} / ${esc(summary)} <span style=\"color:#666\">Target: ${esc(target)}</span></li>`;\n}\nfunction section(title, list, emptyText) {\n  return `<h2>${esc(title)}</h2>${list.length ? `<ul>${list.map(itemLine).join(\"\")}</ul>` : `<p>${esc(emptyText)}</p>`}`;\n}\n\nreturn $input.all().map((item) => {\n  const digest = parseJson(item.json.digest, {});\n  const company = parseJson(item.json.company, {});\n  const outbound = parseJson(item.json.outbound_email, {});\n  const openEmergencies = rows(item.json.open_emergencies);\n  const breachedTargets = rows(item.json.breached_targets);\n  const overdueItems = rows(item.json.overdue_items);\n  const counts = parseJson(item.json.yesterday_counts, {});\n  const fromName = outbound.from_name || company.from_name || \"Demo Maintenance Desk\";\n  const fromEmail = outbound.from_email || \"maintenance@example.test\";\n  const toEmail = digest.to_email || outbound.test_to || outbound.from_email || fromEmail;\n  const prefix = digest.subject_prefix || \"Daily maintenance triage digest\";\n  const generated = new Date(item.json.generated_at || Date.now()).toLocaleString(\"en-US\", { timeZone: digest.timezone || company.timezone || \"America/Chicago\" });\n  const html = `<!doctype html>\n    <html><body style=\"font-family:Arial,sans-serif;line-height:1.45;color:#222\">\n      <h1>${esc(company.name || \"Demo Property Management\")} maintenance digest</h1>\n      <p>Generated ${esc(generated)}. Advisory demo digest; response targets are operational targets, not legal deadlines.</p>\n      ${section(\"Still-open emergencies\", openEmergencies, \"No open emergencies.\")}\n      ${section(\"Breached response targets\", breachedTargets, \"No breached response targets.\")}\n      ${section(\"Overdue routine/urgent items\", overdueItems, \"No overdue routine or urgent items.\")}\n      <h2>Yesterday</h2>\n      <p>Total ${esc(counts.total || 0)} / Emergency ${esc(counts.emergency || 0)} / Urgent ${esc(counts.urgent || 0)} / Routine ${esc(counts.routine || 0)} / Needs review ${esc(counts.needs_review || 0)} / Replies sent ${esc(counts.ack_sent || 0)}</p>\n    </body></html>`;\n  return {\n    json: {\n      should_send_digest: digest.enabled === true,\n      from_email: `${fromName} <${fromEmail}>`,\n      to_email: toEmail,\n      email_subject: `${prefix} - ${new Date().toISOString().slice(0, 10)}`,\n      email_html: html,\n      open_emergency_count: openEmergencies.length,\n      breached_count: breachedTargets.length,\n      overdue_count: overdueItems.length,\n    }\n  };\n});"
+      },
+      "id": "prepare-digest-email",
+      "name": "Prepare Digest Email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -460,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "should-send-digest-email-condition",
+              "leftValue": "={{ Boolean($json.should_send_digest) }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "should-send-digest-email",
+      "name": "Should Send Digest Email",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "={{ $json.from_email }}",
+        "toEmail": "={{ $json.to_email }}",
+        "subject": "={{ $json.email_subject }}",
+        "emailFormat": "html",
+        "html": "={{ $json.email_html }}",
+        "options": {
+          "appendAttribution": false,
+          "replyTo": "={{ $json.from_email }}"
+        }
+      },
+      "id": "smtp-send-digest-email",
+      "name": "SMTP Send Digest Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        40,
+        -120
+      ],
+      "credentials": {
+        "smtp": {
+          "id": "stage7DemoSmtpDomain",
+          "name": "maintenance-triage-demo-smtp-domain"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const contexts = $(\"Prepare Digest Email\").all().filter(item => item.json.should_send_digest);\nreturn $input.all().map((item, index) => {\n  const ctx = contexts[index]?.json || {};\n  const response = item.json || {};\n  return {\n    json: {\n      ...ctx,\n      digest_error: response.error || null,\n      digest_message_id: response.messageId || response.message_id || response.response || null,\n    }\n  };\n});"
+      },
+      "id": "attach-digest-send-result",
+      "name": "Attach Digest Send Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        300,
+        -120
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "return $input.all()\n  .filter(item => !item.json.should_send_digest)\n  .map(item => ({ json: { ...item.json, digest_skipped: true } }));"
+      },
+      "id": "return-digest-skipped",
+      "name": "Return Digest Skipped",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        40,
+        140
+      ]
+    }
+  ],
+  "connections": {
+    "Manual Digest Trigger": {
+      "main": [
+        [
+          {
+            "node": "Postgres Load Digest Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Daily 0700 Digest Schedule": {
+      "main": [
+        [
+          {
+            "node": "Postgres Load Digest Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Load Digest Context": {
+      "main": [
+        [
+          {
+            "node": "Prepare Digest Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Digest Email": {
+      "main": [
+        [
+          {
+            "node": "Should Send Digest Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Should Send Digest Email": {
+      "main": [
+        [
+          {
+            "node": "SMTP Send Digest Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Return Digest Skipped",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SMTP Send Digest Email": {
+      "main": [
+        [
+          {
+            "node": "Attach Digest Send Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "pinData": {},
+  "meta": {
+    "stage": 8,
+    "generatedBy": "scripts/build-stage-8-workflows.py"
+  },
+  "versionId": "stage-8-generated",
+  "triggerCount": 0,
+  "tags": []
+}
