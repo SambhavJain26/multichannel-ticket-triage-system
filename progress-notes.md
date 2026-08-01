@@ -4,7 +4,7 @@ Read this file first at the start of every session.
 
 ## Current Status
 
-Stage 5 board and detail view is implemented and verified. Docker Compose runs local n8n, Postgres, and GreenMail. The `triage` Postgres schema, config seed, 30-fixture corpus, Stage 3 OpenAI harness, Stage 4 reusable core workflow, Stage 4 verification driver, and Stage 5 read-only board workflow exist. No Telegram alerting, approval buttons, public ingestion, or outbound SMTP send has been created yet.
+Stage 6 alerts, approval gate, and outbound email is implemented and verified in hybrid mode. Docker Compose runs local n8n, Postgres, and GreenMail. The `triage` Postgres schema, config seed, 30-fixture corpus, Stage 3 OpenAI harness, Stage 4 reusable core workflow, Stage 4 verification driver, Stage 5 read-only board workflow, and Stage 6 alert/approval workflows exist. Telegram live callback verification remains a manual gate because local contacts still use placeholder chat IDs and no current HTTPS tunnel is configured.
 
 The staged plan is saved in `build-plan.md`.
 
@@ -17,7 +17,7 @@ The staged plan is saved in `build-plan.md`.
 | 3 | OpenAI Model Contract and Accuracy Harness | Implemented for demo gate | Responses API probe passed for `gpt-5-nano` and `gpt-5.6-luna`. Reduced live-demo harness passed with 6/6 priority matches, zero under-escalations, zero over-escalations, and zero missed safety signals. Full 30-fixture x 3-run hardening failed and is deferred. |
 | 4 | Core Triage Sub-Workflow | Implemented for demo gate | Importable n8n core sub-workflow and local Stage 4 driver exist. Core normalizes, dedupes/threads, calls OpenAI Responses via HTTP Request, applies deterministic safety rules, persists tickets/events, drafts when allowed, and supports mock/error test modes. |
 | 5 | Board and Detail View | Implemented | Read-only token-protected n8n board webhook renders priority cards and detail view from stored tickets/events. |
-| 6 | Alerts, Approval Gate, and Outbound Email | Not started | Depends on core workflow and credentials. |
+| 6 | Alerts, Approval Gate, and Outbound Email | Implemented | Hybrid validation passed: mock Telegram dispatch/callback behavior plus real GreenMail SMTP approved reply. Live Telegram callback is imported but not published until real chat IDs and HTTPS tunnel are set. |
 | 7 | Ingestion Paths and Follow-Up Importer | Not started | Depends on core workflow; importer supports the sales follow-up ask. |
 | 8 | Digest, Aging, Heartbeat, and Demo Hardening | Not started | Final reliability and demo-readiness pass. |
 
@@ -52,6 +52,9 @@ The staged plan is saved in `build-plan.md`.
 - Stage 4 validation correction: n8n CLI execution of an Execute Sub-workflow driver requires the core workflow to be published/active through n8n's workflow CLI, not merely imported. `scripts/import-stage-4-workflows.ps1` now activates both Stage 4 workflows after import.
 - Stage 5 webhook correction: imported n8n Webhook nodes without a fixed top-level `webhookId` register under a generated workflow/node-prefixed path in local n8n `2.29.10`. The board workflow pins `webhookId: board` and restarts n8n after import so `/webhook/board` is registered.
 - Stage 5 response-code correction: local n8n `2.29.10` did not reliably apply a nested `options.responseCode` expression in Respond to Webhook. The board workflow routes not-found and normal responses to separate Respond nodes with literal 404 and 200 codes.
+- Stage 6 import correction: generated n8n workflow IDs must stay within the local database `varchar(36)` limit. Stage 6 uses short internal IDs with descriptive workflow names.
+- Stage 6 routing correction: n8n strict IF nodes require actual boolean values; Code nodes now coerce guard fields such as `should_send_email` explicitly.
+- Stage 6 live-callback correction: Telegram Trigger workflows are imported but not published by default because activation needs a current HTTPS tunnel and real chat IDs. Use `scripts/check-stage-6-live-prereqs.ps1` first, then `scripts/import-stage-6-workflows.ps1 -PublishTelegramCallback`.
 - `AGENTS.md` was rewritten using lessons from a similar local n8n AI automation project, adapted for maintenance triage: read order, local service rules, n8n workflow gotchas, fixture expectations, security rules, and completion/documentation discipline.
 - User requested a durable rule to commit and push after every completed task. `AGENTS.md` now requires committing and pushing to `main` after task completion, while still avoiding secrets/local data/generated temp output.
 
@@ -79,6 +82,8 @@ The staged plan is saved in `build-plan.md`.
 - 2026-07-31: Ran `.\scripts\validate-stage-4.ps1`; it passed. Checks included workflow JSON parse, prompt/schema JSON parse, `docker compose config`, Stage 4 SQL apply, credential presence, workflow import/activation, Stage 4 driver execution, 12 created tickets, 1 duplicate event, 6/6 live demo priority matches, 3 safety override events, accommodation draft suppression, Spanish draft generation, simulated model errors to `NEEDS_REVIEW`, and degraded runtime state after repeated failures.
 - 2026-08-01: Added Stage 5 board config SQL, generated n8n board workflow, and apply/import/validate scripts. `triage.config.board` stores a generated local token, `recent_hours`, and `max_cards`; the token is not committed.
 - 2026-08-01: Ran `.\scripts\validate-stage-5.ps1`; it passed. Checks included workflow JSON parse, `docker compose config`, Stage 4/5 SQL apply, board config presence, ticket reset, Stage 4/5 workflow import, n8n restart for webhook registration, missing-token 404, bad-token 404 without ticket refs, valid empty board, Stage 4 fixture driver board population, emergency/urgent/routine/needs-review/human-only/override/reply-written/overdue states, detail view sections, and repeated fixture runs staying within the configured board bound. Valid local board URL shape: `http://localhost:5678/webhook/board?t=<generated-token>`.
+- 2026-08-01: Added Stage 6 SQL, generated n8n alert/approval/callback/escalation/driver workflows, and apply/import/validate/live-prereq scripts. Stage 6 extends tickets with `telegram_chat_id`, `outbound_to`, `outbound_sent_at`, and `last_alert_error`, seeds `triage.config.outbound_email` in `test_only` mode, and adds escalation/approval/rate indexes.
+- 2026-08-01: Ran `.\scripts\validate-stage-6.ps1`; it passed. Checks included workflow JSON parse, `docker compose config`, Stage 4/5/6 SQL apply, required credential presence, ticket reset, Stage 4/5/6 workflow import, Stage 4 fixture generation, Stage 6 mock alert dispatch, emergency/urgent/needs-review/routine/human-only/quiet-hours/rate-cap/forced-failure outcomes, exactly one GreenMail email for approved `MR-0001`, double-approve guard, hold, not-emergency downgrade with feedback, human-only approval refusal, failed-alert emergency escalation predicate, and board `Reply sent` status.
 
 ## Outstanding Risks To Recheck During Build
 

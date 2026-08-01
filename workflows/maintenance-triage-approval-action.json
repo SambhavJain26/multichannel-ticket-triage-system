@@ -1,0 +1,350 @@
+{
+  "id": "mt-approval-action-stage-6",
+  "name": "Maintenance Triage Approval Action",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough",
+        "returnOutput": "allRuns"
+      },
+      "id": "approval-action-input",
+      "name": "Approval Action Input",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1180,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "function parseCallback(value) {\n  const raw = String(value || \"\");\n  const match = /^act:(\\d+):(approve|hold|not_emergency)$/.exec(raw);\n  if (!match) return { valid: false, ticket_id: null, action: null };\n  return { valid: true, ticket_id: Number(match[1]), action: match[2] };\n}\nreturn $input.all().map((item) => {\n  const src = item.json || {};\n  const parsed = parseCallback(src.callback_data || src.data || \"\");\n  return {\n    json: {\n      callback_data: src.callback_data || src.data || \"\",\n      valid: parsed.valid,\n      ticket_id: parsed.ticket_id,\n      action_name: parsed.action,\n      actor: src.actor || src.actor_username || src.username || \"human:local\",\n      callback_query_id: src.callback_query_id || src.query_id || \"\",\n      telegram_chat_id: src.telegram_chat_id || src.chat_id || \"\",\n      telegram_message_id: src.telegram_message_id || src.message_id || \"\",\n    },\n  };\n});"
+      },
+      "id": "normalize-approval-action",
+      "name": "Normalize Approval Action",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -960,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "database",
+        "operation": "executeQuery",
+        "query": "WITH input_values AS (\n  SELECT\n    $1::boolean AS valid,\n    NULLIF($2::text, '')::bigint AS ticket_id,\n    NULLIF($3::text, '') AS action_name,\n    NULLIF($4::text, '') AS actor,\n    NULLIF($5::text, '') AS telegram_chat_id,\n    NULLIF($6::text, '')::bigint AS telegram_message_id\n),\ncfg AS (\n  SELECT\n    coalesce((SELECT value FROM triage.config WHERE key = 'outbound_email'), '{}'::jsonb) AS outbound_email,\n    coalesce((SELECT value FROM triage.config WHERE key = 'company'), '{}'::jsonb) AS company\n),\ntarget AS (\n  SELECT t.*\n  FROM triage.tickets t\n  JOIN input_values i ON i.ticket_id = t.id\n),\napprove_claim AS (\n  UPDATE triage.tickets t\n  SET status = 'ACKED', acked_at = now(), acked_by = i.actor\n  FROM input_values i\n  WHERE i.valid\n    AND i.action_name = 'approve'\n    AND t.id = i.ticket_id\n    AND t.status NOT IN ('ACKED', 'ACK_SENT')\n    AND t.draft_body IS NOT NULL\n    AND t.human_only = false\n    AND t.priority <> 'NEEDS_REVIEW'\n  RETURNING t.*\n),\nhold_claim AS (\n  UPDATE triage.tickets t\n  SET status = 'HELD', acked_at = now(), acked_by = i.actor\n  FROM input_values i\n  WHERE i.valid\n    AND i.action_name = 'hold'\n    AND t.id = i.ticket_id\n    AND t.status <> 'ACK_SENT'\n  RETURNING t.*\n),\ndowngrade_claim AS (\n  UPDATE triage.tickets t\n  SET priority = 'URGENT', status = 'ACKED', acked_at = now(), acked_by = i.actor\n  FROM input_values i\n  WHERE i.valid\n    AND i.action_name = 'not_emergency'\n    AND t.id = i.ticket_id\n    AND t.status <> 'ACK_SENT'\n  RETURNING t.*\n),\nfeedback_insert AS (\n  INSERT INTO triage.feedback (ticket_id, was, became, by_user)\n  SELECT id, 'EMERGENCY', 'URGENT', (SELECT actor FROM input_values)\n  FROM downgrade_claim\n  WHERE priority = 'URGENT'\n  RETURNING id\n),\nevent_insert AS (\n  INSERT INTO triage.events (ticket_id, actor, action, detail)\n  SELECT id, (SELECT actor FROM input_values), 'approval_claimed', jsonb_build_object('action', 'approve')\n  FROM approve_claim\n  UNION ALL\n  SELECT id, (SELECT actor FROM input_values), 'held', jsonb_build_object('action', 'hold')\n  FROM hold_claim\n  UNION ALL\n  SELECT id, (SELECT actor FROM input_values), 'not_emergency', jsonb_build_object('was', 'EMERGENCY', 'became', 'URGENT')\n  FROM downgrade_claim\n  RETURNING id\n),\nfinal_ticket AS (\n  SELECT * FROM approve_claim\n  UNION ALL SELECT * FROM hold_claim\n  UNION ALL SELECT * FROM downgrade_claim\n  UNION ALL SELECT * FROM target WHERE NOT EXISTS (SELECT 1 FROM approve_claim) AND NOT EXISTS (SELECT 1 FROM hold_claim) AND NOT EXISTS (SELECT 1 FROM downgrade_claim)\n  LIMIT 1\n)\nSELECT\n  i.valid,\n  i.action_name,\n  i.actor,\n  i.telegram_chat_id,\n  i.telegram_message_id,\n  to_jsonb(f) AS ticket,\n  cfg.outbound_email,\n  cfg.company,\n  CASE\n    WHEN NOT i.valid THEN 'invalid'\n    WHEN NOT EXISTS (SELECT 1 FROM target) THEN 'not_found'\n    WHEN i.action_name = 'approve' AND EXISTS (SELECT 1 FROM approve_claim) THEN 'send_email'\n    WHEN i.action_name = 'approve' AND EXISTS (SELECT 1 FROM target WHERE status IN ('ACKED', 'ACK_SENT') OR out_msg_id IS NOT NULL) THEN 'already_handled'\n    WHEN i.action_name = 'approve' THEN 'refused'\n    WHEN i.action_name = 'hold' AND EXISTS (SELECT 1 FROM hold_claim) THEN 'held'\n    WHEN i.action_name = 'not_emergency' AND EXISTS (SELECT 1 FROM downgrade_claim) THEN 'not_emergency'\n    ELSE 'already_handled'\n  END AS action_result\nFROM input_values i\nCROSS JOIN cfg\nLEFT JOIN final_ticket f ON true;",
+        "options": {
+          "queryReplacement": "={{ [$json.valid, $json.ticket_id || '', $json.action_name || '', $json.actor || '', $json.telegram_chat_id || '', $json.telegram_message_id || ''] }}"
+        }
+      },
+      "id": "postgres-approval-gate",
+      "name": "Postgres Approval Gate",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -720,
+        0
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "stage1PgLocal",
+          "name": "maintenance-triage-postgres-local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "function parseJson(value, fallback) {\n  if (value === null || value === undefined || value === \"\") return fallback;\n  if (typeof value === \"string\") {\n    try { return JSON.parse(value); } catch (error) { return fallback; }\n  }\n  return value;\n}\nfunction emailFor(ticket, outbound, company) {\n  const fromName = outbound.from_name || company.from_name || \"Demo Maintenance Desk\";\n  const fromEmail = outbound.from_email || \"maintenance@example.test\";\n  const toEmail = outbound.mode === \"test_only\"\n    ? (outbound.test_to || \"maintenance@example.test\")\n    : (ticket.tenant_contact || outbound.test_to || \"maintenance@example.test\");\n  return {\n    from_email: `${fromName} <${fromEmail}>`,\n    to_email: toEmail,\n    email_subject: `[${ticket.ref}] ${ticket.draft_subject || \"Maintenance request received\"}`,\n    email_body: ticket.draft_body,\n  };\n}\nreturn $input.all().map((item) => {\n  const row = item.json;\n  const ticket = parseJson(row.ticket, null);\n  const outbound = parseJson(row.outbound_email, {});\n  const company = parseJson(row.company, {});\n  const result = row.action_result;\n  const canEmail = result === \"send_email\" && Boolean(ticket && ticket.draft_body);\n  const email = canEmail ? emailFor(ticket, outbound, company) : {};\n  let answer = \"Action recorded.\";\n  if (result === \"send_email\") answer = \"Sending approved reply.\";\n  if (result === \"already_handled\") answer = \"Already sent or already being handled.\";\n  if (result === \"refused\") answer = \"No draft can be sent for this ticket.\";\n  if (result === \"held\") answer = \"Held. No email sent.\";\n  if (result === \"not_emergency\") answer = \"Changed to urgent. No email sent.\";\n  if (result === \"invalid\") answer = \"Invalid action.\";\n  if (result === \"not_found\") answer = \"Ticket not found.\";\n  return {\n    json: {\n      ...row,\n      ticket,\n      should_send_email: canEmail,\n      answer_text: answer,\n      edit_text: ticket ? `${ticket.ref}: ${answer}` : answer,\n      ...email,\n    },\n  };\n});"
+      },
+      "id": "prepare-email-payload",
+      "name": "Prepare Email Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -480,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "should-send-approved-email-condition",
+              "leftValue": "={{ $json.should_send_email }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "should-send-approved-email",
+      "name": "Should Send Approved Email",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -240,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "={{ $json.from_email }}",
+        "toEmail": "={{ $json.to_email }}",
+        "subject": "={{ $json.email_subject }}",
+        "emailFormat": "text",
+        "text": "={{ $json.email_body }}",
+        "options": {
+          "appendAttribution": false,
+          "replyTo": "={{ $json.from_email }}"
+        }
+      },
+      "id": "smtp-send-approved-reply",
+      "name": "SMTP Send Approved Reply",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        20,
+        -120
+      ],
+      "credentials": {
+        "smtp": {
+          "id": "stage1GreenmailSmtpLocal",
+          "name": "maintenance-triage-greenmail-smtp-local"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const contexts = $(\"Prepare Email Payload\").all().filter(item => item.json.should_send_email);\nreturn $input.all().map((item, index) => {\n  const ctx = contexts[index].json;\n  const response = item.json || {};\n  const error = response.error || null;\n  return {\n    json: {\n      ...ctx,\n      email_error: error,\n      out_msg_id: error ? null : (response.messageId || response.message_id || response.response || null),\n    },\n  };\n});"
+      },
+      "id": "attach-email-send-result",
+      "name": "Attach Email Send Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        260,
+        -120
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "database",
+        "operation": "executeQuery",
+        "query": "WITH input_values AS (\n  SELECT\n    $1::bigint AS ticket_id,\n    NULLIF($2::text, '') AS out_msg_id,\n    NULLIF($3::text, '') AS outbound_to,\n    NULLIF($4::text, '') AS email_error,\n    NULLIF($5::text, '') AS actor\n),\nsuccess_update AS (\n  UPDATE triage.tickets t\n  SET\n    status = 'ACK_SENT',\n    out_msg_id = i.out_msg_id,\n    outbound_to = i.outbound_to,\n    outbound_sent_at = now(),\n    last_alert_error = NULL\n  FROM input_values i\n  WHERE t.id = i.ticket_id\n    AND i.email_error IS NULL\n  RETURNING t.*\n),\nfailure_update AS (\n  UPDATE triage.tickets t\n  SET last_alert_error = i.email_error\n  FROM input_values i\n  WHERE t.id = i.ticket_id\n    AND i.email_error IS NOT NULL\n  RETURNING t.*\n),\nevent_insert AS (\n  INSERT INTO triage.events (ticket_id, actor, action, detail)\n  SELECT id, (SELECT actor FROM input_values), 'tenant_reply_sent', jsonb_build_object('out_msg_id', out_msg_id, 'outbound_to', outbound_to)\n  FROM success_update\n  UNION ALL\n  SELECT id, 'system', 'tenant_reply_send_failed', jsonb_build_object('error', (SELECT email_error FROM input_values))\n  FROM failure_update\n  RETURNING id\n)\nSELECT\n  coalesce((SELECT id FROM success_update), (SELECT id FROM failure_update), (SELECT ticket_id FROM input_values)) AS ticket_id,\n  CASE WHEN (SELECT email_error FROM input_values) IS NULL THEN 'sent' ELSE 'failed' END AS email_result,\n  (SELECT out_msg_id FROM input_values) AS out_msg_id,\n  (SELECT email_error FROM input_values) AS email_error;",
+        "options": {
+          "queryReplacement": "={{ [$json.ticket?.id || $json.ticket_id, $json.out_msg_id || '', $json.to_email || '', $json.email_error || '', $json.actor || 'human:local'] }}"
+        }
+      },
+      "id": "postgres-finalize-approved-email",
+      "name": "Postgres Finalize Approved Email",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        500,
+        -120
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "stage1PgLocal",
+          "name": "maintenance-triage-postgres-local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const contexts = $(\"Attach Email Send Result\").all();\nreturn $input.all().map((item, index) => {\n  const ctx = contexts[index].json;\n  const result = item.json || {};\n  const sent = result.email_result === \"sent\";\n  return {\n    json: {\n      ...ctx,\n      action_result: sent ? \"sent\" : \"email_failed\",\n      answer_text: sent ? \"Sent.\" : \"Email failed. Nothing else was sent.\",\n      edit_text: ctx.ticket ? `${ctx.ticket.ref}: ${sent ? \"Reply sent\" : \"Email failed\"}` : (sent ? \"Reply sent\" : \"Email failed\"),\n      out_msg_id: result.out_msg_id || ctx.out_msg_id || null,\n      email_error: result.email_error || ctx.email_error || null,\n    },\n  };\n});"
+      },
+      "id": "attach-final-email-result",
+      "name": "Attach Final Email Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        740,
+        -120
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "return $input.all()\n  .filter(item => !item.json.should_send_email)\n  .map(item => ({ json: item.json }));"
+      },
+      "id": "return-non-email-action",
+      "name": "Return Non Email Action",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        20,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "return $input.all().map(item => ({ json: item.json }));"
+      },
+      "id": "approval-action-result",
+      "name": "Approval Action Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        980,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Approval Action Input": {
+      "main": [
+        [
+          {
+            "node": "Normalize Approval Action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Approval Action": {
+      "main": [
+        [
+          {
+            "node": "Postgres Approval Gate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Approval Gate": {
+      "main": [
+        [
+          {
+            "node": "Prepare Email Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Email Payload": {
+      "main": [
+        [
+          {
+            "node": "Should Send Approved Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Should Send Approved Email": {
+      "main": [
+        [
+          {
+            "node": "SMTP Send Approved Reply",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Return Non Email Action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SMTP Send Approved Reply": {
+      "main": [
+        [
+          {
+            "node": "Attach Email Send Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Attach Email Send Result": {
+      "main": [
+        [
+          {
+            "node": "Postgres Finalize Approved Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Finalize Approved Email": {
+      "main": [
+        [
+          {
+            "node": "Attach Final Email Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Attach Final Email Result": {
+      "main": [
+        [
+          {
+            "node": "Approval Action Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Return Non Email Action": {
+      "main": [
+        [
+          {
+            "node": "Approval Action Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "pinData": {},
+  "meta": {
+    "stage": 6,
+    "generatedBy": "scripts/build-stage-6-workflows.py"
+  },
+  "versionId": "stage-6-generated",
+  "triggerCount": 0,
+  "tags": []
+}

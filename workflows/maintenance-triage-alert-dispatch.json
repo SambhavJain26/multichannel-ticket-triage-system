@@ -1,0 +1,273 @@
+{
+  "id": "mt-alert-dispatch-stage-6",
+  "name": "Maintenance Triage Alert Dispatch",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough",
+        "returnOutput": "allRuns"
+      },
+      "id": "alert-dispatch-input",
+      "name": "Alert Dispatch Input",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -980,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "database",
+        "operation": "executeQuery",
+        "query": "WITH input_values AS (\n  SELECT\n    NULLIF($1::text, '')::bigint AS ticket_id,\n    coalesce(NULLIF($2::text, '')::jsonb, '{}'::jsonb) AS test_mode\n),\nconfigs AS (\n  SELECT\n    coalesce((SELECT value FROM triage.config WHERE key = 'board'), '{}'::jsonb) AS board,\n    coalesce((SELECT value FROM triage.config WHERE key = 'contacts'), '{}'::jsonb) AS contacts,\n    coalesce((SELECT value FROM triage.config WHERE key = 'company'), '{}'::jsonb) AS company,\n    coalesce((SELECT value FROM triage.config WHERE key = 'quiet_hours'), '{}'::jsonb) AS quiet_hours,\n    coalesce((SELECT value FROM triage.config WHERE key = 'limits'), '{}'::jsonb) AS limits\n),\nrecent AS (\n  SELECT count(*)::int AS alert_count\n  FROM triage.events\n  WHERE action IN ('telegram_alert_sent', 'telegram_alert_mocked', 'telegram_alert_grouped')\n    AND at >= now() - interval '1 hour'\n)\nSELECT\n  to_jsonb(t) AS ticket,\n  i.test_mode,\n  c.board,\n  c.contacts,\n  c.company,\n  c.quiet_hours,\n  c.limits,\n  r.alert_count,\n  now() AS loaded_at\nFROM input_values i\nCROSS JOIN configs c\nCROSS JOIN recent r\nLEFT JOIN triage.tickets t ON t.id = i.ticket_id;",
+        "options": {
+          "queryReplacement": "={{ [$json.ticket_id || $json.id || '', JSON.stringify($json.test_mode || {})] }}"
+        }
+      },
+      "id": "postgres-load-alert-context",
+      "name": "Postgres Load Alert Context",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -760,
+        0
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "stage1PgLocal",
+          "name": "maintenance-triage-postgres-local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "function parseJson(value, fallback) {\n  if (value === null || value === undefined || value === \"\") return fallback;\n  if (typeof value === \"string\") {\n    try { return JSON.parse(value); } catch (error) { return fallback; }\n  }\n  return value;\n}\nfunction isPlaceholder(value) {\n  return !value || String(value).startsWith(\"PLACEHOLDER_\");\n}\nfunction escHtml(value) {\n  return String(value ?? \"\")\n    .replace(/&/g, \"&amp;\")\n    .replace(/</g, \"&lt;\")\n    .replace(/>/g, \"&gt;\");\n}\nfunction truncate(value, max) {\n  const text = String(value ?? \"\").replace(/\\s+/g, \" \").trim();\n  return text.length <= max ? text : `${text.slice(0, max - 1)}...`;\n}\nfunction inQuietHours(config, testMode) {\n  if (testMode.force_quiet_hours === true) return true;\n  if (testMode.force_business_hours === true) return false;\n  const start = String(config.start || \"20:00\");\n  const end = String(config.end || \"07:00\");\n  const tz = config.tz || \"America/Chicago\";\n  const parts = new Intl.DateTimeFormat(\"en-US\", {\n    timeZone: tz,\n    hour: \"2-digit\",\n    minute: \"2-digit\",\n    hour12: false,\n  }).formatToParts(new Date());\n  const hour = Number(parts.find(p => p.type === \"hour\")?.value || 0);\n  const minute = Number(parts.find(p => p.type === \"minute\")?.value || 0);\n  const nowMin = hour * 60 + minute;\n  const [sh, sm] = start.split(\":\").map(Number);\n  const [eh, em] = end.split(\":\").map(Number);\n  const startMin = (sh || 0) * 60 + (sm || 0);\n  const endMin = (eh || 0) * 60 + (em || 0);\n  if (startMin === endMin) return false;\n  return startMin < endMin\n    ? nowMin >= startMin && nowMin < endMin\n    : nowMin >= startMin || nowMin < endMin;\n}\nfunction signals(ticket) {\n  const parsed = parseJson(ticket.safety_signals, []);\n  return Array.isArray(parsed) ? parsed.filter(v => v && v !== \"NONE\").map(String) : [];\n}\nfunction button(label, data) {\n  return { text: label, additionalFields: { callback_data: data } };\n}\nfunction actionButtons(ticket) {\n  if (ticket.priority === \"EMERGENCY\") {\n    return {\n      rows: [\n        { row: { buttons: [\n          button(\"Approve reply\", `act:${ticket.id}:approve`),\n          button(\"Hold\", `act:${ticket.id}:hold`),\n        ] } },\n        { row: { buttons: [\n          button(\"Not emergency\", `act:${ticket.id}:not_emergency`),\n        ] } },\n      ],\n    };\n  }\n  if (ticket.priority === \"URGENT\") {\n    return {\n      rows: [\n        { row: { buttons: [button(\"Approve reply\", `act:${ticket.id}:approve`)] } },\n      ],\n    };\n  }\n  return {};\n}\nfunction boardLink(board, ticket) {\n  const token = board?.token || \"\";\n  if (!token) return \"Board token missing\";\n  return `http://localhost:5678/webhook/board?t=${encodeURIComponent(token)}&ref=${encodeURIComponent(ticket.ref)}`;\n}\nfunction messageFor(ticket, kind, board, company) {\n  const unit = ticket.unit_identifier || \"UNIT NOT STATED\";\n  const target = ticket.sla_due_at ? new Date(ticket.sla_due_at).toLocaleString(\"en-US\", { timeZone: company.timezone || \"America/Chicago\", hour: \"numeric\", minute: \"2-digit\", month: \"short\", day: \"numeric\" }) : \"Not set\";\n  const tenant = truncate(ticket.body_clean || ticket.body_raw || \"\", 420);\n  const override = ticket.override_applied && ticket.override_reason ? `\\nOverride: ${ticket.override_reason}` : \"\";\n  return [\n    `${kind}: ${ticket.ref}`,\n    `Unit: ${unit}`,\n    `Summary: ${ticket.issue_summary || ticket.subject || \"Maintenance request\"}`,\n    `Trade: ${ticket.trade || \"UNKNOWN\"}`,\n    `Target: ${target}`,\n    override.trim(),\n    `Tenant words: \"${tenant}\"`,\n    `Board: ${boardLink(board, ticket)}`,\n  ].filter(Boolean).map(escHtml).join(\"\\n\");\n}\n\nreturn $input.all().map((item) => {\n  const row = item.json;\n  const ticket = parseJson(row.ticket, null);\n  const testMode = parseJson(row.test_mode, {});\n  const board = parseJson(row.board, {});\n  const contacts = parseJson(row.contacts, {});\n  const company = parseJson(row.company, {});\n  const quiet = parseJson(row.quiet_hours, {});\n  const limits = parseJson(row.limits, {});\n  if (!ticket) {\n    return { json: { outcome: \"not_found\", action: \"telegram_alert_skipped\", should_send_real: false, detail: { reason: \"ticket_not_found\" } } };\n  }\n\n  const safetySignals = signals(ticket);\n  const quietNow = inQuietHours(quiet, testMode);\n  const maxAlerts = Number(limits.max_alerts_per_hour || 6);\n  const recentAlerts = Number(row.alert_count || 0);\n  const rateLimited = (testMode.force_rate_limit === true || recentAlerts >= maxAlerts) && testMode.ignore_rate_cap !== true;\n  let outcome = \"skipped\";\n  let reason = \"priority_not_alertable\";\n  let kind = \"\";\n  let silent = false;\n  let shouldAlert = false;\n\n  if (ticket.priority === \"EMERGENCY\") {\n    kind = \"EMERGENCY\";\n    shouldAlert = true;\n    reason = \"emergency\";\n  } else if (ticket.priority === \"URGENT\") {\n    kind = \"URGENT\";\n    shouldAlert = !quietNow;\n    silent = true;\n    reason = shouldAlert ? \"urgent_business_hours\" : \"urgent_quiet_hours_held\";\n  } else if (ticket.priority === \"NEEDS_REVIEW\") {\n    kind = \"NEEDS REVIEW\";\n    shouldAlert = !quietNow || safetySignals.length > 0;\n    silent = !safetySignals.length;\n    reason = shouldAlert ? (safetySignals.length ? \"needs_review_safety_signal\" : \"needs_review_business_hours\") : \"needs_review_quiet_hours_held\";\n  }\n  if (ticket.human_only && ticket.priority === \"ROUTINE\") {\n    shouldAlert = false;\n    reason = \"routine_human_only_no_alert\";\n  }\n  if (rateLimited && shouldAlert) {\n    shouldAlert = false;\n    outcome = \"rate_limited\";\n    reason = \"max_alerts_per_hour_reached\";\n  }\n  if (shouldAlert) {\n    outcome = testMode.mock_telegram === true ? \"mocked\" : \"send_real\";\n  }\n  if (testMode.force_telegram_error === true && ticket.priority === \"EMERGENCY\") {\n    outcome = \"failed\";\n    shouldAlert = false;\n    reason = \"simulated_telegram_failure\";\n  }\n\n  const chatId = contacts.primary_chat_id || contacts.operator_chat_id || \"\";\n  const canSendReal = outcome === \"send_real\" && !isPlaceholder(chatId);\n  const text = messageFor(ticket, kind || \"NOTICE\", board, company);\n  const inlineKeyboard = actionButtons(ticket);\n  const hasButtons = inlineKeyboard.rows && inlineKeyboard.rows.length > 0;\n  return {\n    json: {\n      ticket_id: ticket.id,\n      ref: ticket.ref,\n      priority: ticket.priority,\n      outcome,\n      action: outcome === \"rate_limited\" ? \"telegram_alert_grouped\" : (outcome === \"failed\" ? \"telegram_alert_failed\" : (outcome === \"skipped\" ? \"telegram_alert_skipped\" : (outcome === \"mocked\" ? \"telegram_alert_mocked\" : \"telegram_alert_sent\"))),\n      reason,\n      kind,\n      chat_id: chatId,\n      should_send_real: canSendReal,\n      message_text: text,\n      silent,\n      reply_markup: hasButtons ? \"inlineKeyboard\" : \"none\",\n      inline_keyboard: hasButtons ? inlineKeyboard : {},\n      telegram_message_id: testMode.mock_message_id || null,\n      alert_error: outcome === \"failed\" ? \"simulated Telegram alert failure\" : (outcome === \"send_real\" && isPlaceholder(chatId) ? \"Telegram chat ID is not configured\" : null),\n      detail: {\n        ref: ticket.ref,\n        priority: ticket.priority,\n        reason,\n        quiet_hours: quietNow,\n        safety_signals: safetySignals,\n        silent,\n        rate_limited: rateLimited,\n        board_url: boardLink(board, ticket),\n        mock: testMode.mock_telegram === true,\n      },\n    },\n  };\n});"
+      },
+      "id": "prepare-alert-action",
+      "name": "Prepare Alert Action",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -520,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "should-send-real-telegram-condition",
+              "leftValue": "={{ $json.should_send_real }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "should-send-real-telegram",
+      "name": "Should Send Real Telegram",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -280,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $json.chat_id }}",
+        "text": "={{ $json.message_text }}",
+        "replyMarkup": "={{ $json.reply_markup }}",
+        "inlineKeyboard": "={{ $json.inline_keyboard }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "disable_notification": "={{ $json.silent }}",
+          "disable_web_page_preview": true,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "telegram-send-alert",
+      "name": "Telegram Send Alert",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -20,
+        -120
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "stage1TelegramLocal",
+          "name": "maintenance-triage-telegram-bot"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const contexts = $(\"Prepare Alert Action\").all();\nreturn $input.all().map((item, index) => {\n  const ctx = contexts[index].json;\n  const response = item.json || {};\n  const failed = Boolean(response.error);\n  return {\n    json: {\n      ...ctx,\n      outcome: failed ? \"failed\" : \"sent\",\n      action: failed ? \"telegram_alert_failed\" : \"telegram_alert_sent\",\n      telegram_message_id: failed ? null : (response.result?.message_id || response.message_id || null),\n      alert_error: failed ? response.error : null,\n    },\n  };\n});"
+      },
+      "id": "attach-telegram-send-result",
+      "name": "Attach Telegram Send Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        -120
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "database",
+        "operation": "executeQuery",
+        "query": "WITH input_values AS (\n  SELECT\n    $1::bigint AS ticket_id,\n    $2::text AS outcome,\n    $3::text AS event_action,\n    NULLIF($4::text, '') AS chat_id,\n    NULLIF($5::text, '')::bigint AS telegram_message_id,\n    NULLIF($6::text, '') AS alert_error,\n    $7::jsonb AS detail\n),\nupdated AS (\n  UPDATE triage.tickets t\n  SET\n    status = CASE WHEN i.outcome IN ('mocked', 'sent') THEN 'ALERTED' ELSE t.status END,\n    alerted_at = CASE WHEN i.outcome IN ('mocked', 'sent') THEN now() ELSE t.alerted_at END,\n    telegram_chat_id = CASE WHEN i.outcome IN ('mocked', 'sent') THEN i.chat_id ELSE t.telegram_chat_id END,\n    telegram_msg_id = CASE WHEN i.outcome IN ('mocked', 'sent') THEN i.telegram_message_id ELSE t.telegram_msg_id END,\n    last_alert_error = CASE WHEN i.outcome = 'failed' THEN i.alert_error ELSE t.last_alert_error END\n  FROM input_values i\n  WHERE t.id = i.ticket_id\n  RETURNING t.id\n),\nevent_insert AS (\n  INSERT INTO triage.events (ticket_id, actor, action, detail)\n  SELECT\n    i.ticket_id,\n    'system',\n    i.event_action,\n    i.detail || jsonb_build_object('outcome', i.outcome, 'telegram_message_id', i.telegram_message_id, 'error', i.alert_error)\n  FROM input_values i\n  WHERE EXISTS (SELECT 1 FROM updated)\n  RETURNING id\n)\nSELECT\n  i.ticket_id,\n  i.outcome,\n  i.event_action,\n  i.chat_id,\n  i.telegram_message_id,\n  i.alert_error\nFROM input_values i;",
+        "options": {
+          "queryReplacement": "={{ [$json.ticket_id, $json.outcome, $json.action, $json.chat_id || '', $json.telegram_message_id || '', $json.alert_error || '', JSON.stringify($json.detail || {})] }}"
+        }
+      },
+      "id": "postgres-record-real-alert",
+      "name": "Postgres Record Real Alert",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        460,
+        -120
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "stage1PgLocal",
+          "name": "maintenance-triage-postgres-local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "database",
+        "operation": "executeQuery",
+        "query": "WITH input_values AS (\n  SELECT\n    $1::bigint AS ticket_id,\n    $2::text AS outcome,\n    $3::text AS event_action,\n    NULLIF($4::text, '') AS chat_id,\n    NULLIF($5::text, '')::bigint AS telegram_message_id,\n    NULLIF($6::text, '') AS alert_error,\n    $7::jsonb AS detail\n),\nupdated AS (\n  UPDATE triage.tickets t\n  SET\n    status = CASE WHEN i.outcome IN ('mocked', 'sent') THEN 'ALERTED' ELSE t.status END,\n    alerted_at = CASE WHEN i.outcome IN ('mocked', 'sent') THEN now() ELSE t.alerted_at END,\n    telegram_chat_id = CASE WHEN i.outcome IN ('mocked', 'sent') THEN i.chat_id ELSE t.telegram_chat_id END,\n    telegram_msg_id = CASE WHEN i.outcome IN ('mocked', 'sent') THEN i.telegram_message_id ELSE t.telegram_msg_id END,\n    last_alert_error = CASE WHEN i.outcome = 'failed' THEN i.alert_error ELSE t.last_alert_error END\n  FROM input_values i\n  WHERE t.id = i.ticket_id\n  RETURNING t.id\n),\nevent_insert AS (\n  INSERT INTO triage.events (ticket_id, actor, action, detail)\n  SELECT\n    i.ticket_id,\n    'system',\n    i.event_action,\n    i.detail || jsonb_build_object('outcome', i.outcome, 'telegram_message_id', i.telegram_message_id, 'error', i.alert_error)\n  FROM input_values i\n  WHERE EXISTS (SELECT 1 FROM updated)\n  RETURNING id\n)\nSELECT\n  i.ticket_id,\n  i.outcome,\n  i.event_action,\n  i.chat_id,\n  i.telegram_message_id,\n  i.alert_error\nFROM input_values i;",
+        "options": {
+          "queryReplacement": "={{ [$json.ticket_id || 0, $json.outcome, $json.action, $json.chat_id || '', $json.telegram_message_id || '', $json.alert_error || '', JSON.stringify($json.detail || {})] }}"
+        }
+      },
+      "id": "postgres-record-mock-or-skipped-alert",
+      "name": "Postgres Record Mock Or Skipped Alert",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        0,
+        140
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "stage1PgLocal",
+          "name": "maintenance-triage-postgres-local"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Alert Dispatch Input": {
+      "main": [
+        [
+          {
+            "node": "Postgres Load Alert Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Load Alert Context": {
+      "main": [
+        [
+          {
+            "node": "Prepare Alert Action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Alert Action": {
+      "main": [
+        [
+          {
+            "node": "Should Send Real Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Should Send Real Telegram": {
+      "main": [
+        [
+          {
+            "node": "Telegram Send Alert",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Postgres Record Mock Or Skipped Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Send Alert": {
+      "main": [
+        [
+          {
+            "node": "Attach Telegram Send Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Attach Telegram Send Result": {
+      "main": [
+        [
+          {
+            "node": "Postgres Record Real Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "pinData": {},
+  "meta": {
+    "stage": 6,
+    "generatedBy": "scripts/build-stage-6-workflows.py"
+  },
+  "versionId": "stage-6-generated",
+  "triggerCount": 0,
+  "tags": []
+}

@@ -1,0 +1,105 @@
+{
+  "id": "mt-emergency-escalation-stage-6",
+  "name": "Maintenance Triage Emergency Escalation",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 15
+            }
+          ]
+        }
+      },
+      "id": "every-15-minutes",
+      "name": "Every 15 Minutes",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -600,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "database",
+        "operation": "executeQuery",
+        "query": "WITH cfg AS (\n  SELECT coalesce((SELECT value FROM triage.config WHERE key = 'escalate_after'), '{\"EMERGENCY_minutes\":15}'::jsonb) AS value\n)\nSELECT\n  t.id AS ticket_id,\n  jsonb_build_object('mock_telegram', true, 'ignore_rate_cap', true, 'escalation_run', true) AS test_mode\nFROM triage.tickets t, cfg\nWHERE t.priority = 'EMERGENCY'\n  AND t.acked_at IS NULL\n  AND t.closed_at IS NULL\n  AND t.received_at < now() - make_interval(mins => coalesce((cfg.value->>'EMERGENCY_minutes')::int, 15))\n  AND (t.alerted_at IS NULL OR t.alerted_at < now() - make_interval(mins => coalesce((cfg.value->>'EMERGENCY_minutes')::int, 15)))\nORDER BY t.received_at\nLIMIT 10;",
+        "options": {
+          "queryReplacement": "={{ [] }}"
+        }
+      },
+      "id": "postgres-select-emergency-escalations",
+      "name": "Postgres Select Emergency Escalations",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -360,
+        0
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "stage1PgLocal",
+          "name": "maintenance-triage-postgres-local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "source": "database",
+        "workflowId": "mt-alert-dispatch-stage-6",
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "execute-alert-dispatch-for-escalations",
+      "name": "Execute Alert Dispatch For Escalations",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [
+        -100,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Every 15 Minutes": {
+      "main": [
+        [
+          {
+            "node": "Postgres Select Emergency Escalations",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Select Emergency Escalations": {
+      "main": [
+        [
+          {
+            "node": "Execute Alert Dispatch For Escalations",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "pinData": {},
+  "meta": {
+    "stage": 6,
+    "generatedBy": "scripts/build-stage-6-workflows.py"
+  },
+  "versionId": "stage-6-generated",
+  "triggerCount": 0,
+  "tags": []
+}

@@ -1,0 +1,177 @@
+{
+  "id": "mt-stage-6-driver",
+  "name": "Maintenance Triage Stage 6 Driver",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "manual-start",
+      "name": "Manual Start",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -900,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "database",
+        "operation": "executeQuery",
+        "query": "SELECT ref, id, priority, status\nFROM triage.tickets\nWHERE ref BETWEEN 'MR-0001' AND 'MR-0012'\nORDER BY ref;",
+        "options": {
+          "queryReplacement": "={{ [] }}"
+        }
+      },
+      "id": "postgres-select-stage-6-tickets",
+      "name": "Postgres Select Stage 6 Tickets",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -660,
+        0
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "stage1PgLocal",
+          "name": "maintenance-triage-postgres-local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const rows = $input.all().map(item => item.json);\nconst cases = [];\nfor (const row of rows) {\n  cases.push({\n    ticket_id: row.id,\n    ref: row.ref,\n    test_mode: { mock_telegram: true, force_business_hours: true, ignore_rate_cap: true }\n  });\n}\nconst byRef = Object.fromEntries(rows.map(row => [row.ref, row]));\nif (byRef[\"MR-0005\"]) {\n  cases.push({\n    ticket_id: byRef[\"MR-0005\"].id,\n    ref: byRef[\"MR-0005\"].ref,\n    test_mode: { mock_telegram: true, force_quiet_hours: true, ignore_rate_cap: true }\n  });\n}\nif (byRef[\"MR-0002\"]) {\n  cases.push({\n    ticket_id: byRef[\"MR-0002\"].id,\n    ref: byRef[\"MR-0002\"].ref,\n    test_mode: { mock_telegram: true, force_business_hours: true, force_rate_limit: true }\n  });\n}\nif (byRef[\"MR-0007\"]) {\n  cases.push({\n    ticket_id: byRef[\"MR-0007\"].id,\n    ref: byRef[\"MR-0007\"].ref,\n    test_mode: { force_telegram_error: true, ignore_rate_cap: true }\n  });\n}\nreturn cases.map(json => ({ json }));"
+      },
+      "id": "prepare-mock-alert-dispatch-cases",
+      "name": "Prepare Mock Alert Dispatch Cases",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -420,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "source": "database",
+        "workflowId": "mt-alert-dispatch-stage-6",
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "execute-alert-dispatch",
+      "name": "Execute Alert Dispatch",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [
+        -180,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const rows = $(\"Postgres Select Stage 6 Tickets\").all().map(item => item.json);\nconst byRef = Object.fromEntries(rows.map(row => [row.ref, row]));\nconst cases = [];\nif (byRef[\"MR-0001\"]) {\n  cases.push({ callback_data: `act:${byRef[\"MR-0001\"].id}:approve`, actor: \"human:stage6\", telegram_chat_id: \"mock-chat\", telegram_message_id: \"61001\" });\n  cases.push({ callback_data: `act:${byRef[\"MR-0001\"].id}:approve`, actor: \"human:stage6-second-tap\", telegram_chat_id: \"mock-chat\", telegram_message_id: \"61001\" });\n}\nif (byRef[\"MR-0005\"]) {\n  cases.push({ callback_data: `act:${byRef[\"MR-0005\"].id}:hold`, actor: \"human:stage6\", telegram_chat_id: \"mock-chat\", telegram_message_id: \"61005\" });\n}\nif (byRef[\"MR-0002\"]) {\n  cases.push({ callback_data: `act:${byRef[\"MR-0002\"].id}:not_emergency`, actor: \"human:stage6\", telegram_chat_id: \"mock-chat\", telegram_message_id: \"61002\" });\n}\nif (byRef[\"MR-0006\"]) {\n  cases.push({ callback_data: `act:${byRef[\"MR-0006\"].id}:approve`, actor: \"human:stage6\", telegram_chat_id: \"mock-chat\", telegram_message_id: \"61006\" });\n}\nreturn cases.map(json => ({ json }));"
+      },
+      "id": "prepare-approval-cases",
+      "name": "Prepare Approval Cases",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        60,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "source": "database",
+        "workflowId": "mt-approval-action-stage-6",
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "execute-approval-actions",
+      "name": "Execute Approval Actions",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [
+        300,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Manual Start": {
+      "main": [
+        [
+          {
+            "node": "Postgres Select Stage 6 Tickets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Select Stage 6 Tickets": {
+      "main": [
+        [
+          {
+            "node": "Prepare Mock Alert Dispatch Cases",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Mock Alert Dispatch Cases": {
+      "main": [
+        [
+          {
+            "node": "Execute Alert Dispatch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Alert Dispatch": {
+      "main": [
+        [
+          {
+            "node": "Prepare Approval Cases",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Approval Cases": {
+      "main": [
+        [
+          {
+            "node": "Execute Approval Actions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "pinData": {},
+  "meta": {
+    "stage": 6,
+    "generatedBy": "scripts/build-stage-6-workflows.py"
+  },
+  "versionId": "stage-6-generated",
+  "triggerCount": 0,
+  "tags": []
+}

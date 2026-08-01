@@ -70,6 +70,8 @@ Known n8n gotchas to account for:
 - Imported Webhook nodes in local n8n `2.29.10` need a fixed top-level `webhookId` when the production URL must be a clean path such as `/webhook/board`; otherwise n8n may register a workflow/node-prefixed path.
 - After importing and publishing a new active webhook workflow, restart n8n or otherwise reload active workflows before testing the production `/webhook/...` URL.
 - Respond to Webhook `options.responseCode` expressions may not be reliable in local n8n `2.29.10`; prefer separate Respond nodes with literal status codes when 404/200 behavior is important.
+- Imported workflow `id` values must fit n8n's database limit of 36 characters. Keep generated IDs short even when workflow names are descriptive.
+- Strict IF nodes require expressions that evaluate to booleans. Do not rely on JavaScript truthy strings such as a draft body; wrap them with `Boolean(...)` in Code nodes before routing.
 - After import or activation, verify with a real execution, database row, or validation script.
 - Code nodes may be sandboxed; do not assume `process.env` exists.
 - Optional Postgres update/cleanup nodes need `alwaysOutputData` if downstream nodes must continue after zero rows.
@@ -77,7 +79,7 @@ Known n8n gotchas to account for:
 - Form Trigger submissions can render fields as `field-0`; normalize form payloads before SQL or AI steps.
 - AI structured output may be wrapped under `output`; downstream expressions should handle wrapped and direct JSON shapes.
 - Form Trigger workflows should use the Form completion step, not Respond to Webhook.
-- Telegram callback webhooks require a reachable HTTPS tunnel during local testing.
+- Telegram callback webhooks require a reachable HTTPS tunnel during local testing. Import callback workflows freely, but publish/activate Telegram Trigger workflows only after real chat IDs and `N8N_WEBHOOK_URL` are set.
 
 ## Testing And Verification
 
