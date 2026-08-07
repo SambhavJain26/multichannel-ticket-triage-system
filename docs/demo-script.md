@@ -1,59 +1,366 @@
 # Demo Script: Maintenance Triage
 
-Script for a recorded screen walkthrough, published to YouTube, aimed at US residential
-property management owners and operations leads.
+A recorded screen walkthrough for YouTube, aimed at the owner or operations lead of a US
+residential property management company.
 
-**Target length: 6:49.** That is 789 words of narration at an unhurried 130 words a
-minute, plus 12 percent for pauses and screen actions. The arithmetic is below, per
-scene, so the timestamps can't drift from what's said.
+**Target length: 7:31.** Computed from the narration, scene by scene, in the timing table
+below. Not estimated.
 
-**Tone:** calm, plain, unhurried. Incident-report register. Describing how a piece of
-office work was automated, not selling software.
+**How to talk.** You are talking to one person, not an audience. They run a property
+management company, they are watching this on a phone between other jobs, and they have
+seen software demos before. Say "you" and "your inbox," never "users" or "viewers." Never
+say "in this video" or "as you can see" or "let's take a look." Short sentences. Say the
+thing, then stop. If a sentence sounds like a slide, cut it.
 
 ---
 
-## The framing this script exists to protect
+## The framing this protects
 
-**This is custom automation built inside a property management company's existing
-inbox, not a product.** There is no login to show, no seat, no subscription, and no
-second customer sharing this instance. It runs on infrastructure the client owns, reads
-a mailbox they already use, and they own it when the work is done.
+**This is not a product.** No login, no seats, no subscription, nothing for their tenants
+to join. It is automation built inside a company's existing mailbox and phone, running on
+infrastructure they own.
 
-Three rules keep that honest on camera:
+Three rules hold that on camera:
 
-1. **Lead with the automations, not the board.** Scene 2 opens on the n8n workflow list
-   before anything that looks like a dashboard.
-2. **Name the responsible workflow every time something happens.** A named workflow is
-   a component someone can own. "The system" is a product someone rents.
-3. **Never say "it does X" without saying which part.** Say "the intake workflow does
-   X."
+1. **Show the workflows before the board.** Scene 2 opens on the n8n workflow list. A nice
+   dashboard looks like a product; a list of named automations looks like a build.
+2. **Name the piece doing the work.** "The intake workflow read that," not "the system read
+   that." A named workflow is something they can own.
+3. **Never say "it does X" without saying which part.**
 
 Never say: my platform, my tool, my product, the app, users, sign up, subscribers.
-
-Say: the intake workflow, the alert dispatch workflow, the mailbox, the database, the
-board, the office.
 
 ---
 
 ## Workflows on screen
 
-| Workflow, as named in n8n | Responsible for | Triggered by |
-|---|---|---|
-| Maintenance Triage Fixture Fire | Injecting the six weekend-style demo messages, staggered | Manual trigger |
-| Maintenance Triage Core | Normalizing, classifying, applying the safety-keyword rules, drafting | Called by every ingestion workflow |
-| Maintenance Triage Email Ingest | Picking up the one real live email sent on camera | IMAP trigger on the demo mailbox |
-| Maintenance Triage Alert Dispatch | Deciding whether the phone buzzes, and sending the Telegram alert | Called after every new ticket |
-| Maintenance Triage Telegram Callback | Receiving the approve tap | Telegram button press |
-| Maintenance Triage Approval Action | Sending the approved reply, and guaranteeing a second tap can't send twice | Called by the callback workflow |
-| Maintenance Triage Form Ingest | The live "break it" submission | Web form trigger |
-| Maintenance Triage Board | Rendering everything shown on screen | Loaded on request |
+| Workflow, as named in n8n | What it does in this recording |
+|---|---|
+| Maintenance Triage Fixture Fire | Injects the six test messages in scene 3 |
+| Maintenance Triage Core | Normalizes, classifies, applies the safety rules, writes the drafts |
+| Maintenance Triage Email Ingest | Picks up the one real email you send in scene 6 |
+| Maintenance Triage Post Ingest | Matches the unit against the roster, decides whether to alert |
+| Maintenance Triage Alert Dispatch | Sends the Telegram alert in scene 7 |
+| Maintenance Triage Telegram Callback | Receives your approve tap |
+| Maintenance Triage Approval Action | Sends the approved reply, and refuses to send twice |
+| Maintenance Triage Board | Renders everything you point at |
 
-**Two workflows run and never appear on screen:** Maintenance Triage Post Ingest
-matches the unit against the demo roster in the background after every ticket, and
-Maintenance Triage Emergency Escalation is a 15-minute schedule that stays irrelevant
-for an eight-minute recording. **Two more stay disabled throughout:** Maintenance
-Triage Daily Digest and Maintenance Triage Operator Heartbeat both default to off in
-config, and staying off is confirmed before recording (see the checklist).
+Three run and never appear: Emergency Escalation (a 15-minute schedule, irrelevant over
+seven minutes), Daily Digest and Operator Heartbeat (both gated off in config, confirmed in
+staging).
+
+---
+
+## Flow facts that constrain these scenes
+
+Read this before recording. Each one is a real behavior of the build, and getting it wrong
+on camera either breaks the take or makes you say something untrue.
+
+1. **Firing fixtures does not ring your phone.** Fixture Fire passes `mock_telegram: true`,
+   deliberately, so a rehearsal never sends real alerts. Do not gesture at your phone during
+   scene 3, and do not promise a buzz that will not come. The phone buzz comes from the real
+   email in scene 6, which is the only path in this recording that uses real alert dispatch.
+2. **Six fixtures take about 75 seconds, not 12.** Each one is a real classification call and
+   a real drafting call, run one at a time. Cards land roughly 11 seconds apart. Scene 3 is
+   written to fill that time. Do not click Execute twice because nothing appeared yet.
+3. **The live message must trip a keyword rule.** Use wording that matches the flood rule
+   exactly, "water is pouring," so the emergency is guaranteed rather than left to model
+   variance on camera.
+4. **The approved reply goes back to whoever sent the message.** Outbound is in live mode, so
+   for an emailed ticket the reply goes to the sending address. Send scene 6 from a personal
+   account you are happy to show, and the reply lands there for you to display.
+5. **Quiet hours do not affect an emergency.** An EMERGENCY alerts audibly at any hour. An
+   URGENT ticket would be held between 20:00 and 07:00 Chicago time, so do not build a scene
+   on an urgent alert firing.
+6. **The Telegram alert needs a live tunnel.** Its board button must be a public HTTPS URL. A
+   stale or missing `board.public_base_url` makes the whole alert fail, not just the button.
+7. **The demo mailbox must have zero unread mail.** The IMAP trigger ingests anything unread
+   the moment it is active, and those become tickets on your clean board.
+8. **The unit in your live message should exist in the roster.** Use `4C`, which is Maple
+   Court 4C, so the card shows a real property rather than "not found."
+
+---
+
+## Timing
+
+910 words of narration at an unhurried 130 words a minute, plus 12 percent for pauses and
+screen actions, gives 145.6 effective words a minute. Speech time is words divided by that.
+Where the build takes longer than the words, the scene runs at the build's pace instead, and
+that floor is what goes in the table.
+
+| Scene | Words | Speech | Floor | Duration | Starts |
+|---|---|---|---|---|---|
+| 1. The inbox you already know | 41 | 0:16 | 0:20 | 0:20 | 0:00 |
+| 2. What this actually is | 89 | 0:36 | none | 0:36 | 0:20 |
+| 3. Putting a weekend through it | 69 | 0:28 | 1:15 | 1:15 | 0:56 |
+| 4. What it did with them | 67 | 0:27 | none | 0:27 | 2:11 |
+| 5. The rule that overrules the AI | 79 | 0:32 | none | 0:32 | 2:39 |
+| 6. Sending one for real | 62 | 0:25 | 0:45 | 0:45 | 3:11 |
+| 7. The tap, and the email that follows | 79 | 0:32 | 0:40 | 0:40 | 3:56 |
+| 8. The one it refuses to answer | 72 | 0:29 | none | 0:29 | 4:36 |
+| 9. What it won't do, and can't do | 95 | 0:39 | none | 0:39 | 5:06 |
+| 10. What it takes to run in your business | 176 | 1:12 | none | 1:12 | 5:45 |
+| 11. See it against your own week | 81 | 0:33 | none | 0:33 | 6:58 |
+| **Total** | **910** | | | **7:31** | |
+
+If an edit changes the words, recompute this table and the chapter list from it. Do not
+relabel timestamps by hand.
+
+---
+
+## Before you record
+
+**1. Clean board.**
+```
+.\scripts\restore-stage-8-demo-snapshot.ps1 -Name clean
+```
+
+**2. Empty the demo mailbox.** Every unread message in it becomes a ticket the moment the
+IMAP trigger runs. Archive everything.
+
+**3. Fresh tunnel, and point the board at it.**
+```
+.\scripts\start-cloudflare-tunnel.ps1
+```
+Then set the new URL:
+```sql
+update triage.config
+set value = jsonb_set(value, '{public_base_url}', to_jsonb('https://your-current-tunnel.trycloudflare.com'::text), true)
+where key = 'board';
+```
+
+**4. Confirm the live paths.**
+```
+.\scripts\check-stage-7-live-prereqs.ps1
+```
+
+**5. Confirm your phone will actually buzz.** `triage.config.contacts.primary_chat_id` must
+be the real chat id for the phone you are filming, not a placeholder.
+
+**6. Confirm nothing extra fires.** `triage.config.digest.enabled` and `heartbeat.enabled`
+both read `false`.
+
+**7. Confirm all thirteen workflows show Active** in n8n, and tidy the list. That screen is
+scene 2.
+
+**8. Dry-run scene 6 once, then reset.** Send the real email, watch it alert, then run the
+snapshot restore again. You want to know it works before the camera is on.
+
+Tabs open, in order:
+1. n8n workflows: `http://localhost:5678/home/workflows`
+2. The board: `http://localhost:5678/webhook/board?t=<board-token>`
+3. Fixture Fire workflow, ready to execute
+4. Your phone, on camera, with Telegram open
+
+Silence every notification except Telegram.
+
+---
+
+## Scene 1: The inbox you already know (0:00-0:20)
+
+**On screen:** the board, empty.
+
+**You do:** let it sit for three seconds before speaking.
+
+> "If you run a property management company, you already know what Monday morning looks
+> like. Forty messages sat there since Friday. Somewhere in them is the one that actually
+> mattered. This is that inbox, except something read it before you did."
+
+---
+
+## Scene 2: What this actually is (0:20-0:56)
+
+**On screen:** the n8n workflow list, all thirteen showing Active.
+
+**You do:** scroll slowly down the names as you talk. Do not click into one.
+
+> "I want to be straight with you about what this is, because it changes how you watch the
+> rest. This isn't software. There's nothing to log into, nothing to buy a seat for, no
+> portal for your tenants to learn. It's a set of automations that sit on a server, read a
+> mailbox, and write to a database. All of it yours. Right now you're looking at the list of
+> them. Thirteen pieces, each doing one job. I'll name which one is working every time
+> something happens on screen."
+
+**Watch out:** this is the scene that stops the video reading as a product tour. Do not cut
+it for time.
+
+---
+
+## Scene 3: Putting a weekend through it (0:56-2:11)
+
+**Responsible:** Maintenance Triage Fixture Fire, then Maintenance Triage Core.
+
+**On screen:** click Execute on Fixture Fire, then switch to the board and stay there.
+
+**You do:** click once. Switch tabs. Then wait, and keep talking while cards appear.
+
+> "So let me put a weekend through it. These six are test messages I wrote, standing in for
+> what actually lands between Friday night and Monday. Watch the board, not me."
+
+Let two or three cards land.
+
+> "These take about ten seconds each, because every one is a real call to a real model
+> reading real text. It isn't a recording. That's also roughly what it costs you: a fraction
+> of a cent per message."
+
+Then stop talking and let the rest land.
+
+**Watch out:** about 75 seconds end to end. No phone buzz here, by design. If the silence
+feels long in the edit, this is the scene to speed up, not the one to cut.
+
+---
+
+## Scene 4: What it did with them (2:11-2:39)
+
+**Responsible:** decisions from Maintenance Triage Core, rendered by Maintenance Triage Board.
+
+**On screen:** the full board. Point at the buried-lede card, then the squeaky-door card.
+
+> "Look at what it did with them. Somebody wrote three paragraphs about a barking dog and a
+> parking space, and buried in the middle of it, their ceiling is dripping into a bucket.
+> That's the one it put near the top. Somebody else typed urgent in capital letters about a
+> squeaking door, and it left that at the bottom, because it reads what's described, not how
+> loudly."
+
+---
+
+## Scene 5: The rule that overrules the AI (2:39-3:11)
+
+**Responsible:** the `Apply Safety Rules` step inside Maintenance Triage Core.
+
+**On screen:** the gas card, with its override stamp. Open the detail view if the stamp is
+hard to read.
+
+> "Now this one is the reason I built it this way. A tenant writes that they can probably
+> smell gas, and it's probably nothing. The model on its own called that urgent. Not an
+> emergency. A separate rule overruled it, because the word gas is in the message. That rule
+> is ordinary code sitting after the model. It can't be talked out of it, it can't have a bad
+> day, and it only ever moves things up, never down."
+
+**Watch out:** the strongest thirty seconds in the video. Slow down here.
+
+---
+
+## Scene 6: Sending one for real (3:11-3:56)
+
+**Responsible:** Maintenance Triage Email Ingest, then Core, then Post Ingest.
+
+**On screen:** your phone composing an email, then the board.
+
+**You do:** send from a personal account, not the demo mailbox.
+
+> "Here's what I'd want to see if I were you. Everything so far came from my own test set. So
+> let me send one for real, from my phone, to the actual mailbox this thing reads."
+
+Send: *"Water is pouring out from under the kitchen sink and I can't stop it. Unit 4C."*
+
+> "Nothing on my end after this. No clicking, no helping it along."
+
+Put the phone down. Watch the board. Roughly 20 seconds.
+
+> "There it is. Read, sorted, and the same water rule pushed it to emergency."
+
+**Watch out:** the wording matters. "Water is pouring" trips the flood rule, so the emergency
+is guaranteed rather than left to the model. `4C` is a real roster unit, so the card shows
+Maple Court rather than "not found."
+
+---
+
+## Scene 7: The tap, and the email that follows (3:56-4:36)
+
+**Responsible:** Maintenance Triage Alert Dispatch, then Telegram Callback, then Approval Action.
+
+**On screen:** your phone as the alert lands, then the board, then your inbox.
+
+> "And that's my phone. Not a notification I built to look good in a video. That's the real
+> thing, with three buttons on it, and I could be anywhere when it arrives."
+
+Hold the phone still so the buttons are readable.
+
+> "Watch the board when I press approve."
+
+Tap approve. Cut to the board; the card moves to reply sent.
+
+> "That email just went to the tenant, because I pressed a button. There is no path through
+> any of this where a message reaches your tenant without somebody's thumb. Not a setting I
+> switched on. There's no code for it."
+
+Show the reply arriving in the personal account you sent from.
+
+**Watch out:** the reply goes back to the address that sent the message, which is why scene 6
+comes from an account you can show. Tap approve once. A second tap is correctly refused, and
+explaining that on camera costs you the moment.
+
+---
+
+## Scene 8: The one it refuses to answer (4:36-5:06)
+
+**Responsible:** the human-only decision in Maintenance Triage Core.
+
+**On screen:** open the accommodation card from scene 3. Scroll to where the draft would be.
+
+> "And here's the one I'd point at if you only had thirty seconds. A tenant asks for grab
+> bars in the bathroom for their mother, who uses a walker. It read that, flagged it, and
+> wrote nothing at all. No draft, not even a weak one. That's a fair housing conversation, and
+> it belongs to a person who knows your properties and your obligations. A machine having an
+> opinion there helps nobody."
+
+---
+
+## Scene 9: What it won't do, and can't do (5:06-5:45)
+
+**On screen:** the board, still.
+
+> "Let me be honest about the rest of it. It won't create the work order in your software. It
+> won't call a vendor. It'll miss things, and some days it'll wake you for something that
+> turns out to be nothing, which costs you a phone call. It can't read a photo, only tell you
+> one is attached. And the only accuracy number I'll give you is the one I measured: six test
+> messages, six correct priorities, no missed safety signals, on that set. I'm not going to
+> hand you a bigger number I haven't earned."
+
+**Watch out:** do not soften this. It is the scene that makes everything before it credible.
+
+---
+
+## Scene 10: What it takes to run in your business (5:45-6:58)
+
+**On screen:** the board, or your face if you have a camera. This is the part they are
+actually deciding on.
+
+> "So what would it actually take to put this in your business. Less than you'd think. You
+> add a forwarding rule to your maintenance inbox, which takes about five minutes. You send me
+> your unit list, one export out of whatever software you already use. You tell me who gets
+> woken up, what response times you promise your owners, and how you want replies to sound."
+
+> "That's it. I don't touch your property management software. I don't need a login to it.
+> Your tenants carry on emailing exactly where they email now, and they never know anything
+> changed."
+
+> "And the first week, it doesn't send anything. It just reads, sorts, and drafts, and at the
+> end of the week you compare what it flagged against what your team actually did. If it's
+> reading your mail wrong, you find out that week, for the price of a forwarding rule."
+
+> "If you ever want it gone, you delete the forwarding rule. Five minutes, and you're back to
+> exactly the inbox you have today. Nothing's moved, nothing's trapped anywhere."
+
+---
+
+## Scene 11: See it against your own week (6:58-7:31)
+
+**On screen:** the board.
+
+> "If you want to see this against your own week rather than mine, send me twenty real
+> maintenance emails from last month. Black out the names and addresses, I don't need them.
+> I'll run them through what you just watched and send you back your own week, sorted, with
+> the ones it got wrong listed first. Costs you nothing, and there's nothing to install. The
+> link's in the description, and I delete your files the day I send the page back."
+
+**Watch out:** no deadline, no bonus, no limited spots. The offer works because it is small
+and checkable. Two details carry it: listing the misses first, and saying out loud that the
+files get deleted. Someone deciding whether to email you their tenants' messages is thinking
+about both.
+
+**Put the link in the description before you publish.** The narration promises it.
 
 ---
 
@@ -61,43 +368,45 @@ config, and staying off is confirmed before recording (see the checklist).
 
 ### Title
 
-**Recommended:** `How AI Maintenance Triage Works Inside a Property Management Inbox`
+**Recommended:** `I built something that reads your maintenance inbox before you do`
 
-66 characters, comfortably inside the roughly 70 that stay visible before truncation.
-Names the mechanism and the audience.
+65 characters, inside the roughly 70 that stay visible. Second person, and it describes what
+happens to them rather than what the thing is.
 
 **Alternatives:**
-- `A Property Management Inbox, Triaged Live by AI and a Fixed Rule` (67)
-- `Maintenance Triage Automation: A Full Walkthrough` (51)
+- `What happens to your maintenance inbox before you open it Monday` (64)
+- `Your weekend maintenance inbox, already sorted by Monday morning` (64)
 
 ### Description
 
-The first 95 characters stand alone before "Show more," so the opening line has to
-carry the whole idea.
+The first line has to stand alone before "Show more." This one is exactly 100 characters.
 
-> A gas-smell message lands in a demo inbox, and a fixed rule flags it before the model finishes.
+> A tenant writes that they can probably smell gas. A fixed rule overrules the AI and flags it anyway.
 >
-> This is not a product and there's nothing to log into. It's custom automation built inside a property management company's existing mailbox and phone. Thirteen workflows do the work, and this video names which one is responsible for each thing you see.
+> If you run a property management company, this is the part of the job that lives in an inbox and somebody's memory: reading every message, working out which one can't wait, and drafting the reply. This reads them first and sorts them. It never answers anyone on its own.
 >
-> What it does: reads an incoming message, classifies its priority and trade, and checks the same text against a fixed list of safety keywords that can only raise the priority, never lower it. Drafts a tenant reply and a vendor note. Alerts the manager by Telegram on anything urgent, and sends nothing to a tenant until a person taps approve.
+> There's nothing to log into and nothing to buy. It's automation built inside a mailbox and a phone that already exist, running on a server the client owns. Thirteen workflows do the work, and the video names which one is responsible for each thing on screen.
 >
-> What it refuses to do, and what it genuinely can't do yet, explained near the end.
+> Near the end: what it refuses to do, what it genuinely can't do yet, and exactly what it would take to run inside your own business. That last part is about five minutes of setup on your side.
 >
-> All fixture messages and unit numbers shown are synthetic. One message is sent live during the recording, from a personal account, to a dedicated demo mailbox.
+> All test messages, unit numbers and tenants shown are synthetic. One message is sent live during the recording, from a personal account, to a dedicated demo mailbox.
 >
-> Chapters below. If you run a property management company and want to see this against your own week, the last thirty seconds explain how.
+> Chapters below. The last thirty seconds explain how to see this against your own week.
 
 ### Chapters
 
 ```
-0:00 A quiet Monday morning inbox
-0:22 What this actually is
-1:20 Firing six weekend messages
-2:41 A real one: gas smell, real alert, real approve
-3:45 Breaking it on purpose
-4:33 The one it won't draft a reply for
-5:06 What it refuses to do, and what it can't do yet
-6:02 If you want your own week sorted
+0:00 The inbox you already know
+0:20 What this actually is
+0:56 Putting a weekend through it
+2:11 What it did with them
+2:39 The rule that overrules the AI
+3:11 Sending one for real
+3:56 The tap, and the email that follows
+4:36 The one it refuses to answer
+5:06 What it won't do, and can't do
+5:45 What it takes to run in your business
+6:58 See it against your own week
 ```
 
 ### Hashtags
@@ -106,324 +415,72 @@ carry the whole idea.
 
 ---
 
-## Timing arithmetic
+## If something stalls
 
-789 words of narration, at 130 words per minute unhurried delivery, is 6.07 minutes of
-speech. Add 12 percent for pauses and on-screen actions: 6.07 x 1.12 = 6.80 minutes,
-which is 6 minutes 49 seconds. That is the target length above, and the chapter
-timestamps below are this same arithmetic run scene by scene, at roughly 0.517 seconds
-per word (130 wpm x 1.12 overhead = 116.1 effective words per minute), not estimated
-separately.
+Say one of these and keep moving. Do not troubleshoot on camera for more than a few seconds.
 
-| Scene | Words | Scene duration | Starts at |
-|---|---|---|---|
-| 1. Cold open | 43 | 0:22 | 0:00 |
-| 2. What this actually is | 113 | 0:58 | 0:22 |
-| 3. Firing six weekend messages | 156 | 1:21 | 1:20 |
-| 4. The real one | 124 | 1:04 | 2:41 |
-| 5. Breaking it on purpose | 92 | 0:48 | 3:45 |
-| 6. The accommodation example | 63 | 0:33 | 4:33 |
-| 7. What it refuses / can't do | 108 | 0:56 | 5:06 |
-| 8. The close | 90 | 0:47 | 6:02 |
-| **Total** | **789** | **6:49** | |
+**Cards are slow to appear in scene 3**
+> "Each one of these is a real classification call, so it's doing the work rather than
+> replaying it."
 
-If a later edit pushes the total outside 6-10 minutes, cut words from the longest
-scene and recompute this table. Do not relabel the chapter timestamps without rerunning
-the arithmetic.
-
----
-
-## Before You Hit Record
-
-All staging happens through the same screens used in the recording. No terminal is on
-camera.
-
-**1. Reset to clean state.**
-```
-.\scripts\restore-stage-8-demo-snapshot.ps1 -Name clean
-```
-Confirms the board loads empty before anything else.
-
-**2. Start a fresh tunnel and point the board at it.** A stale tunnel URL from a prior
-session is the most likely reason a Telegram board-link button fails on camera.
-```
-.\scripts\start-cloudflare-tunnel.ps1
-```
-Then set the fresh URL as the board's public base:
-```sql
-update triage.config
-set value = jsonb_set(value, '{public_base_url}', to_jsonb('https://your-current-tunnel.trycloudflare.com'::text), true)
-where key = 'board';
-```
-
-**3. Confirm the live prerequisites.**
-```
-.\scripts\check-stage-7-live-prereqs.ps1
-```
-This fails loudly if the mailbox credentials, outbound mode, or the three live
-ingestion workflows (`mt-email-ingest-stage-7`, `mt-form-ingest-stage-7`,
-`mt-import-bridge-stage-7`) aren't active. Fix whatever it names before continuing.
-
-**4. Confirm the phone will buzz.** `triage.config.contacts.primary_chat_id`
-must be the real chat id for the phone used in the recording, not a placeholder.
-
-**5. Confirm digest and heartbeat stay off.** `triage.config.digest.enabled` and
-`triage.config.heartbeat.enabled` should both read `false`, so nothing extra fires or
-emails during the recording.
-
-**6. Check n8n's workflow list is presentable.** This screen is Scene 2. All thirteen
-active workflows should show Active, sorted so nothing half-built is visible.
-
-Tabs to have open, in this order:
-1. n8n workflow list: `http://localhost:5678/home/workflows`
-2. The board: `http://localhost:5678/webhook/board?t=<board-token>`
-3. The intake form: `http://localhost:5678/form/mt-form-ingest-stage-7/tenantreportform/report-issue`
-4. A personal email account, ready to send one message to the demo mailbox
-5. Telegram, open and unmuted, on the phone used for recording
-
-Close everything else. Silence notifications other than Telegram.
-
----
-
-## Scene 1: A quiet Monday morning inbox (0:00-0:22)
-
-**Workflow on screen:** none yet, the board only.
-
-**Screen:** the board, empty. Let it sit for two seconds before speaking.
-
-> "This is a maintenance inbox at seven on a Monday morning. Nothing waiting. Over the
-> next few minutes I'm going to put six weekend messages through it, then send one
-> myself, live, and show you exactly which piece of automation did each part."
-
----
-
-## Scene 2: What this actually is (0:22-1:20)
-
-**Workflow on screen:** all thirteen active workflows.
-
-**Screen:** the n8n Workflows page.
-
-> "One thing before anything else, because it changes how you read the rest of this.
-> This is not a product. There's no login, no seat, no monthly subscription to a
-> dashboard. What you're watching is thirteen automations running on a server, reading
-> a mailbox, and writing to a database."
-
-Scroll slowly down a few of the names.
-
-> "Intake reads a message and classifies it. A separate set of fixed rules checks the
-> same text for safety keywords, and can only raise the priority, never lower it. Alert
-> dispatch decides whether a phone buzzes. Approval action is the only place an email
-> ever gets sent, and only after a human taps a button. Every scene from here names
-> which one is responsible."
-
----
-
-## Scene 3: Firing six weekend messages (1:20-2:41)
-
-**Workflow on screen:** Maintenance Triage Fixture Fire, then Maintenance Triage Core.
-
-**Screen:** click Manual Start on the fixture-fire workflow, then the board, refreshing
-every five seconds as cards land.
-
-> "These six are fixture messages I wrote to stand in for what actually lands over a
-> weekend. Watch the board, not me."
-
-Let the cards land, roughly two seconds apart.
-
-> "There's a burst pipe with no unit number. There's a squeaky door marked 'urgent' in
-> all caps, which stays at the bottom, because the rules don't listen to volume.
-> There's a three-paragraph complaint about a barking dog and a parking spot, and
-> buried in the middle of it, a dripping ceiling with a bucket underneath. That's the
-> one the board leads with."
-
-Point at the gas-smell card and its stamp.
-
-> "And there's this one. A message that just says it's probably nothing, but there
-> might be a smell of gas. The model on its own read that as urgent, not an emergency.
-> A fixed keyword rule overrode it, because the word gas is in the text. That override
-> is separate code from the model, and it can't be talked out of firing, because it
-> isn't reasoning about anything. It's checking a word."
-
----
-
-## Scene 4: A real one (2:41-3:45)
-
-**Workflow on screen:** Maintenance Triage Email Ingest, then Maintenance Triage Alert
-Dispatch, then Maintenance Triage Approval Action.
-
-**Screen:** a personal email account, compose a message to the demo mailbox; then the
-board; then the phone.
-
-> "Everything so far was a fixture. Here's a real one. I'm sending this from my own
-> phone right now, to the actual mailbox this project reads."
-
-Send: *"Hi, this is Dana in 2B. I think I smell gas by the front door. Probably
-nothing."*
-
-> "That email is on its way over a live inbox connection. Nobody touches a keyboard on
-> my end after I hit send."
-
-Wait for the board to update.
-
-> "There it is. Classified, overridden by the same gas rule, and alerted."
-
-Cut to the phone as it buzzes.
-
-> "That's my phone. A real Telegram message, with real buttons: approve, hold, not an
-> emergency."
-
-Tap approve.
-
-> "I just approved a reply. Watch the board."
-
-Cut back; the card now shows "Reply sent."
-
-> "That email went out through the real mailbox, to a real inbox, because I tapped a
-> button. There's no path in this project from a message to a tenant that skips that
-> tap. Not a setting. There's no code for it."
-
----
-
-## Scene 5: Breaking it on purpose (3:45-4:33)
-
-**Workflow on screen:** Maintenance Triage Form Ingest.
-
-**Screen:** the intake form.
-
-> "Now let me try to break it. I'm going to submit something bad on purpose."
-
-Fill in something deliberately garbled and submit.
-
-> "No unit, barely a sentence, and no photo actually attached even though the message
-> says one is."
-
-Board updates.
-
-> "That one landed as needs review, not a priority at all. That's a system state. The
-> model can't choose it. A message this thin trips a rule that says don't guess, hand
-> it to a person. If it had said the word gas instead of nothing, the safety rule
-> still would have fired, no matter how badly it was written."
-
----
-
-## Scene 6: The one it won't draft a reply for (4:33-5:06)
-
-**Workflow on screen:** decisions made in Maintenance Triage Core, rendered by
-Maintenance Triage Board.
-
-**Screen:** open the accommodation-request card from Scene 3's fixture batch.
-
-> "Last one. This message asks for grab bars installed for a tenant's mother, who uses
-> a walker."
-
-Scroll to the "human decision required" band.
-
-> "No draft was written for this one at all. Not a weak draft. No draft. An
-> accommodation request like this gets flagged and routed straight to a person,
-> because that's a decision a human has to make, not something a model should have an
-> opinion on."
-
----
-
-## Scene 7: What it refuses to do, and what it can't do yet (5:06-6:02)
-
-**Screen:** the board, static.
-
-> "A few things worth saying plainly. It never dispatches a vendor. It never sends
-> anything without a tap. Age alone never sets off a phone alert; an old routine
-> request just gets flagged overdue on the board."
-
-> "And a few things it genuinely can't do yet. It doesn't write into a property
-> management system. It can't read a photo, only show that one's attached. It hasn't
-> been tested past English and Spanish. The only accuracy number I'll give you is
-> measured: six test messages, six correct priorities, zero missed safety signals, on
-> this exact fixture set. I'm not going to hand you a bigger number I haven't earned."
-
----
-
-## Scene 8: If you want your own week sorted (6:02-6:49)
-
-**Screen:** the board.
-
-> "So that's the whole thing. A message arrives, it gets read, a fixed rule
-> double-checks the dangerous words, a person approves anything that goes out, and the
-> board shows all of it, the whole time."
-
-> "If you run a property management company and want to see this against your own
-> week, send me twenty real maintenance emails, names and addresses blacked out. I'll
-> run them through exactly what you just watched and send back how your week would
-> have sorted. No cost, nothing to install, nothing to sign up for."
-
----
-
-## Fallback Lines
-
-If something stalls mid-recording, say one of these and keep moving. Don't apologize
-or troubleshoot live for more than a few seconds.
-
-**OpenAI is slow or fails**
-> "That's the failure mode I actually want. When it can't read something, it says so
-> loudly instead of dropping it quietly."
+**The model is slow or errors**
+> "That's the failure I actually want. When it can't read something it says so loudly instead
+> of dropping it quietly."
 
 **The Telegram alert doesn't arrive**
-> "The alert is a second channel, not the source of truth. The ticket is already on the
-> board regardless."
+> "The alert is the second channel, not the record. The ticket's already on the board either
+> way, and that's the bit that matters."
 
 **The board link fails**
-> "The display link is down right now. The request is still stored; let me show the
-> raw execution instead."
+> "The page is down. The request is still stored, so let me show you the run itself instead."
 
-**Postgres or the board is down entirely**
-> "I'm not going to debug this on camera. I'll cut to a version of this scene recorded
-> earlier and say so in the video."
+**The whole thing is down**
+> "I'm not going to debug this while you watch. I'll cut to a version of this I recorded
+> earlier and tell you that's what I've done."
 
-**A live classification comes back wrong**
-> "That's wrong, and I'd rather show you that than hide it. I'm saving this exact
-> message as a new test case right now."
+**It classifies your live message wrong**
+> "That's wrong, and I'd rather you see it than not. That message becomes a test case today,
+> and this is exactly how it gets safer."
 
 ---
 
-## Language Rules
-
-Stated once here; the whole script obeys them.
+## Language rules
 
 **Never say:**
-- "This confirms the model is always right."
-- "This catches every emergency."
-- "This replaces your judgment."
-- "This is legal advice" or anything implying a guaranteed compliance outcome.
+- That it catches every emergency.
+- That it verifies, confirms, or checks anything about a tenant's situation.
+- That it replaces anyone's judgment.
+- Anything implying a legal obligation, a deadline, or a compliance guarantee.
 - My platform, my tool, my product, the app, users, sign up, subscribers.
 
 **Say instead:**
-- "This flags it and a person decides."
-- "This adds information, it never removes any."
-- "This is a response target, not a deadline."
-- The name of the responsible workflow, every time.
+- "It flags it and you decide."
+- "It only ever adds information. It never removes any."
+- "That's a response target, not a deadline."
+- The name of the workflow doing the work.
 
-**On accuracy.** The only number this script uses is the measured six-fixture result
-(6 of 6 priority matches, zero missed safety signals). It does not extrapolate that
-into a broader percentage, because the wider 30-fixture accuracy run has not passed.
+**On accuracy.** The only number in this script is the measured six-fixture result: six of
+six priorities correct, no missed safety signals, on that set. Do not turn it into a
+percentage and do not extend it to messages it has not seen. The wider 30-fixture run has
+not passed.
 
-**On the word approve.** Every use of it, in the workflow names and in the narration,
-means one specific thing: a human tapping a button that releases an email. Scene 4 is
-where it happens on camera. Never use the word to describe anything the model itself
-decided.
+**On the word approve.** It means one thing: a human pressing a button that releases an
+email. Never use it for anything the model decided.
 
 ---
 
-## Pre-Recording Checklist
+## Pre-recording checklist
 
-- [ ] Docker services running (n8n, Postgres)
+- [ ] Docker services up
 - [ ] `restore-stage-8-demo-snapshot.ps1 -Name clean` run, board confirmed empty
-- [ ] Fresh Cloudflare Tunnel running, URL copied into `triage.config.board.public_base_url`
+- [ ] Demo mailbox has zero unread messages
+- [ ] Fresh tunnel running, URL written into `triage.config.board.public_base_url`
 - [ ] `check-stage-7-live-prereqs.ps1` passes
-- [ ] `triage.config.contacts.primary_chat_id` is the real chat id for the recording phone
-- [ ] `triage.config.digest.enabled` and `heartbeat.enabled` both `false`
-- [ ] Telegram open and unmuted on the recording phone
-- [ ] Personal email account open and ready to send the one live message
-- [ ] n8n workflow list, board, and intake form tabs all open and tidy
-- [ ] Fixture Fire workflow open with Manual Start ready to click
-- [ ] No day counts or ages quoted in narration that will drift after this is recorded
+- [ ] `contacts.primary_chat_id` is the phone you are filming
+- [ ] `digest.enabled` and `heartbeat.enabled` both false
+- [ ] All thirteen workflows Active, list tidied for scene 2
+- [ ] Scene 6 dry-run done, then board reset again
+- [ ] Personal sending account open and ready, and one you are happy to show
+- [ ] Phone framed, Telegram open, notifications otherwise silenced
+- [ ] No day counts or ticket ages spoken aloud, they drift after recording
 - [ ] "Synthetic test data" note ready for the description
-- [ ] Notifications silenced except Telegram
-- [ ] Screen readable at the recording resolution
