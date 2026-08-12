@@ -14,6 +14,12 @@ email with a Telegram link so that the conversation can continue in one place. A
 tenant updates and questions are handled in Telegram. A tenant can also start with the
 Telegram bot directly.
 
+For this demo, the tenant Telegram bot is dedicated to one known tenant, equivalent to a
+dedicated SMS number. Its configured tenant name, email, property, and unit are added to
+every direct Telegram request automatically. It therefore never asks that tenant who they
+are or which property they live in. A multi-tenant production version would use a separate
+verified identity or a separate configured bot/number for each tenant.
+
 The email link is a demo convenience, not a production identity check. Before a real
 deployment, the link must be bound to a verified tenant identity.
 
@@ -30,8 +36,9 @@ opens a separate request after an existing conversation.
 3. If the description is too vague, the tenant Telegram bot keeps asking focused follow-up
    questions until it has the details needed to classify the request, with no more than
    three questions in a round. It treats the active email or Telegram chat as the tenant
-   contact channel, so it does not ask for a phone number. It does not send a vendor email
-   while details are missing.
+   contact channel, so it does not ask for a phone number. The dedicated tenant bot also
+   already knows the property and unit, so it asks only about the issue or maintenance
+   access details. It does not send a vendor email while details are missing.
    Sensitive or human-only cases go to manager review instead.
 4. For a complete maintenance request, it selects up to three active vendors whose trade
    and property coverage match the request.

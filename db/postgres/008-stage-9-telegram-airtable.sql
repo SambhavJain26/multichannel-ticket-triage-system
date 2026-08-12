@@ -126,7 +126,7 @@ CREATE INDEX IF NOT EXISTS tickets_stage_9_vendor_queue_idx
 
 INSERT INTO triage.config (key, value)
 VALUES
-  ('tenant_telegram', '{"bot_username":"PLACEHOLDER_TENANT_BOT_USERNAME","pairing_days":7,"max_clarification_rounds":2}'::jsonb),
+  ('tenant_telegram', '{"bot_username":"PLACEHOLDER_TENANT_BOT_USERNAME","pairing_days":7,"mode":"dedicated_tenant","tenant_name":"Demo Tenant","tenant_email":"sambhavn8n@gmail.com","property":"Maple Court","unit":"2B"}'::jsonb),
   ('airtable', '{"enabled":false,"base_id":"","base_url":"","requests_table":"Requests","conversations_table":"Conversations","tenant_roster_table":"Tenant Roster","vendors_table":"Vendors"}'::jsonb),
   ('system_mail', '{"subject_prefix":"[MT-SYSTEM]","onboarding_subject":"[MT-SYSTEM] Continue your maintenance request in Telegram","vendor_subject_prefix":"[MT-SYSTEM][VENDOR]"}'::jsonb)
 ON CONFLICT (key) DO UPDATE

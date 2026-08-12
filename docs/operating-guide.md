@@ -95,12 +95,12 @@ second unrelated issue.
 **Expect:** The bot records the request, asks only the details required for classification,
 and keeps replies on the same active ticket.
 
-**Verify:** Check Airtable `Requests` and `Conversations`. A vague request keeps receiving
-focused clarification prompts until the required details are supplied. Telegram is already
-the tenant contact channel, so the bot does not ask for a phone number. When location is
-missing, it asks one combined property-and-unit question. Once clear, the manager receives
-the vendor-choice alert; sensitive or human-only requests receive the Hold-only manager
-review alert.
+**Verify:** Check Airtable `Requests` and `Conversations`. The current tenant bot is a
+dedicated bot for the configured demo tenant, so it automatically supplies that tenant's
+name, property, unit, and email to triage. It does not ask for a phone number or location.
+A vague request keeps receiving focused issue or access prompts until the required details
+are supplied. Once clear, the manager receives the vendor-choice alert; sensitive or
+human-only requests receive the Hold-only manager review alert.
 
 ### Tenant status question
 
