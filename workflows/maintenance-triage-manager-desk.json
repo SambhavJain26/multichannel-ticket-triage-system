@@ -342,7 +342,7 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "function parse(value, fallback) { try { return typeof value === 'string' ? JSON.parse(value) : (value || fallback); } catch (_) { return fallback; } }\nfunction records(value) { const body = value?.body ?? value ?? {}; return Array.isArray(body.records) ? body.records : []; }\nconst context = $(\"Postgres Load Ticket For Manager\").all()[0]?.json || {};\nconst ticket = parse(context.ticket, {}); const cfg = parse(context.airtable, {}); const contacts = parse(context.contacts, {});\nlet rows = []; try { rows = records($input.all()[0]?.json); } catch (_) {}\nconst trade = String(ticket.trade || '').toUpperCase(); const property = String(ticket.unit_match_display || ticket.unit_identifier || '').toUpperCase();\nconst candidates = rows.map(r => ({id:r.id, name:r.fields?.['Vendor Name'] || '', email:r.fields?.Email || '', active:String(r.fields?.Active || '').toLowerCase() !== 'no', trades:String(r.fields?.Trades || '').toUpperCase(), properties:String(r.fields?.Properties || '').toUpperCase(), priority:Number(r.fields?.Priority || 999)}))\n  .filter(v => v.active && v.name && v.email && v.trades.includes(trade) && (!v.properties || property.includes(v.properties) || v.properties.includes(property.split(' - ')[0] || '')))\n  .sort((a,b) => a.priority - b.priority).slice(0,3);\nconst labels = [0,1,2].map(i => candidates[i] ? `Send to ${candidates[i].name}` : 'No additional vendor');\nconst callbacks = [0,1,2].map(i => candidates[i] ? `vendor:${ticket.id}:${candidates[i].id}` : `vendor:${ticket.id}:none`);\nconst missing = Array.isArray(ticket.missing_info) ? ticket.missing_info : [];\nconst canChoose = Boolean(ticket.id && !ticket.human_only && ticket.priority !== 'NEEDS_REVIEW' && missing.length === 0 && ticket.source !== 'fixture' && ticket.source !== 'import');\nreturn [{json:{ticket_id:ticket.id, ticket, airtable:cfg, contacts, candidates, should_send_manager:Boolean(canChoose && (contacts.primary_chat_id || contacts.operator_chat_id)), should_sync:Boolean(cfg.enabled && cfg.base_id), chat_id:contacts.primary_chat_id || contacts.operator_chat_id || '', vendor_1_label:labels[0], vendor_2_label:labels[1], vendor_3_label:labels[2], vendor_1_callback:callbacks[0], vendor_2_callback:callbacks[1], vendor_3_callback:callbacks[2], message_text: canChoose ? [`VENDOR APPROVAL: ${ticket.ref}`, `Priority: ${ticket.priority}`, `Trade: ${ticket.trade || 'UNKNOWN'}`, `Unit: ${ticket.unit_match_display || ticket.unit_identifier || 'not stated'}`, `Issue: ${ticket.issue_summary || ticket.subject || 'Maintenance request'}`, '', 'Select a vendor to send this exact email:', String(ticket.vendor_note || 'No vendor note was drafted.')].join('\\n') : `${ticket.ref}: manager review required. No vendor email will be sent automatically.`}}];"
+        "jsCode": "function parse(value, fallback) { try { return typeof value === 'string' ? JSON.parse(value) : (value || fallback); } catch (_) { return fallback; } }\nfunction records(value) { const body = parse(value?.body ?? value ?? {}, {}); return Array.isArray(body?.records) ? body.records : []; }\nconst context = $(\"Postgres Load Ticket For Manager\").all()[0]?.json || {};\nconst ticket = parse(context.ticket, {}); const cfg = parse(context.airtable, {}); const contacts = parse(context.contacts, {});\nlet rows = []; try { rows = records($input.all()[0]?.json); } catch (_) {}\nconst trade = String(ticket.trade || '').toUpperCase(); const propertyMatch = String(ticket.body_raw || '').match(/(?:^|\\\\n)Property:\\\\s*([^\\\\n]+)/i); const property = [ticket.unit_match_display, ticket.unit_identifier, propertyMatch?.[1]].filter(Boolean).join(' ').toUpperCase();\nconst candidates = rows.map(r => ({id:r.id, name:r.fields?.['Vendor Name'] || '', email:r.fields?.Email || '', active:String(r.fields?.Active || '').toLowerCase() !== 'no', trades:String(r.fields?.Trades || '').toUpperCase(), properties:String(r.fields?.Properties || '').toUpperCase(), priority:Number(r.fields?.Priority || 999)}))\n  .filter(v => v.active && v.name && v.email && v.trades.includes(trade) && (!v.properties || property.includes(v.properties) || v.properties.includes(property.split(' - ')[0] || '')))\n  .sort((a,b) => a.priority - b.priority).slice(0,3);\nconst labels = [0,1,2].map(i => candidates[i] ? `Send to ${candidates[i].name}` : 'No additional vendor');\nconst callbacks = [0,1,2].map(i => candidates[i] ? `vendor:${ticket.id}:${candidates[i].id}` : `vendor:${ticket.id}:none`);\nconst missing = Array.isArray(ticket.missing_info) ? ticket.missing_info : [];\nconst canChoose = Boolean(ticket.id && !ticket.human_only && ticket.priority !== 'NEEDS_REVIEW' && missing.length === 0 && ticket.source !== 'fixture' && ticket.source !== 'import');\nreturn [{json:{ticket_id:ticket.id, ticket, airtable:cfg, contacts, candidates, should_send_manager:Boolean(canChoose && (contacts.primary_chat_id || contacts.operator_chat_id)), should_sync:Boolean(cfg.enabled && cfg.base_id), chat_id:contacts.primary_chat_id || contacts.operator_chat_id || '', vendor_1_label:labels[0], vendor_2_label:labels[1], vendor_3_label:labels[2], vendor_1_callback:callbacks[0], vendor_2_callback:callbacks[1], vendor_3_callback:callbacks[2], message_text: canChoose ? [`VENDOR APPROVAL: ${ticket.ref}`, `Priority: ${ticket.priority}`, `Trade: ${ticket.trade || 'UNKNOWN'}`, `Unit: ${ticket.unit_match_display || ticket.unit_identifier || 'not stated'}`, `Issue: ${ticket.issue_summary || ticket.subject || 'Maintenance request'}`, '', 'Select a vendor to send this exact email:', String(ticket.vendor_note || 'No vendor note was drafted.')].join('\\n') : `${ticket.ref}: manager review required. No vendor email will be sent automatically.`}}];"
       },
       "id": "prepare-manager-vendor-alert",
       "name": "Prepare Manager Vendor Alert",
@@ -509,7 +509,7 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "return $input.all().map(item=>{const j=item.json; const t=j.ticket||{}; const cfg=j.airtable||{}; return {json:{...j,should_sync:Boolean(cfg.enabled&&cfg.base_id),airtable_url:`https://api.airtable.com/v0/${cfg.base_id}/${encodeURIComponent(cfg.requests_table||'Requests')}`,airtable_body:{performUpsert:{fieldsToMergeOn:['Reference']},records:[{fields:{'Reference':t.ref||'',Status:t.status||'NEW',Priority:t.priority||'',Source:t.source||'', 'Tenant Name':t.tenant_name||'', 'Tenant Email':t.from_address||t.tenant_contact||'',Unit:t.unit_identifier||'',Trade:t.trade||'',Summary:t.issue_summary||t.subject||'', 'Missing Info':JSON.stringify(t.missing_info||[]), 'Human Only':String(Boolean(t.human_only)), 'Vendor Status':t.vendor_status||'', 'Suggested Vendors':(j.candidates||[]).map(v=>v.name).join(', '), 'Telegram Chat ID':t.tenant_chat_id||''}}]}}};});"
+        "jsCode": "return $input.all().map(item=>{const j=item.json; const t=j.ticket||{}; const cfg=j.airtable||{}; const propertyMatch=String(t.body_raw||'').match(/(?:^|\\n)Property:\\s*([^\\n]+)/i); return {json:{...j,should_sync:Boolean(cfg.enabled&&cfg.base_id),airtable_url:`https://api.airtable.com/v0/${cfg.base_id}/${encodeURIComponent(cfg.requests_table||'Requests')}`,airtable_body:{performUpsert:{fieldsToMergeOn:['Reference']},records:[{fields:{'Reference':t.ref||'',Status:t.status||'NEW',Priority:t.priority||'',Source:t.source||'', 'Tenant Name':t.tenant_name||'', 'Tenant Email':t.from_address||t.tenant_contact||'',Property:propertyMatch?.[1]||'',Unit:t.unit_identifier||'',Trade:t.trade||'',Summary:t.issue_summary||t.subject||'', 'Missing Info':JSON.stringify(t.missing_info||[]), 'Human Only':String(Boolean(t.human_only)), 'Vendor Status':t.vendor_status||'', 'Suggested Vendors':(j.candidates||[]).map(v=>v.name).join(', '), 'Telegram Chat ID':t.tenant_chat_id||''}}]}}};});"
       },
       "id": "prepare-airtable-request-upsert",
       "name": "Prepare Airtable Request Upsert",
@@ -587,6 +587,45 @@
         }
       },
       "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const ctx=$(\"Prepare Airtable Request Upsert\").all(); return $input.all().map((item,i)=>({json:{ticket_id:ctx[i]?.json.ticket?.id || '',airtable_record_id:item.json.body?.records?.[0]?.id || item.json.records?.[0]?.id || '',sync_error:item.json.error || ''}}));"
+      },
+      "id": "attach-airtable-request-result",
+      "name": "Attach Airtable Request Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1240,
+        -60
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "database",
+        "operation": "executeQuery",
+        "query": "UPDATE triage.tickets SET airtable_record_id=NULLIF($2::text,'') WHERE id=$1::bigint AND NULLIF($3::text,'') IS NULL RETURNING id;",
+        "options": {
+          "queryReplacement": "={{ [$json.ticket_id,$json.airtable_record_id || '',$json.sync_error || ''] }}"
+        }
+      },
+      "id": "postgres-store-airtable-request-link",
+      "name": "Postgres Store Airtable Request Link",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1460,
+        -60
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "stage1PgLocal",
+          "name": "maintenance-triage-postgres-local"
+        }
+      }
     }
   ],
   "connections": {
@@ -823,6 +862,28 @@
           }
         ],
         []
+      ]
+    },
+    "HTTP Airtable Upsert Request": {
+      "main": [
+        [
+          {
+            "node": "Attach Airtable Request Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Attach Airtable Request Result": {
+      "main": [
+        [
+          {
+            "node": "Postgres Store Airtable Request Link",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     }
   },

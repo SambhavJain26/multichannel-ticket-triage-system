@@ -33,16 +33,80 @@
         "authentication": "none",
         "formTitle": "Report a Maintenance Issue",
         "formDescription": "You will receive a Telegram link for updates.",
-        "defineForm": "json",
-        "jsonOutput": "[{\"fieldLabel\": \"Name\", \"requiredField\": true}, {\"fieldLabel\": \"Unit\", \"requiredField\": false}, {\"fieldLabel\": \"Email\", \"fieldType\": \"email\", \"requiredField\": true}, {\"fieldLabel\": \"What's wrong?\", \"fieldType\": \"textarea\", \"requiredField\": true}, {\"fieldLabel\": \"Can we enter if you're not home?\", \"fieldType\": \"dropdown\", \"fieldOptions\": {\"values\": [{\"option\": \"Yes\"}, {\"option\": \"No\"}, {\"option\": \"Call first\"}]}, \"requiredField\": false}]",
+        "formFields": {
+          "values": [
+            {
+              "fieldName": "name",
+              "fieldLabel": "Name",
+              "fieldType": "text",
+              "requiredField": true
+            },
+            {
+              "fieldName": "unit",
+              "fieldLabel": "Unit",
+              "fieldType": "text",
+              "requiredField": false
+            },
+            {
+              "fieldName": "property",
+              "fieldLabel": "Property",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Maple Court"
+                  },
+                  {
+                    "option": "Oak Terrace"
+                  },
+                  {
+                    "option": "Pine House"
+                  }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldName": "email",
+              "fieldLabel": "Email",
+              "fieldType": "email",
+              "requiredField": true
+            },
+            {
+              "fieldName": "issue",
+              "fieldLabel": "What's wrong?",
+              "fieldType": "textarea",
+              "requiredField": true
+            },
+            {
+              "fieldName": "entry_permission",
+              "fieldLabel": "Can we enter if you're not home?",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Yes"
+                  },
+                  {
+                    "option": "No"
+                  },
+                  {
+                    "option": "Call first"
+                  }
+                ]
+              },
+              "requiredField": false
+            }
+          ]
+        },
         "responseMode": "lastNode",
         "options": {
           "path": "report-issue",
           "buttonLabel": "Submit"
         }
       },
-      "id": "tenant-intake-form",
-      "name": "Tenant Intake Form",
+      "id": "tenantintakeform",
+      "name": "TenantIntakeForm",
       "type": "n8n-nodes-base.formTrigger",
       "typeVersion": 2.6,
       "position": [
@@ -69,7 +133,7 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "function field(j, names) { for (const name of names) if (j[name] !== undefined && String(j[name]).trim()) return String(j[name]).trim(); return \"\"; }\nreturn $input.all().map((item, index) => {\n  const j = item.json || {}; const name = field(j, [\"Name\", \"name\", \"field-0\"]); const unit = field(j, [\"Unit\", \"unit\", \"field-1\"]);\n  const email = field(j, [\"Email\", \"email\", \"field-2\"]); const issue = field(j, [\"What's wrong?\", \"Issue\", \"issue\", \"field-3\"]);\n  const entry = field(j, [\"Can we enter if you're not home?\", \"entry_permission\", \"field-4\"]);\n  return {json: {source: \"form\", from_address: email, subject: unit ? `Form report - ${unit}` : \"Form report\",\n    body_raw: [`Tenant: ${name || \"Not stated\"}`, `Unit: ${unit || \"Not stated\"}`, `Contact: ${email}`, `Entry permission: ${entry || \"Not stated\"}`, \"\", issue || \"(empty form issue)\"].join(\"\\n\"),\n    received_at: new Date().toISOString(), attachment_paths: [], msg_id: `<form-${Date.now()}-${index}@maintenance-triage.local>`, in_reply_to: null, refs: null}};\n});"
+        "jsCode": "function field(j, names) { for (const name of names) if (j[name] !== undefined && String(j[name]).trim()) return String(j[name]).trim(); return \"\"; }\nreturn $input.all().map((item, index) => {\n  const j = item.json || {}; const name = field(j, [\"Name\", \"name\", \"field-0\"]); const unit = field(j, [\"Unit\", \"unit\", \"field-1\"]);\n  const property = field(j, [\"Property\", \"property\", \"field-2\"]); const email = field(j, [\"Email\", \"email\", \"field-3\"]); const issue = field(j, [\"What's wrong?\", \"Issue\", \"issue\", \"field-4\"]);\n  const entry = field(j, [\"Can we enter if you're not home?\", \"entry_permission\", \"field-5\"]);\n  return {json: {source: \"form\", from_address: email, subject: unit ? `Form report - ${unit}` : \"Form report\",\n    body_raw: [`Tenant: ${name || \"Not stated\"}`, `Property: ${property || \"Not stated\"}`, `Unit: ${unit || \"Not stated\"}`, `Contact: ${email}`, `Entry permission: ${entry || \"Not stated\"}`, \"\", issue || \"(empty form issue)\"].join(\"\\n\"),\n    received_at: new Date().toISOString(), attachment_paths: [], msg_id: `<form-${Date.now()}-${index}@maintenance-triage.local>`, in_reply_to: null, refs: null}};\n});"
       },
       "id": "normalize-form-intake",
       "name": "Normalize Form Intake",
@@ -78,6 +142,21 @@
       "position": [
         -760,
         180
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "return $input.all().map(item => ({json: item.json}));"
+      },
+      "id": "preserve-intake-context",
+      "name": "Preserve Intake Context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -520,
+        0
       ]
     },
     {
@@ -94,7 +173,7 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1,
       "position": [
-        -500,
+        -300,
         0
       ],
       "alwaysOutputData": true
@@ -103,14 +182,14 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "const contexts = [...$(\"Normalize Email Intake\").all(), ...$(\"Normalize Form Intake\").all()]; return contexts.map(item => ({json: {msg_id: item.json.msg_id, source: item.json.source}}));"
+        "jsCode": "return $(\"Preserve Intake Context\").all().map(item => ({json: {msg_id: item.json.msg_id, source: item.json.source}}));"
       },
       "id": "prepare-pairing-lookup",
       "name": "Prepare Pairing Lookup",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -260,
+        -60,
         0
       ]
     },
@@ -302,7 +381,7 @@
         ]
       ]
     },
-    "Tenant Intake Form": {
+    "TenantIntakeForm": {
       "main": [
         [
           {
@@ -317,7 +396,7 @@
       "main": [
         [
           {
-            "node": "Execute Triage Engine",
+            "node": "Preserve Intake Context",
             "type": "main",
             "index": 0
           }
@@ -325,6 +404,17 @@
       ]
     },
     "Normalize Form Intake": {
+      "main": [
+        [
+          {
+            "node": "Preserve Intake Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preserve Intake Context": {
       "main": [
         [
           {

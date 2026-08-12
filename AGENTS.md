@@ -78,9 +78,12 @@ Known n8n gotchas to account for:
 - Postgres nodes that update then reselect rows must return every field later expressions use.
 - Postgres nodes must also preserve control fields such as `test_mode`, `msg_id`, and source outcome when downstream dispatch depends on them. Do not assume n8n will carry pre-query JSON through a Postgres node.
 - Execute Sub-workflow nodes may produce no downstream items when the called workflow exits through multiple routed branches. For ingestion connectors, treat the core workflow as a database-writing side effect and reselect tickets by stable identifiers such as `msg_id` before post-processing.
+- After an Execute Sub-workflow node, its output may be empty even with `alwaysOutputData`. Preserve a common normalized context node before the call, then reselect durable ticket state using that common node's `msg_id`. Do not reach back to mutually exclusive intake branches with `$("Node Name").all()`: local n8n can surface an unexecuted branch as a non-catchable expression error.
 - Publishing a live Gmail IMAP trigger against an inbox with unrelated unread mail can ingest those messages immediately. Use a dedicated mailbox or clear/archive unrelated unread mail before publishing live triggers.
 - Form Trigger submissions can render fields as `field-0`; normalize form payloads before SQL or AI steps.
 - Imported Form Trigger workflows in local n8n `2.29.10` may register under a workflow/node-prefixed form path rather than the clean configured path. Query `webhook_entity` or test the registered `/form/...` path after import.
+- Form Trigger node names must also avoid spaces in local n8n `2.29.10`; a space is persisted as `%20` and then requires `%2520` in the live URL. Use a compact node name such as `TenantIntakeForm` for a usable form path.
+- Form Trigger v2.5+ does not use the older `defineForm`/`jsonOutput` shape. Use `formFields: { values: [...] }` with an explicit `fieldName` for each item, then verify the rendered form contains all inputs before testing submission.
 - AI structured output may be wrapped under `output`; downstream expressions should handle wrapped and direct JSON shapes.
 - Form Trigger workflows should use the Form completion step, not Respond to Webhook.
 - One-off `n8n execute` commands can collide with the running task broker on port `5679`. Stop the n8n service before CLI execution and restart it afterward when using this local Compose setup.

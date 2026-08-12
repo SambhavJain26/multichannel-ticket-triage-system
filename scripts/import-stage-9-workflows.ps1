@@ -115,9 +115,18 @@ try {
         }
         if ($CleanupLegacy) {
             $legacy = @("mt-alert-dispatch-stage-6", "mt-approval-action-stage-6", "maintenance-triage-board-stage-5", "mt-digest-stage-8", "mt-email-ingest-stage-7", "mt-emergency-escalation-stage-6", "mt-fixture-fire-stage-7", "mt-form-ingest-stage-7", "mt-import-bridge-stage-7", "mt-heartbeat-stage-8", "mt-post-ingest-stage-7", "maintenance-triage-stage-4-driver", "mt-stage-6-driver", "mt-telegram-callback-stage-6")
-            $quoted = ($legacy | ForEach-Object { "'" + $_.Replace("'", "''") + "'" }) -join ","
-            docker compose exec -T postgres psql -U $postgresUser -d $postgresDb -v ON_ERROR_STOP=1 -c "update workflow_entity set active=false where id in ($quoted);" | Out-Host
-            Write-Host "Legacy workflows were deactivated, not deleted. Their exports remain available for rollback."
+            $legacy | ForEach-Object {
+                $workflowId = $_
+                $escapedWorkflowId = $workflowId.Replace("'", "''")
+                $exists = (docker compose exec -T postgres psql -U $postgresUser -d $postgresDb -At -v ON_ERROR_STOP=1 -c "select exists(select 1 from workflow_entity where id = '$escapedWorkflowId');" | Select-Object -First 1).Trim()
+                if ($exists -eq "t") {
+                    docker compose exec -T n8n n8n unpublish:workflow --id=$workflowId | Out-Host
+                }
+                else {
+                    Write-Host "Skipping absent legacy workflow '$workflowId'."
+                }
+            }
+            Write-Host "Legacy workflows were unpublished, not deleted. Their exports remain available for rollback."
         }
         docker compose restart n8n | Out-Host
     }

@@ -54,11 +54,12 @@ workflow remains inactive and contains only the six synthetic fixture messages:
 ## Live smoke sequence
 
 1. Send a controlled request to the Gmail mailbox.
-2. Confirm the `[MT-SYSTEM]` onboarding message arrives at `sambhavn8n@gmail.com`.
-3. Open the deep link and start the tenant bot.
-4. Confirm the Airtable request row, conversation history, and manager vendor-selection alert.
-5. Choose a synthetic vendor once and verify one controlled SMTP email and one tenant Telegram update.
-6. Ask for an ETA and verify the bot does not invent one.
+2. Or submit the local form at `/form/mt-tenant-intake-stage-9/tenantintakeform/report-issue`, selecting the property so vendor matching can apply property and trade together.
+3. Confirm the `[MT-SYSTEM]` onboarding message arrives at `sambhavn8n@gmail.com`.
+4. Open the deep link and start the tenant bot.
+5. Confirm the Airtable request row, conversation history, and manager vendor-selection alert.
+6. Choose a synthetic vendor once and verify one controlled SMTP email and one tenant Telegram update.
+7. Ask for an ETA and verify the bot does not invent one.
 
 Do not use a real tenant or vendor during this demo. The pairing link is deliberately
 unverified and is not production-ready identity handling.
