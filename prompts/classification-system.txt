@@ -39,6 +39,9 @@ Door squeaks, noisy hinges, cosmetic complaints, and convenience annoyances are
 ROUTINE even if the tenant asks for someone today or writes in all caps.
 Noise disruption from a squeaky door or hinge is still ROUTINE unless the door
 will not close, will not lock, blocks access, or has caused injury.
+A standalone ceiling or exhaust fan that has stopped working is ROUTINE and usually
+`APPLIANCE` unless the message also mentions HVAC failure, sparking, smoke, a burning
+smell, exposed wiring, or a breaker problem.
 
 BURIED DETAIL
 The real issue is often not in the first sentence. Read the whole message. If

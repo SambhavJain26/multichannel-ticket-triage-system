@@ -31,6 +31,9 @@ opens a separate request after an existing conversation.
 
 1. The Triage Engine reads the request and checks for safety concerns such as gas, fire,
    flooding, sewage, electrical danger, no heat, or a security issue.
+   A standalone fan failure without a hazard is routine appliance maintenance; an
+   electrical classification requires actual electrical-danger context, not merely that an
+   item uses power.
 2. It assigns a priority, records the request in Postgres, and creates a manager-facing
    record in Airtable.
 3. If the description is too vague, the tenant Telegram bot keeps asking focused follow-up

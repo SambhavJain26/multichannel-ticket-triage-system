@@ -526,6 +526,13 @@ def build_core():
       const emergencyWater = /\b(flood|flooding|water everywhere|pouring|gushing|spreading|downstairs|into the hallway|electrical|outlet|sparking|breaker|collapse|collapsing|ceiling fell|ceiling falling)\b/.test(text);
       return ceilingDrip && contained && !emergencyWater;
     }
+    function routineFanFailure(message) {
+      const text = String(message || "").toLowerCase();
+      const fanFailure = /\b(ceiling |exhaust )?fan\b[^.!?]{0,40}\b(stopped|stop|not working|won'?t work|dead|broken)\b|\b(stopped|not working|won'?t work|dead|broken)\b[^.!?]{0,40}\b(ceiling |exhaust )?fan\b/.test(text);
+      const hvacContext = /\b(ac|a\/c|air conditioning|furnace|heater|heating|cooling|vent)\b/.test(text);
+      const electricalHazard = /\b(spark|sparking|burning smell|smoke|exposed wire|breaker)\b/.test(text);
+      return fanFailure && !hvacContext && !electricalHazard;
+    }
 
     return $input.all().map((item) => {
       const j = item.json;
@@ -598,6 +605,11 @@ def build_core():
         if (ruleSignals.length === 0 && modelJson.is_maintenance_request === true && priority === "EMERGENCY" && containedCeilingDrip(j.body_clean || j.body_raw || "")) {
           priority = "URGENT";
           priorityReason = "Contained ceiling drip with a bucket and no spreading water, collapse, or electrical hazard detail.";
+        }
+        if (ruleSignals.length === 0 && modelJson.is_maintenance_request === true && routineFanFailure(j.body_clean || j.body_raw || "")) {
+          priority = "ROUTINE";
+          modelJson = {...modelJson, trade: "APPLIANCE"};
+          priorityReason = "Standalone fan failure without HVAC context or electrical hazard detail.";
         }
         draftAllowed = priority !== "NEEDS_REVIEW"
           && !humanOnly
