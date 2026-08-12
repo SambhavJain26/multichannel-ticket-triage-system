@@ -168,6 +168,21 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
+        "jsCode": "const events = $(\"Normalize Tenant Telegram Event\").all();\nreturn $input.all().map((item, index) => {\n  const database = item.json || {};\n  const event = events.find(candidate => String(candidate.json.chat_id || '') === String(database.chat_id || ''))?.json || events[index]?.json || {};\n  return {json: {...event, ...database}};\n});"
+      },
+      "id": "reattach-tenant-event-context",
+      "name": "Reattach Tenant Event Context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -360,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
         "jsCode": "function parse(v) { try { return typeof v === \"string\" ? JSON.parse(v) : v; } catch (_) { return null; } }\nreturn $input.all().map((item) => { const j = item.json; const ticket = parse(j.ticket); const status = /\\b(when|what time|how soon).{0,30}\\b(arrive|coming|help|someone)\\b/i.test(j.text); let route = \"new\"; if (j.is_bare_start) route = \"welcome\"; else if (j.is_new_command) route = \"new_command\"; else if (ticket && status) route = \"status\"; else if (ticket && Number(ticket.clarification_round || 0) < 2 && Array.isArray(ticket.missing_info) && ticket.missing_info.length) route = \"clarification\"; return {json: {...j, ticket, route}}; });"
       },
       "id": "route-tenant-message",
@@ -175,7 +190,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -360,
+        -140,
         120
       ]
     },
@@ -268,7 +283,7 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
       "position": [
-        -140,
+        80,
         120
       ]
     },
@@ -805,6 +820,17 @@
       ]
     },
     "Postgres Load Tenant Chat": {
+      "main": [
+        [
+          {
+            "node": "Reattach Tenant Event Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reattach Tenant Event Context": {
       "main": [
         [
           {

@@ -29,6 +29,8 @@ try {
     if((Get-Content -Raw workflows\maintenance-triage-manager-desk.json) -match 'No additional vendor') { throw "Manager workflow still contains placeholder vendor buttons." }
     $tenantWorkflow = Get-Content -Raw workflows\maintenance-triage-tenant-telegram.json | ConvertFrom-Json
     if(-not ($tenantWorkflow.nodes | Where-Object { $_.name -eq 'Prepare Direct Telegram Welcome' })) { throw "Tenant direct Telegram welcome path is missing." }
+    if(-not ($tenantWorkflow.nodes | Where-Object { $_.name -eq 'Reattach Tenant Event Context' })) { throw "Tenant Telegram database lookup drops its event context." }
+    if($tenantWorkflow.connections.'Postgres Load Tenant Chat'.main[0][0].node -ne 'Reattach Tenant Event Context') { throw "Tenant Telegram context is not restored before routing." }
     Write-Host "OK: manager keyboard variants and direct Telegram intake"
     if($LivePrerequisites) {
       Assert-Scalar "Airtable configured" "select count(*) from triage.config where key='airtable' and value->>'enabled'='true' and coalesce(value->>'base_id','')<>'';" "1" $user $db
