@@ -12,6 +12,7 @@ import sys
 import urllib.error
 import urllib.parse
 import urllib.request
+from pathlib import Path
 
 
 API = "https://api.airtable.com/v0"
@@ -64,12 +65,24 @@ def table_url(base_id: str, table: str) -> str:
     return f"{API}/{base_id}/{urllib.parse.quote(table, safe='')}"
 
 
+def local_env_value(name: str) -> str:
+    """Read one local-only value without printing or exporting the full .env file."""
+    env_path = Path(__file__).resolve().parent.parent / ".env"
+    if not env_path.exists():
+        return ""
+    prefix = f"{name}="
+    for line in env_path.read_text(encoding="utf-8").splitlines():
+        if line.startswith(prefix):
+            return line[len(prefix):].strip().strip('"').strip("'")
+    return ""
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--base-id", required=True)
     parser.add_argument("--apply", action="store_true", help="Perform Airtable writes. Without this, print the planned schema.")
     args = parser.parse_args()
-    token = os.environ.get("AIRTABLE_PAT", "").strip()
+    token = os.environ.get("AIRTABLE_PAT", "").strip() or local_env_value("AIRTABLE_PAT")
 
     print("Airtable demo schema:")
     for name, fields in TABLES.items():
@@ -77,10 +90,10 @@ def main() -> int:
     print("- Seeded tenant roster: 8 synthetic records")
     print("- Seeded vendor roster: 4 synthetic records using sambhavn8n@gmail.com")
     if not args.apply:
-        print("Dry run only. Set AIRTABLE_PAT locally and re-run with --apply.")
+        print("Dry run only. Set AIRTABLE_PAT in .env or the local environment and re-run with --apply.")
         return 0
     if not token:
-        raise SystemExit("AIRTABLE_PAT must be set in the local environment before --apply.")
+        raise SystemExit("AIRTABLE_PAT must be set in .env or the local environment before --apply.")
 
     existing = request(token, "GET", f"{META_API}/bases/{args.base_id}/tables")
     existing_names = {table["name"] for table in existing.get("tables", [])}

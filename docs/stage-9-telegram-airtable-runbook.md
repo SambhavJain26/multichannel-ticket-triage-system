@@ -10,6 +10,10 @@ changes manager approval from tenant email replies to vendor-email selection.
 - An Airtable credential named `maintenance-triage-airtable`.
 - A current public HTTPS `N8N_WEBHOOK_URL` before activating either Telegram trigger.
 
+The Airtable PAT must be granted access to the `Maintenance Triage Demo` base and these scopes:
+`data.records:read`, `data.records:write`, `schema.bases:read`, and `schema.bases:write`.
+The Airtable account that creates the token must have Creator-level access to that base.
+
 The Stage 9 importer resolves n8n credential IDs from these names at import time. Do not edit workflow JSON to add credential IDs or secrets.
 
 The Stage 9 migration is safe to rerun: it adds only missing configuration defaults and preserves any configured Airtable base or tenant bot values.
@@ -24,7 +28,8 @@ The Stage 9 migration is safe to rerun: it adds only missing configuration defau
 Create and seed the Airtable base, configure its IDs locally, then verify configuration:
 
 ```powershell
-$env:AIRTABLE_PAT = "your-local-token" # Set locally. Do not send this token in chat.
+# Set AIRTABLE_PAT=your-local-token in the ignored .env file. Do not send this token in chat.
+# Use the same token in the n8n Airtable credential.
 python .\scripts\setup-stage-9-airtable.py --base-id appYourBaseId --apply
 .\scripts\configure-stage-9-airtable.ps1 -BaseId appYourBaseId -BaseUrl https://airtable.com/appYourBaseId -TenantBotUsername YourTenantBot
 .\scripts\validate-stage-9.ps1 -LivePrerequisites
