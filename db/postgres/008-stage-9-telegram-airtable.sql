@@ -114,4 +114,4 @@ VALUES
   ('airtable', '{"enabled":false,"base_id":"","base_url":"","requests_table":"Requests","conversations_table":"Conversations","tenant_roster_table":"Tenant Roster","vendors_table":"Vendors"}'::jsonb),
   ('system_mail', '{"subject_prefix":"[MT-SYSTEM]","onboarding_subject":"[MT-SYSTEM] Continue your maintenance request in Telegram","vendor_subject_prefix":"[MT-SYSTEM][VENDOR]"}'::jsonb)
 ON CONFLICT (key) DO UPDATE
-SET value = triage.config.value || EXCLUDED.value;
+SET value = EXCLUDED.value || triage.config.value;

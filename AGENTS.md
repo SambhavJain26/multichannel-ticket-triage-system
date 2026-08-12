@@ -62,7 +62,7 @@ Do not assume Docker images, accounts, API keys, mailbox app passwords, tunnel c
 
 Prefer editable workflow JSON exports over manual-only UI changes. Name every node descriptively; never leave default names like `Code`, `If`, `Set`, or `HTTP Request`.
 
-Use n8n credentials by name only. Never hardcode OpenAI keys, Telegram tokens, mailbox passwords, bearer tokens, OAuth secrets, or tunnel credentials in workflow JSON.
+Use n8n credentials by name only. Never hardcode OpenAI keys, Telegram tokens, mailbox passwords, bearer tokens, OAuth secrets, or tunnel credentials in workflow JSON. When importing workflows locally, resolve n8n credential IDs from their names at import time; do not hand-edit workflow JSON with IDs or secrets.
 
 Known n8n gotchas to account for:
 
