@@ -95,8 +95,10 @@ second unrelated issue.
 **Expect:** The bot records the request, asks only the details required for classification,
 and keeps replies on the same active ticket.
 
-**Verify:** Check Airtable `Requests` and `Conversations`. A vague request receives at most
-two clarification rounds before the manager review state and a Hold-only manager alert.
+**Verify:** Check Airtable `Requests` and `Conversations`. A vague request keeps receiving
+focused clarification prompts until the required details are supplied. Once clear, the
+manager receives the vendor-choice alert; sensitive or human-only requests receive the
+Hold-only manager review alert.
 
 ### Tenant status question
 

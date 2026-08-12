@@ -38,8 +38,11 @@ try {
     if(-not ($tenantWorkflow.nodes | Where-Object { $_.name -eq 'Prepare Direct Telegram Welcome' })) { throw "Tenant direct Telegram welcome path is missing." }
     if(-not ($tenantWorkflow.nodes | Where-Object { $_.name -eq 'Reattach Tenant Event Context' })) { throw "Tenant Telegram database lookup drops its event context." }
     if($tenantWorkflow.connections.'Postgres Load Tenant Chat'.main[0][0].node -ne 'Reattach Tenant Event Context') { throw "Tenant Telegram context is not restored before routing." }
+    $tenantRoute = $tenantWorkflow.nodes | Where-Object { $_.name -eq 'Route Tenant Message' } | Select-Object -First 1
+    if($tenantRoute.parameters.jsCode -match 'clarification_round\s*\|\|\s*0\)\s*<\s*2') { throw "Tenant clarification still has a two-round cap." }
     $clarificationResponse = $tenantWorkflow.nodes | Where-Object { $_.name -eq 'Prepare Clarification Response' } | Select-Object -First 1
-    if($clarificationResponse.parameters.jsCode -notmatch 'should_notify_manager:needsManager') { throw "Review-required clarification replies do not reach the manager." }
+    if($clarificationResponse.parameters.jsCode -notmatch 'hasClarificationPrompt') { throw "Tenant clarification does not keep asking while required details are missing." }
+    if($clarificationResponse.parameters.jsCode -notmatch 'should_notify_manager:readyForVendor \|\| needsManager') { throw "Completed or review-required clarification replies do not reach the manager." }
     Write-Host "OK: manager keyboard variants and direct Telegram intake"
     if($LivePrerequisites) {
       Assert-Scalar "Airtable configured" "select count(*) from triage.config where key='airtable' and value->>'enabled'='true' and coalesce(value->>'base_id','')<>'';" "1" $user $db

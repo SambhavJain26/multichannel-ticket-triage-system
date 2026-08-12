@@ -27,10 +27,10 @@ opens a separate request after an existing conversation.
    flooding, sewage, electrical danger, no heat, or a security issue.
 2. It assigns a priority, records the request in Postgres, and creates a manager-facing
    record in Airtable.
-3. If the description is too vague, the tenant Telegram bot asks focused follow-up
-   questions. It asks at most two rounds, with no more than three questions in a round.
-   A request still lacking enough detail becomes `NEEDS_REVIEW`; the manager receives a
-   review alert, while no vendor email can be sent from it.
+3. If the description is too vague, the tenant Telegram bot keeps asking focused follow-up
+   questions until it has the details needed to classify the request, with no more than
+   three questions in a round. It does not send a vendor email while details are missing.
+   Sensitive or human-only cases go to manager review instead.
 4. For a complete maintenance request, it selects up to three active vendors whose trade
    and property coverage match the request.
 5. The manager receives a Telegram approval message containing the exact vendor email and
