@@ -7,6 +7,7 @@ appropriate for a client or production base.
 """
 
 import argparse
+import datetime
 import json
 import os
 import sys
@@ -43,6 +44,14 @@ VENDORS = [
 
 def choices(names):
     return {"choices": [{"name": name} for name in names]}
+
+
+def timestamp_options():
+    return {
+        "dateFormat": {"name": "iso", "format": "YYYY-MM-DD"},
+        "timeFormat": {"name": "24hour", "format": "HH:mm"},
+        "timeZone": "utc",
+    }
 
 
 def local_env_value(name: str) -> str:
@@ -86,6 +95,38 @@ def add_field(token: str, base_id: str, table_id: str, field: dict) -> dict:
     return request(token, "POST", schema_url(base_id, f"/{table_id}/fields"), field)
 
 
+def update_field(token: str, base_id: str, table_id: str, field_id_value: str, field: dict) -> dict:
+    return request(token, "PATCH", schema_url(base_id, f"/{table_id}/fields/{field_id_value}"), field)
+
+
+def ensure_field(token: str, base_id: str, table: dict, field: dict) -> dict:
+    """Create an optional post-create field once, including during a resumed rebuild."""
+    for existing in table["fields"]:
+        if existing["name"] == field["name"]:
+            return existing
+    created = add_field(token, base_id, table["id"], field)
+    table["fields"].append(created)
+    return created
+
+
+def ensure_conversation_timestamp(token: str, base_id: str, table: dict) -> None:
+    """Repair an empty partial rebuild where Airtable created `At` as date-only."""
+    at_field = next((field for field in table["fields"] if field["name"] == "At"), None)
+    if at_field and at_field["type"] != "dateTime":
+        renamed = update_field(token, base_id, table["id"], at_field["id"], {"name": "Date"})
+        table["fields"][table["fields"].index(at_field)] = renamed
+    ensure_field(token, base_id, table, {"name": "At", "type": "dateTime", "options": timestamp_options()})
+
+
+def ensure_inverse_link_name(token: str, base_id: str, source_table: dict, source_name: str, target_table: dict, target_name: str) -> None:
+    source = next(field for field in source_table["fields"] if field["name"] == source_name)
+    inverse_id = source.get("options", {}).get("inverseLinkFieldId")
+    inverse = next((field for field in target_table["fields"] if field["id"] == inverse_id), None)
+    if inverse and inverse["name"] != target_name:
+        updated = update_field(token, base_id, target_table["id"], inverse["id"], {"name": target_name})
+        target_table["fields"][target_table["fields"].index(inverse)] = updated
+
+
 def field_id(table: dict, field_name: str) -> str:
     for field in table["fields"]:
         if field["name"] == field_name:
@@ -100,17 +141,17 @@ def upsert_records(token: str, base_id: str, table: str, primary: str, records: 
     })
 
 
-def build_schema(token: str, base_id: str) -> dict[str, dict]:
-    tenant_table = create_table(token, base_id, "Tenant Roster", [
+def build_schema(token: str, base_id: str, existing: list[dict]) -> dict[str, dict]:
+    by_name = {table["name"]: table for table in existing}
+    tenant_table = by_name.get("Tenant Roster") or create_table(token, base_id, "Tenant Roster", [
         {"name": "Tenant Name", "type": "singleLineText"},
         {"name": "Email", "type": "email"},
         {"name": "Property", "type": "singleSelect", "options": choices(PROPERTIES)},
         {"name": "Unit", "type": "singleLineText"},
         {"name": "Telegram Chat ID", "type": "singleLineText"},
         {"name": "Active", "type": "checkbox", "options": {"icon": "check", "color": "greenBright"}},
-        {"name": "Created", "type": "createdTime"},
     ])
-    vendor_table = create_table(token, base_id, "Vendors", [
+    vendor_table = by_name.get("Vendors") or create_table(token, base_id, "Vendors", [
         {"name": "Vendor Name", "type": "singleLineText"},
         {"name": "Email", "type": "email"},
         {"name": "Phone", "type": "phoneNumber"},
@@ -118,59 +159,67 @@ def build_schema(token: str, base_id: str) -> dict[str, dict]:
         {"name": "Properties", "type": "multipleSelects", "options": choices(PROPERTIES)},
         {"name": "Priority", "type": "number", "options": {"precision": 0}},
         {"name": "Active", "type": "checkbox", "options": {"icon": "check", "color": "greenBright"}},
-        {"name": "Created", "type": "createdTime"},
     ])
-    request_table = create_table(token, base_id, "Requests", [
+    request_table = by_name.get("Requests") or create_table(token, base_id, "Requests", [
         {"name": "Reference", "type": "singleLineText"},
         {"name": "Status", "type": "singleSelect", "options": choices(["NEW", "ALERTED", "ACKED", "HELD", "CLOSED", "NEEDS_REVIEW"])},
         {"name": "Priority", "type": "singleSelect", "options": choices(["EMERGENCY", "URGENT", "ROUTINE", "NEEDS_REVIEW"])},
         {"name": "Source", "type": "singleSelect", "options": choices(["email", "form", "telegram", "fixture", "import"])},
-        {"name": "Tenant", "type": "multipleRecordLinks", "options": {"linkedTableId": tenant_table["id"], "prefersSingleRecordLink": True}},
+        {"name": "Tenant", "type": "multipleRecordLinks", "options": {"linkedTableId": tenant_table["id"]}},
         {"name": "Tenant Email", "type": "email"},
         {"name": "Property", "type": "singleSelect", "options": choices(PROPERTIES)},
         {"name": "Unit", "type": "singleLineText"},
         {"name": "Trade", "type": "singleSelect", "options": choices(TRADES)},
         {"name": "Summary", "type": "multilineText"},
         {"name": "Missing Info", "type": "multipleSelects", "options": choices(["UNIT", "PROPERTY", "CONTACT", "ACCESS_PERMISSION", "ISSUE_DETAIL", "ONSET_TIME"])},
-        {"name": "Human Only", "type": "checkbox", "options": {"icon": "warning", "color": "orangeBright"}},
+        {"name": "Human Only", "type": "checkbox", "options": {"icon": "check", "color": "orangeBright"}},
         {"name": "Vendor Status", "type": "singleSelect", "options": choices(["NOT_STARTED", "AWAITING_VENDOR", "NEEDS_VENDOR_ASSIGNMENT", "SENDING", "SENT", "FAILED", "HELD"])},
         {"name": "Suggested Vendors", "type": "multipleRecordLinks", "options": {"linkedTableId": vendor_table["id"]}},
-        {"name": "Selected Vendor", "type": "multipleRecordLinks", "options": {"linkedTableId": vendor_table["id"], "prefersSingleRecordLink": True}},
+        {"name": "Selected Vendor", "type": "multipleRecordLinks", "options": {"linkedTableId": vendor_table["id"]}},
         {"name": "Telegram Chat ID", "type": "singleLineText"},
-        {"name": "Created", "type": "createdTime"},
-        {"name": "Last Updated", "type": "lastModifiedTime"},
     ])
-    add_field(token, base_id, request_table["id"], {
+    ensure_field(token, base_id, request_table, {
         "name": "Vendor Email", "type": "multipleLookupValues",
         "options": {
             "recordLinkFieldId": field_id(request_table, "Selected Vendor"),
             "fieldIdInLinkedTable": field_id(vendor_table, "Email"),
         },
     })
-    conversation_table = create_table(token, base_id, "Conversations", [
+    conversation_table = by_name.get("Conversations") or create_table(token, base_id, "Conversations", [
         {"name": "Conversation", "type": "singleLineText"},
-        {"name": "Request", "type": "multipleRecordLinks", "options": {"linkedTableId": request_table["id"], "prefersSingleRecordLink": True}},
+        {"name": "Request", "type": "multipleRecordLinks", "options": {"linkedTableId": request_table["id"]}},
         {"name": "Direction", "type": "singleSelect", "options": choices(["inbound", "outbound"])},
         {"name": "Channel", "type": "singleSelect", "options": choices(["email", "form", "telegram"])},
         {"name": "Intent", "type": "singleSelect", "options": choices(["request", "pairing", "receipt", "clarification", "clarification_answer", "status", "vendor_update", "vendor_dispatch", "manager_note"])},
         {"name": "Body", "type": "multilineText"},
         {"name": "External Message ID", "type": "singleLineText"},
         {"name": "Delivery State", "type": "singleSelect", "options": choices(["RECORDED", "PENDING", "SENT", "FAILED", "SKIPPED"])},
-        {"name": "At", "type": "date", "options": {"dateFormat": {"name": "iso"}, "timeFormat": {"name": "24hour"}, "timeZone": "utc"}},
-        {"name": "Created", "type": "createdTime"},
+        {"name": "At", "type": "dateTime", "options": timestamp_options()},
     ])
+    ensure_conversation_timestamp(token, base_id, conversation_table)
+    ensure_inverse_link_name(token, base_id, request_table, "Suggested Vendors", vendor_table, "Suggested Requests")
+    ensure_inverse_link_name(token, base_id, request_table, "Selected Vendor", vendor_table, "Selected Requests")
+    # Airtable's public schema endpoint cannot create native created/modified-time fields.
+    # These fields are populated from Postgres timestamps during the controlled demo sync.
+    audit_field = {"type": "dateTime", "options": timestamp_options()}
+    ensure_field(token, base_id, tenant_table, {"name": "Created At", **audit_field})
+    ensure_field(token, base_id, vendor_table, {"name": "Created At", **audit_field})
+    ensure_field(token, base_id, request_table, {"name": "Created At", **audit_field})
+    ensure_field(token, base_id, request_table, {"name": "Last Synced", **audit_field})
+    ensure_field(token, base_id, conversation_table, {"name": "Created At", **audit_field})
     return {table["name"]: table for table in (tenant_table, vendor_table, request_table, conversation_table)}
 
 
 def seed(token: str, base_id: str) -> None:
+    created_at = datetime.datetime.now(datetime.timezone.utc).isoformat()
     upsert_records(token, base_id, "Tenant Roster", "Tenant Name", [
-        {"Tenant Name": name, "Email": email, "Property": prop, "Unit": unit, "Active": True}
+        {"Tenant Name": name, "Email": email, "Property": prop, "Unit": unit, "Active": True, "Created At": created_at}
         for name, email, prop, unit in TENANTS
     ])
     upsert_records(token, base_id, "Vendors", "Vendor Name", [
         {"Vendor Name": name, "Email": "sambhavn8n@gmail.com", "Phone": phone,
          "Trades": trades.split(","), "Properties": properties.split(",") if properties else [],
-         "Priority": priority, "Active": True}
+         "Priority": priority, "Active": True, "Created At": created_at}
         for name, trades, properties, priority, phone in VENDORS
     ])
 
@@ -195,19 +244,26 @@ def main() -> int:
 
     existing = request(token, "GET", schema_url(args.base_id)).get("tables", [])
     names = {"Requests", "Conversations", "Tenant Roster", "Vendors"}
-    if args.rebuild_demo_base and names & {table["name"] for table in existing}:
-        raise SystemExit(
-            "Airtable's public API cannot delete existing tables. Delete only Requests, Conversations, Tenant Roster, "
-            "and Vendors in the Airtable UI, then rerun this command to create the typed local-demo tables."
-        )
     existing_names = {table["name"] for table in existing}
-    if names & existing_names:
-        missing = names - existing_names
-        if missing:
-            raise SystemExit("Existing Stage 9 Airtable tables are incomplete. Use --rebuild-demo-base for the local demo base.")
-        print("Typed Stage 9 Airtable tables already exist; roster records will be upserted.")
+    partial_typed_rebuild = bool(existing_names & names) and existing_names & names != names and all(
+        any(field["type"] != "singleLineText" for field in table["fields"])
+        for table in existing if table["name"] in names
+    )
+    if args.rebuild_demo_base and names & existing_names and not partial_typed_rebuild:
+        typed_existing = all(
+            any(field["type"] != "singleLineText" for field in table["fields"])
+            for table in existing if table["name"] in names
+        )
+        if not typed_existing:
+            raise SystemExit(
+                "Airtable's public API cannot delete existing tables. Delete only Requests, Conversations, Tenant Roster, "
+                "and Vendors in the Airtable UI, then rerun this command to create the typed local-demo tables."
+            )
+    if names <= existing_names:
+        build_schema(token, args.base_id, existing)
+        print("Verified typed Stage 9 Airtable tables; roster records will be upserted.")
     else:
-        build_schema(token, args.base_id)
+        build_schema(token, args.base_id, existing)
         print("Created typed Stage 9 Airtable tables.")
     seed(token, args.base_id)
     print("Seeded 9 synthetic/demo tenants and 4 controlled-demo vendors.")

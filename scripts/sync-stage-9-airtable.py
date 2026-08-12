@@ -2,6 +2,7 @@
 """Re-sync local Stage 9 Postgres demo state into the typed Airtable workspace."""
 
 import argparse
+import datetime
 import json
 import os
 import subprocess
@@ -83,6 +84,12 @@ def field(fields: dict, name: str, value):
         fields[name] = value
 
 
+def airtable_datetime(value) -> str:
+    """Convert Postgres' offset timestamp to Airtable's UTC timestamp format."""
+    parsed = datetime.datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    return parsed.astimezone(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.000Z")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--reset-links", action="store_true", help="Clear local Airtable IDs before a typed demo-base rebuild.")
@@ -116,7 +123,7 @@ def main() -> int:
 
     tickets = json_rows("""
 SELECT jsonb_build_object(
-  'id', id, 'ref', ref, 'status', status, 'priority', priority, 'source', source,
+  'id', id, 'ref', ref, 'status', status, 'priority', priority, 'source', source, 'received_at', received_at,
   'from_address', from_address, 'tenant_contact', tenant_contact, 'body_raw', body_raw,
   'unit_identifier', unit_identifier, 'trade', trade, 'issue_summary', issue_summary,
   'missing_info', missing_info, 'human_only', human_only, 'vendor_status', vendor_status,
@@ -144,6 +151,8 @@ FROM triage.tickets ORDER BY id;
             "Source": ticket.get("source") or "telegram", "Summary": ticket.get("issue_summary") or "Maintenance request",
             "Missing Info": missing_info if isinstance(missing_info, list) else [],
             "Human Only": bool(ticket.get("human_only")), "Vendor Status": ticket.get("vendor_status") or "NOT_STARTED",
+            "Created At": airtable_datetime(ticket["received_at"]),
+            "Last Synced": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.000Z"),
         }
         field(fields, "Tenant Email", "" if email.startswith("telegram:") else email)
         field(fields, "Property", property_name if property_name in PROPERTIES else "")
@@ -177,7 +186,7 @@ FROM triage.ticket_messages m JOIN triage.tickets t ON t.id = m.ticket_id ORDER 
             "Conversation": f"{message['ref']} #{message['id']}", "Request": [request_id],
             "Direction": message["direction"], "Channel": message["channel"],
             "Intent": message["intent"] if message["intent"] in INTENTS else "manager_note",
-            "Body": message["body"], "Delivery State": message["delivery_state"], "At": message["created_at"],
+            "Body": message["body"], "Delivery State": message["delivery_state"], "At": airtable_datetime(message["created_at"]),
         }
         field(fields, "External Message ID", message.get("external_message_id"))
         response = request(token, "POST", table_url(base_id, conversations_table), {"records": [{"fields": fields}]})
