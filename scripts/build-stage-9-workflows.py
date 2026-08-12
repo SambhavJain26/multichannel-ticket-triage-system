@@ -135,11 +135,16 @@ function header(headers, name) {
   return "";
 }
 function address(value) {
+  if (Array.isArray(value)) return address(value[0]);
+  if (value && typeof value === "object") {
+    if (Array.isArray(value.value)) return address(value.value[0]);
+    return address(value.address || value.email || value.text || "");
+  }
   const raw = String(value || ""); const match = raw.match(/<([^>]+)>/); return (match ? match[1] : raw).trim();
 }
 return $input.all().flatMap((item, index) => {
   const j = item.json || {}; const subject = String(j.subject || "(no subject)");
-  if (/^\[MT-SYSTEM\]/i.test(subject)) return [];
+  if (/^\s*(?:re:\s*)*\[MT-SYSTEM\]/i.test(subject)) return [];
   const body = j.text || j.textPlain || j.body || j.html || "(empty email body)";
   return [{json: {source: "email", from_address: address(j.from || j.sender || j.replyTo), subject, body_raw: body,
     received_at: j.date || new Date().toISOString(), attachment_paths: [],
@@ -230,10 +235,24 @@ RETURNING ticket_id;
 
 def build_tenant_telegram():
     record_telegram_delivery = r"""
-INSERT INTO triage.ticket_messages (ticket_id, channel, direction, intent, body, external_message_id, delivery_state, detail)
-VALUES ($1::bigint, 'telegram', 'outbound', $2::text, $3::text, NULLIF($4::text, ''), CASE WHEN NULLIF($5::text, '') IS NULL THEN 'SENT' ELSE 'FAILED' END, jsonb_build_object('error', NULLIF($5::text, '')))
-ON CONFLICT (channel, direction, external_message_id) DO UPDATE SET delivery_state = EXCLUDED.delivery_state, detail = EXCLUDED.detail
-RETURNING id;
+WITH input_values AS (
+  SELECT $1::bigint AS ticket_id, $2::text AS outbound_intent, $3::text AS outbound_body,
+         NULLIF($4::text, '') AS outbound_external_id, NULLIF($5::text, '') AS delivery_error,
+         NULLIF($6::text, '') AS inbound_body, NULLIF($7::text, '') AS inbound_external_id
+), inbound_message AS (
+  INSERT INTO triage.ticket_messages (ticket_id, channel, direction, intent, body, external_message_id, delivery_state)
+  SELECT ticket_id, 'telegram', 'inbound', 'status', inbound_body, inbound_external_id, 'RECORDED'
+  FROM input_values WHERE inbound_body IS NOT NULL AND inbound_external_id IS NOT NULL
+  ON CONFLICT (channel, direction, external_message_id) DO NOTHING
+), outbound_message AS (
+  INSERT INTO triage.ticket_messages (ticket_id, channel, direction, intent, body, external_message_id, delivery_state, detail)
+  SELECT ticket_id, 'telegram', 'outbound', outbound_intent, outbound_body, outbound_external_id,
+         CASE WHEN delivery_error IS NULL THEN 'SENT' ELSE 'FAILED' END, jsonb_build_object('error', delivery_error)
+  FROM input_values
+  ON CONFLICT (channel, direction, external_message_id) DO UPDATE SET delivery_state = EXCLUDED.delivery_state, detail = EXCLUDED.detail
+  RETURNING id
+)
+SELECT id FROM outbound_message;
 """
     claim_pair = r"""
 WITH input_values AS (SELECT $1::text AS token, $2::text AS chat_id, NULLIF($3::text, '') AS user_id, NULLIF($4::text, '') AS username),
@@ -254,6 +273,20 @@ WITH input_values AS (SELECT $1::text AS chat_id), cfg AS (
   SELECT value AS tenant_profile FROM triage.config WHERE key = 'tenant_telegram'
 )
 SELECT i.chat_id, c.active_ticket_id, to_jsonb(t) AS ticket, cfg.tenant_profile
+       , coalesce((
+           SELECT jsonb_agg(to_jsonb(open_ticket) ORDER BY open_ticket.received_at DESC)
+           FROM (
+             SELECT candidate.id, candidate.ref, candidate.issue_summary, candidate.priority,
+                    candidate.vendor_status, candidate.status, candidate.received_at
+             FROM triage.tickets candidate
+             WHERE candidate.tenant_chat_id = i.chat_id
+               AND candidate.closed_at IS NULL
+               AND candidate.is_maintenance_request IS TRUE
+               AND candidate.request_type = 'NEW_ISSUE'
+             ORDER BY candidate.received_at DESC
+             LIMIT 10
+           ) open_ticket
+         ), '[]'::jsonb) AS open_tickets
 FROM input_values i CROSS JOIN cfg
 LEFT JOIN triage.tenant_chats c ON c.telegram_chat_id = i.chat_id
 LEFT JOIN triage.tickets t ON t.id = c.active_ticket_id;
@@ -276,7 +309,26 @@ function questions(missing) { const wanted = new Set((parse(missing, []) || []).
 return $input.all().map((item) => { const j = item.json; const qs = questions(j.missing_info); const text = j.human_only ? `Request ${j.ref} was received. A manager needs to review it and will update you here.` : (qs.length ? `Request ${j.ref} was received. ${qs.join(" ")}` : (j.priority === "EMERGENCY" ? `Request ${j.ref} was received and escalated to the manager as an emergency. We will update you here.` : `Request ${j.ref} was received. We will keep you updated here.`)); return {json: {...j, message_text: text, intent: qs.length ? "clarification" : "receipt"}}; });
 """
     status_message = r"""
-return $input.all().map(item => { const j = item.json; const t = typeof j.ticket === "string" ? JSON.parse(j.ticket) : j.ticket; const sent = t?.vendor_status === "SENT"; return {json: {chat_id: j.chat_id, ticket_id: t?.id, intent: "status", message_text: sent ? "We have contacted a maintenance provider. We will update you when we have an arrival time." : "Your request has been escalated to the manager. We will update you here when there is more information."}}; });
+function parse(value, fallback) { try { return typeof value === "string" ? JSON.parse(value) : (value || fallback); } catch (_) { return fallback; } }
+function state(ticket) {
+  const status = String(ticket.vendor_status || "NOT_STARTED");
+  if (status === "SENT") return "A maintenance provider has been contacted; we do not have a confirmed arrival time yet.";
+  if (status === "SENDING") return "The manager approved a provider and the request is being sent.";
+  if (status === "AWAITING_VENDOR") return "It is waiting for the manager to approve the suggested provider.";
+  if (status === "NEEDS_VENDOR_ASSIGNMENT") return "The manager is assigning the right provider manually.";
+  if (status === "FAILED") return "The provider could not be contacted; the manager has been notified.";
+  if (status === "HELD") return "The manager has placed this request on hold for review.";
+  return "It is with the manager for review.";
+}
+return $input.all().map(item => {
+  const j = item.json; const tickets = parse(j.open_tickets, []);
+  const active = tickets[0] || parse(j.ticket, {});
+  const lines = tickets.map(ticket => `${ticket.ref} (${ticket.issue_summary || "maintenance request"}): ${state(ticket)}`);
+  const message = lines.length
+    ? ["Here is the latest status:", ...lines, "We do not have confirmed completion times yet. We will update you here when provider availability is confirmed."].join("\n")
+    : "I cannot find an open maintenance request in this chat. Send /new to report an issue.";
+  return {json: {chat_id: j.chat_id, ticket_id: active?.id, intent: "status", message_text: message, status_query_text: j.text || "", status_query_external_message_id: `telegram:${j.chat_id}:${j.message_id}`}};
+});
 """
     merge_clarification = r"""
 WITH input_values AS (SELECT $1::bigint AS original_ticket_id, NULLIF($2::text, '') AS child_msg_id, $3::text AS chat_id, $4::text AS body, $5::text AS external_message_id),
@@ -310,7 +362,14 @@ return $input.all().map((item) => { const u = item.json.message || item.json; co
 """
     route_message = r"""
 function parse(v) { try { return typeof v === "string" ? JSON.parse(v) : v; } catch (_) { return null; } }
-return $input.all().map((item) => { const j = item.json; const ticket = parse(j.ticket); const status = /\b(when|what time|how soon).{0,30}\b(arrive|coming|help|someone)\b/i.test(j.text); let route = "new"; if (j.is_bare_start) route = "welcome"; else if (j.is_new_command) route = "new_command"; else if (ticket && status) route = "status"; else if (ticket && Array.isArray(ticket.missing_info) && ticket.missing_info.length) route = "clarification"; return {json: {...j, ticket, route}}; });
+function isStatusQuestion(value) {
+  const text = String(value || "").toLowerCase().replace(/\s+/g, " ").trim();
+  if (/\b(status|update|progress|eta)\b/.test(text)) return true;
+  if (/\b(when|what time|how soon)\b.{0,100}\b(arrive|coming|help|someone|fixed|fix|resolved|resolve|completed|complete|done|repair|repairs|issue|issues|request|requests)\b/.test(text)) return true;
+  if (/\b(arrive|coming|fixed|resolved|completed|done)\b.{0,60}\b(when|what time|how soon)\b/.test(text)) return true;
+  return /\bwhat(?:'s| is) happening with\b.{0,60}\b(issue|issues|request|requests|repair|repairs)\b/.test(text);
+}
+return $input.all().map((item) => { const j = item.json; const ticket = parse(j.ticket); const openTickets = parse(j.open_tickets) || []; const status = isStatusQuestion(j.text); let route = "new"; if (j.is_bare_start) route = "welcome"; else if (j.is_new_command) route = "new_command"; else if (status) route = "status"; else if (ticket && Array.isArray(ticket.missing_info) && ticket.missing_info.length) route = "clarification"; return {json: {...j, ticket, open_tickets: openTickets, route}}; });
 """
     nodes = [
         node("TenantTelegramTrigger", "n8n-nodes-base.telegramTrigger", 1.3, [-1020, 0], {"updates": ["message"], "additionalFields": {}}, {"telegramApi": {"id":"stage9TenantTelegram", "name":"maintenance-triage-tenant-telegram-bot"}}),
@@ -326,7 +385,7 @@ return $input.all().map((item, index) => {
         code("Prepare New Ticket Payload", [80,0], """function profile(v){try{return typeof v==='string'?JSON.parse(v):(v||{});}catch(_){return {};}} return $input.all().map(item=>{const p=profile(item.json.tenant_profile); const name=p.tenant_name||'Demo Tenant'; const email=p.tenant_email||('telegram:'+item.json.chat_id); const property=p.property||''; const unit=p.unit||''; const context=[`Tenant: ${name}`,property&&`Property: ${property}`,unit&&`Unit: ${unit}`,email&&!email.startsWith('telegram:')&&`Contact: ${email}`,'',item.json.text].filter(Boolean).join('\\n'); return {json:{source:'telegram',from_address:email,subject:'Telegram maintenance request',body_raw:context,received_at:new Date().toISOString(),attachment_paths:[],msg_id:'<telegram-'+item.json.chat_id+'-'+item.json.message_id+'@maintenance-triage.local>',in_reply_to:null,refs:null,tenant_chat_id:item.json.chat_id,tenant_email:email}};});"""),
         execute("Execute Triage Engine For Tenant", [300,0], ENGINE_ID, True), code("Prepare New Ticket Link", [520,0], """const ctx=$(\"Prepare New Ticket Payload\").all(); return ctx.map(item=>({json:{chat_id:item.json.tenant_chat_id,msg_id:item.json.msg_id,tenant_email:item.json.tenant_email}}));"""), pg("Postgres Link New Tenant Ticket", [740,0], new_ticket, "={{ [$json.chat_id, $json.msg_id, $json.tenant_email] }}"), code("Decide New Ticket Manager Notification", [960,-60], """function list(value){try{return Array.isArray(value)?value:(typeof value==='string'?JSON.parse(value):[]);}catch(_){return [];}} return $input.all().map(item=>{const j=item.json; const missing=list(j.missing_info); return {json:{...j,should_notify_manager:Boolean(j.human_only || missing.length===0)}};});"""), if_node("New Ticket Needs Manager", [1180,-60], "={{ Boolean($json.should_notify_manager) }}"), execute("Execute Manager Desk For Tenant", [1400,-60], MANAGER_ID), code("Prepare New Ticket Tenant Reply", [960,60], start_message), telegram("Telegram Send New Ticket Reply", [1180,60], {"id":"stage9TenantTelegram", "name":"maintenance-triage-tenant-telegram-bot"}),
         code("Prepare New Conversation Prompt", [80,160], """return $input.all().map(item=>({json:{chat_id:item.json.chat_id,message_text:'Tell us what is wrong.'}}));"""), telegram("Telegram Send New Conversation Prompt", [300,160], {"id":"stage9TenantTelegram", "name":"maintenance-triage-tenant-telegram-bot"}),
-        code("Prepare Tenant Status Reply", [80,300], status_message), telegram("Telegram Send Status Reply", [300,300], {"id":"stage9TenantTelegram", "name":"maintenance-triage-tenant-telegram-bot"}), code("Attach Status Reply Delivery", [520,300], """const ctx=$(\"Prepare Tenant Status Reply\").all(); return $input.all().map((item,i)=>({json:{...ctx[i].json,delivery_error:item.json.error || '',delivery_external_message_id:String(item.json.message_id || item.json.messageId || `telegram:status:${ctx[i].json.ticket_id}:${Date.now()}`)}}));"""), pg("Postgres Record Status Reply", [740,300], record_telegram_delivery, "={{ [$json.ticket_id,$json.intent,$json.message_text,$json.delivery_external_message_id,$json.delivery_error] }}"),
+        code("Prepare Tenant Status Reply", [80,300], status_message), telegram("Telegram Send Status Reply", [300,300], {"id":"stage9TenantTelegram", "name":"maintenance-triage-tenant-telegram-bot"}), code("Attach Status Reply Delivery", [520,300], """const ctx=$(\"Prepare Tenant Status Reply\").all(); return $input.all().map((item,i)=>({json:{...ctx[i].json,delivery_error:item.json.error || '',delivery_external_message_id:String(item.json.message_id || item.json.messageId || `telegram:status:${ctx[i].json.ticket_id}:${Date.now()}`)}}));"""), pg("Postgres Record Status Reply", [740,300], record_telegram_delivery, "={{ [$json.ticket_id,$json.intent,$json.message_text,$json.delivery_external_message_id,$json.delivery_error,$json.status_query_text,$json.status_query_external_message_id] }}"),
         code("Prepare Clarification Retriage", [80,440], """return $input.all().map(item=>{const t=item.json.ticket; const msgId='<telegram-retriage-' + item.json.chat_id + '-' + item.json.message_id + '@maintenance-triage.local>'; return {json:{original_ticket_id:t.id,chat_id:item.json.chat_id,answer_text:item.json.text,external_message_id:'telegram:' + item.json.chat_id + ':' + item.json.message_id,source:'telegram',from_address:'telegram:' + item.json.chat_id,subject:'Clarification for ' + t.ref,body_raw:(t.body_raw || '') + '\\n\\nTenant clarification: ' + item.json.text,received_at:new Date().toISOString(),attachment_paths:[],msg_id:msgId,in_reply_to:null,refs:null}};});"""), execute("Execute Clarification Retriage", [300,440], ENGINE_ID, True), code("Prepare Clarification Merge", [520,440], """const ctx=$(\"Prepare Clarification Retriage\").all(); return ctx.map(item=>({json:{original_ticket_id:item.json.original_ticket_id,child_msg_id:item.json.msg_id,chat_id:item.json.chat_id,body:item.json.answer_text,external_message_id:item.json.external_message_id}}));"""), pg("Postgres Merge Clarification Result", [740,440], merge_clarification, "={{ [$json.original_ticket_id, $json.child_msg_id, $json.chat_id, $json.body, $json.external_message_id] }}"), code("Prepare Clarification Response", [960,440], clarification_response), if_node("Clarification Needs Manager", [1180,380], "={{ Boolean($json.should_notify_manager) }}"), execute("Execute Manager Desk After Clarification", [1400,320], MANAGER_ID), telegram("Telegram Send Clarification Reply", [1400,500], {"id":"stage9TenantTelegram", "name":"maintenance-triage-tenant-telegram-bot"}),
     ]
     connections = {
@@ -401,7 +460,8 @@ claim AS (INSERT INTO triage.vendor_send_attempts (ticket_id,vendor_id,vendor_na
   ON CONFLICT (ticket_id) DO NOTHING RETURNING *),
 updated AS (UPDATE triage.tickets t SET vendor_status='SENDING',selected_vendor_id=c.vendor_id,selected_vendor_name=c.vendor_name,selected_vendor_email=c.vendor_email FROM claim c WHERE t.id=c.ticket_id RETURNING t.*)
 SELECT CASE WHEN EXISTS(SELECT 1 FROM held) THEN 'held' WHEN EXISTS(SELECT 1 FROM claim) THEN 'send' WHEN EXISTS(SELECT 1 FROM candidate) THEN 'already_handled' ELSE 'invalid_vendor' END AS result,
-  (SELECT row_to_json(c) FROM claim c LIMIT 1) AS attempt, (SELECT to_jsonb(t) FROM updated t LIMIT 1) AS ticket;
+  (SELECT row_to_json(c) FROM claim c LIMIT 1) AS attempt, (SELECT to_jsonb(t) FROM updated t LIMIT 1) AS ticket,
+  (SELECT value FROM triage.config WHERE key = 'system_mail') AS system_mail;
 """
     finalize = r"""
 WITH input_values AS (SELECT $1::bigint AS ticket_id, NULLIF($2::text, '') AS message_id, NULLIF($3::text, '') AS error),
@@ -417,7 +477,7 @@ FROM updated u;
 function parse(v) { try { return typeof v === 'string' ? JSON.parse(v) : v; } catch (_) { return null; } }
 function property(ticket) { const match=String(ticket?.body_raw || '').match(/(?:^|\n)Property:\s*([^\n]+)/i); return match?.[1]?.trim() || ''; }
 function emailBody(ticket) { const place=[property(ticket), ticket?.unit_identifier && `Unit ${ticket.unit_identifier}`].filter(Boolean).join(', ') || 'the tenant location'; const summary=String(ticket?.vendor_note || ticket?.issue_summary || 'Maintenance request').trim(); const signals=Array.isArray(ticket?.safety_signals)?ticket.safety_signals.filter(value=>value && value!=='NONE'):[]; const safety=signals.length?`This was reported with a ${signals.map(value=>String(value).replace(/_/g,' ').toLowerCase()).join(', ')} safety concern, so please prioritize it.`:''; return ['Hello,','',`Could you please take a look at ${place}?`,'',summary,safety,'Please let us know whether you can attend and your availability.','','Thank you,','Demo Maintenance Desk'].filter((line,index,all)=>line || (index>0 && index<all.length-1)).join('\n'); }
-return $input.all().map(item => { const row=item.json; const attempt=parse(row.attempt); const ticket=parse(row.ticket); const should=row.result==='send' && attempt && ticket; const place=property(ticket); return {json:{...row,attempt,ticket,should_send:should,chat_id:attempt?.manager_chat_id || '',from_email:'Demo Maintenance Desk <sambhavn8n@gmail.com>',to_email:attempt?.vendor_email || '',email_subject:`Maintenance request${place ? ` - ${place}` : ''}${ticket?.unit_identifier ? `, Unit ${ticket.unit_identifier}` : ''}`,email_body:emailBody(ticket),message_text:'Vendor email is being sent.'}}; });
+return $input.all().map(item => { const row=item.json; const attempt=parse(row.attempt); const ticket=parse(row.ticket); const mail=parse(row.system_mail) || {}; const should=row.result==='send' && attempt && ticket; const place=property(ticket); const prefix=String(mail.vendor_subject_prefix || '[MT-SYSTEM][VENDOR]').trim(); return {json:{...row,attempt,ticket,should_send:should,chat_id:attempt?.manager_chat_id || '',from_email:'Demo Maintenance Desk <sambhavn8n@gmail.com>',to_email:attempt?.vendor_email || '',email_subject:`${prefix} Maintenance request${place ? ` - ${place}` : ''}${ticket?.unit_identifier ? `, Unit ${ticket.unit_identifier}` : ''}`,email_body:emailBody(ticket),message_text:'Vendor email is being sent.'}}; });
 """
     normalize_callback = r"""
 return $input.all().map(item => { const q=item.json.callback_query || item.json; const parts=String(q.data || '').split(':'); return {json:{ticket_id:parts[1] || '',vendor_id:parts[2] || '',actor:q.from?.username ? `manager:${q.from.username}` : 'manager:telegram',manager_chat_id:String(q.message?.chat?.id || ''),manager_message_id:String(q.message?.message_id || ''),callback_query_id:q.id || ''}}; });
@@ -440,7 +500,7 @@ return $input.all().flatMap(item => {
         node("Manager Desk Input", "n8n-nodes-base.executeWorkflowTrigger", 1.2, [-1180,-180], {"inputSource":"passthrough","returnOutput":"allRuns"}),
         node("ManagerTelegramTrigger", "n8n-nodes-base.telegramTrigger", 1.3, [-1180,180], {"updates":["callback_query"],"additionalFields":{}}, {"telegramApi":{"id":"stage1TelegramLocal","name":"maintenance-triage-telegram-bot"}}),
         code("Normalize Manager Callback", [-960,180], normalize_callback), pg("Postgres Claim Vendor Send", [-740,180], claim, "={{ [$json.ticket_id, $json.vendor_id, $json.actor, $json.manager_chat_id, $json.manager_message_id] }}"), code("Prepare Vendor Email", [-520,180], prep_vendor_email), if_node("Should Send Vendor Email", [-300,180], "={{ Boolean($json.should_send) }}"), email("SMTP Send Approved Vendor Email", [-80,100]), code("Attach Vendor Email Result", [140,100], """const ctx=$(\"Prepare Vendor Email\").all().filter(i=>i.json.should_send); return $input.all().map((item,i)=>({json:{...ctx[i].json,email_error:item.json.error || '',smtp_message_id:item.json.messageId || item.json.message_id || ''}}));"""), pg("Postgres Finalize Vendor Send", [360,100], finalize, "={{ [$json.ticket?.id || $json.ticket_id, $json.smtp_message_id || '', $json.email_error || ''] }}"),
-        code("Prepare Tenant Vendor Update", [580,100], """return $input.all().flatMap(item=>{const t=typeof item.json.ticket==='string'?JSON.parse(item.json.ticket):item.json.ticket; return item.json.result==='sent' && t?.tenant_chat_id?[{json:{ticket_id:t.id,chat_id:t.tenant_chat_id,message_text:'We have contacted a maintenance provider. We will update you when we have an arrival time.'}}]:[];});"""), telegram("Telegram Send Tenant Vendor Update", [800,100], {"id":"stage9TenantTelegram","name":"maintenance-triage-tenant-telegram-bot"}), code("Attach Tenant Vendor Update Delivery", [1020,100], """const ctx=$(\"Prepare Tenant Vendor Update\").all(); return $input.all().map((item,i)=>({json:{...ctx[i].json,delivery_error:item.json.error || '',delivery_external_message_id:String(item.json.message_id || item.json.messageId || `telegram:vendor-dispatch:${ctx[i].json.ticket_id}:${Date.now()}`)}}));"""), pg("Postgres Record Tenant Vendor Update", [1240,100], record_tenant_delivery, "={{ [$json.ticket_id,$json.message_text,$json.delivery_external_message_id,$json.delivery_error] }}"),
+        code("Prepare Tenant Vendor Update", [580,100], """return $input.all().flatMap(item=>{const t=typeof item.json.ticket==='string'?JSON.parse(item.json.ticket):item.json.ticket; const summary=String(t?.issue_summary || 'maintenance request').replace(/[.]+$/,''); return item.json.result==='sent' && t?.tenant_chat_id?[{json:{ticket_id:t.id,chat_id:t.tenant_chat_id,message_text:`Update for ${t.ref} (${summary}): We have contacted a maintenance provider. We will update you when we have an arrival time.`}}]:[];});"""), telegram("Telegram Send Tenant Vendor Update", [800,100], {"id":"stage9TenantTelegram","name":"maintenance-triage-tenant-telegram-bot"}), code("Attach Tenant Vendor Update Delivery", [1020,100], """const ctx=$(\"Prepare Tenant Vendor Update\").all(); return $input.all().map((item,i)=>({json:{...ctx[i].json,delivery_error:item.json.error || '',delivery_external_message_id:String(item.json.message_id || item.json.messageId || `telegram:vendor-dispatch:${ctx[i].json.ticket_id}:${Date.now()}`)}}));"""), pg("Postgres Record Tenant Vendor Update", [1240,100], record_tenant_delivery, "={{ [$json.ticket_id,$json.message_text,$json.delivery_external_message_id,$json.delivery_error] }}"),
         code("Prepare Airtable Vendor Send Sync", [580,180], prep_post_send_airtable), airtable("HTTP Airtable Sync Vendor Send", [800,180], "PATCH", "={{ $json.airtable_url }}", "={{ $json.airtable_body }}"),
         pg("Postgres Load Ticket For Manager", [-960,-180], load_ticket, "={{ [$json.ticket_id || $json.id || ''] }}"), code("Prepare Airtable Vendor Lookup", [-740,-180], """const j=$input.all()[0]?.json||{}; const cfg=typeof j.airtable==='string'?JSON.parse(j.airtable):j.airtable||{}; return [{json:{...j,should_fetch:Boolean(cfg.enabled && cfg.base_id),vendor_url:`https://api.airtable.com/v0/${cfg.base_id}/${encodeURIComponent(cfg.vendors_table || 'Vendors')}`}}];"""), if_node("Should Fetch Airtable Vendors", [-520,-180], "={{ $json.should_fetch }}"), airtable("HTTP Load Airtable Vendors", [-300,-260], "GET", "={{ $json.vendor_url }}"), code("Prepare Manager Vendor Alert", [-80,-180], prep_candidates), pg("Postgres Store Vendor Candidates", [140,-180], candidate_query, "={{ [$json.ticket_id, JSON.stringify($json.candidates || [])] }}"), code("Reattach Manager Alert", [360,-180], """return $(\"Prepare Manager Vendor Alert\").all().map(item=>{const j=item.json; return {json:{...j,ticket:{...j.ticket,vendor_status:(j.candidates||[]).length?'AWAITING_VENDOR':'NEEDS_VENDOR_ASSIGNMENT'}}};});"""), if_node("Should Notify Manager", [580,-180], "={{ Boolean($json.should_send_manager) }}"), telegram("Telegram Send Vendor Approval", [800,-260], {"id":"stage1TelegramLocal","name":"maintenance-triage-telegram-bot"}, True),
         code("Prepare Airtable Request Upsert", [580,-60], """return $input.all().map(item=>{const j=item.json; const t=j.ticket||{}; const cfg=j.airtable||{}; const propertyMatch=String(t.body_raw||'').match(/(?:^|\\n)Property:\\s*([^\\n]+)/i); return {json:{...j,should_sync:Boolean(cfg.enabled&&cfg.base_id),airtable_url:`https://api.airtable.com/v0/${cfg.base_id}/${encodeURIComponent(cfg.requests_table||'Requests')}`,airtable_body:{performUpsert:{fieldsToMergeOn:['Reference']},records:[{fields:{'Reference':t.ref||'',Status:t.status||'NEW',Priority:t.priority||'',Source:t.source||'', 'Tenant Name':t.tenant_name||'', 'Tenant Email':t.from_address||t.tenant_contact||'',Property:propertyMatch?.[1]||'',Unit:t.unit_identifier||'',Trade:t.trade||'',Summary:t.issue_summary||t.subject||'', 'Missing Info':JSON.stringify(t.missing_info||[]), 'Human Only':String(Boolean(t.human_only)), 'Vendor Status':t.vendor_status||'', 'Suggested Vendors':(j.candidates||[]).map(v=>v.name).join(', '), 'Telegram Chat ID':t.tenant_chat_id||''}}]}}};});"""), if_node("Should Sync Airtable Request", [800,-60], "={{ Boolean($json.should_sync) }}"), airtable("HTTP Airtable Upsert Request", [1020,-60], "PATCH", "={{ $json.airtable_url }}", "={{ $json.airtable_body }}"), code("Attach Airtable Request Result", [1240,-60], """const ctx=$(\"Prepare Airtable Request Upsert\").all(); return $input.all().map((item,i)=>({json:{ticket_id:ctx[i]?.json.ticket?.id || '',airtable_record_id:item.json.body?.records?.[0]?.id || item.json.records?.[0]?.id || '',sync_error:item.json.error || ''}}));"""), pg("Postgres Store Airtable Request Link", [1460,-60], "UPDATE triage.tickets SET airtable_record_id=NULLIF($2::text,'') WHERE id=$1::bigint AND NULLIF($3::text,'') IS NULL RETURNING id;", "={{ [$json.ticket_id,$json.airtable_record_id || '',$json.sync_error || ''] }}"),

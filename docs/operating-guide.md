@@ -84,7 +84,8 @@ The inactive `Maintenance Triage Demo Tools` workflow is only for rehearsals.
 
 **Verify:** Open the link, start the tenant bot, and confirm it replies with either a
 receipt or the required clarification questions. System-marked onboarding and vendor emails
-are intentionally ignored by IMAP, so they cannot create a loop.
+are intentionally ignored by IMAP, so they cannot create a loop. Both email types use a
+subject beginning `[MT-SYSTEM]`.
 
 ### Direct tenant Telegram request
 
@@ -104,13 +105,14 @@ human-only requests receive the Hold-only manager review alert.
 
 ### Tenant status question
 
-**Do:** In an open tenant conversation, ask "When is someone coming?"
+**Do:** In an open tenant conversation, ask "When will all these issues be resolved?"
 
-**Expect:** Before vendor contact, the bot says the request is escalated to the manager.
-After vendor email succeeds, it says a provider was contacted and an update will follow.
+**Expect:** The bot sends one message listing every open request in the chat. Before vendor
+contact, it says the request is with the manager. After vendor email succeeds, it says a
+provider was contacted and an update will follow.
 
-**Verify:** It must not state or imply an unconfirmed arrival time, and it must not create a
-second request.
+**Verify:** Each request appears once. The bot must not state or imply an unconfirmed
+arrival time, create another request, or send another manager approval message.
 
 ### Manager vendor selection
 
@@ -175,5 +177,5 @@ unit roster, credentials, workflow definitions, and all secrets.
 - Vendor SMTP failure: Airtable and the manager alert show failure. The tenant does not get
   the provider-contacted update.
 - Duplicate vendor selection: Postgres accepts only the first claim for a ticket.
-- IMAP self-email loop: requests with a subject starting `[MT-SYSTEM]` are marked read and
-  discarded before triage.
+- IMAP self-email loop: onboarding and vendor-dispatch emails use a subject starting
+  `[MT-SYSTEM]`; they are marked read and discarded before triage.

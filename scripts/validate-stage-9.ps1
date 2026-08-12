@@ -16,6 +16,7 @@ try {
     python .\scripts\build-stage-4-workflows.py | Out-Host
     python .\scripts\build-stage-9-workflows.py | Out-Host
     @("maintenance-triage-core.json","maintenance-triage-tenant-intake.json","maintenance-triage-tenant-telegram.json","maintenance-triage-manager-desk.json","maintenance-triage-operations.json","maintenance-triage-demo-tools.json") | ForEach-Object { Get-Content -Raw "workflows\$_" | ConvertFrom-Json | Out-Null }
+    node .\scripts\test-stage-9-conversation-routing.js | Out-Host
     docker compose config | Out-Null
     .\scripts\apply-stage-4.ps1 | Out-Host
     .\scripts\apply-stage-9.ps1
@@ -40,6 +41,7 @@ try {
     if(-not ($tenantWorkflow.nodes | Where-Object { $_.name -eq 'Reattach Tenant Event Context' })) { throw "Tenant Telegram database lookup drops its event context." }
     if($tenantWorkflow.connections.'Postgres Load Tenant Chat'.main[0][0].node -ne 'Reattach Tenant Event Context') { throw "Tenant Telegram context is not restored before routing." }
     $tenantRoute = $tenantWorkflow.nodes | Where-Object { $_.name -eq 'Route Tenant Message' } | Select-Object -First 1
+    if($tenantRoute.parameters.jsCode -notmatch 'isStatusQuestion' -or $tenantRoute.parameters.jsCode -notmatch 'resolved') { throw "Tenant status routing does not cover conversational completion questions." }
     if($tenantRoute.parameters.jsCode -match 'clarification_round\s*\|\|\s*0\)\s*<\s*2') { throw "Tenant clarification still has a two-round cap." }
     $tenantReceipt = $tenantWorkflow.nodes | Where-Object { $_.name -eq 'Prepare New Ticket Tenant Reply' } | Select-Object -First 1
     $clarificationResponse = $tenantWorkflow.nodes | Where-Object { $_.name -eq 'Prepare Clarification Response' } | Select-Object -First 1
@@ -59,6 +61,7 @@ try {
     if($newTicketPayload.parameters.jsCode -notmatch 'tenant_email') { throw "Dedicated tenant Telegram does not preserve its roster identity." }
     $vendorEmail = $managerWorkflow.nodes | Where-Object { $_.name -eq 'Prepare Vendor Email' } | Select-Object -First 1
     if($vendorEmail.parameters.jsCode -notmatch 'Could you please take a look at') { throw "Vendor email body is not the natural property-office format." }
+    if($vendorEmail.parameters.jsCode -notmatch 'vendor_subject_prefix' -or $vendorEmail.parameters.jsCode -notmatch '\[MT-SYSTEM\]\[VENDOR\]') { throw "Vendor email does not carry the shared-mailbox loop marker." }
     if((Get-Content -Raw scripts\setup-stage-9-airtable.py) -notmatch 'PET_ON_SITE') { throw "New Airtable demo tables omit the PET_ON_SITE Missing Info option." }
     Write-Host "OK: manager keyboard variants and direct Telegram intake"
     if($LivePrerequisites) {

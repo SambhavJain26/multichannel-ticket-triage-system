@@ -59,16 +59,17 @@ The tenant bot can do three limited things on its own:
 
 - confirm that a request was received;
 - ask deterministic questions needed to classify it safely;
-- answer status questions truthfully, for example that the request is with the manager or
-  that a provider has been contacted.
+- answer status questions truthfully in one consolidated message across the chat's open
+  requests, identifying each request and whether it is with the manager or a provider has
+  been contacted.
 
 It does not make up an ETA, promise that help will arrive soon, choose a vendor, or send a
 free-form message that needs management judgment. Legal, accommodation, unreadable, and
 otherwise sensitive cases stay with a person.
 
-If a tenant asks, "When is someone coming?", the bot says either that the request is with
-the manager or that a provider has been contacted and an update will follow. It does not
-invent a time.
+If a tenant asks, "When will all these issues be resolved?", the bot lists each open
+request once with its current status. It does not create another request, notify the
+manager again, or invent a completion time.
 
 ## What the manager sees
 
