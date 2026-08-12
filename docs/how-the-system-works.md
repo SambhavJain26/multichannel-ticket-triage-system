@@ -38,7 +38,9 @@ opens a separate request after an existing conversation.
    three questions in a round. It treats the active email or Telegram chat as the tenant
    contact channel, so it does not ask for a phone number. The dedicated tenant bot also
    already knows the property and unit, so it asks only about the issue or maintenance
-   access details. It does not send a vendor email while details are missing.
+   access details. A vague new issue does not alert the manager until it is sufficiently
+   described; the classifier sees the accumulated conversation each time. It does not send
+   a vendor email while details are missing.
    Sensitive or human-only cases go to manager review instead.
 4. For a complete maintenance request, it selects up to three active vendors whose trade
    and property coverage match the request.

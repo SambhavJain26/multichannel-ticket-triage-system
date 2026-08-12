@@ -100,7 +100,7 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "function parse(v, fallback) { try { return typeof v === \"string\" ? JSON.parse(v) : (v || fallback); } catch (_) { return fallback; } }\nfunction questions(missing) { const wanted = new Set((parse(missing, []) || []).filter(value => ![\"CONTACT\", \"UNIT\", \"PROPERTY\"].includes(value))); const result = []; if (wanted.delete(\"ISSUE_DETAIL\")) result.push(\"What is happening, and is it getting worse?\"); const q = {ACCESS_PERMISSION:\"Can maintenance enter if you are away?\", PET_ON_SITE:\"Are there any pets in the unit?\", ONSET_TIME:\"When did this start?\"}; for (const key of [\"ACCESS_PERMISSION\", \"PET_ON_SITE\", \"ONSET_TIME\"]) if (wanted.has(key)) result.push(q[key]); return result.slice(0, 3); }\nreturn $input.all().map((item) => { const j = item.json; const qs = questions(j.missing_info); const text = j.human_only ? `Request ${j.ref} was received. A manager needs to review it and will update you here.` : (qs.length ? `Request ${j.ref} was received. ${qs.join(\" \")}` : `Request ${j.ref} was received. We will keep you updated here.`); return {json: {...j, message_text: text, intent: qs.length ? \"clarification\" : \"receipt\"}}; });"
+        "jsCode": "function parse(v, fallback) { try { return typeof v === \"string\" ? JSON.parse(v) : (v || fallback); } catch (_) { return fallback; } }\nfunction questions(missing) { const wanted = new Set((parse(missing, []) || []).filter(value => ![\"CONTACT\", \"UNIT\", \"PROPERTY\"].includes(value))); const result = []; if (wanted.delete(\"ISSUE_DETAIL\")) result.push(\"What is happening, and is it getting worse?\"); const q = {ACCESS_PERMISSION:\"Can maintenance enter if you are away?\", PET_ON_SITE:\"Are there any pets in the unit?\", ONSET_TIME:\"When did this start?\"}; for (const key of [\"ACCESS_PERMISSION\", \"PET_ON_SITE\", \"ONSET_TIME\"]) if (wanted.has(key)) result.push(q[key]); return result.slice(0, 3); }\nreturn $input.all().map((item) => { const j = item.json; const qs = questions(j.missing_info); const text = j.human_only ? `Request ${j.ref} was received. A manager needs to review it and will update you here.` : (qs.length ? `Request ${j.ref} was received. ${qs.join(\" \")}` : (j.priority === \"EMERGENCY\" ? `Request ${j.ref} was received and escalated to the manager as an emergency. We will update you here.` : `Request ${j.ref} was received. We will keep you updated here.`)); return {json: {...j, message_text: text, intent: qs.length ? \"clarification\" : \"receipt\"}}; });"
       },
       "id": "prepare-pairing-receipt",
       "name": "Prepare Pairing Receipt",
@@ -405,6 +405,53 @@
     },
     {
       "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "function list(value){try{return Array.isArray(value)?value:(typeof value==='string'?JSON.parse(value):[]);}catch(_){return [];}} return $input.all().map(item=>{const j=item.json; const missing=list(j.missing_info); return {json:{...j,should_notify_manager:Boolean(j.human_only || missing.length===0)}};});"
+      },
+      "id": "decide-new-ticket-manager-notification",
+      "name": "Decide New Ticket Manager Notification",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        -60
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "new-ticket-needs-manager-condition",
+              "leftValue": "={{ Boolean($json.should_notify_manager) }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "new-ticket-needs-manager",
+      "name": "New Ticket Needs Manager",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1180,
+        -60
+      ]
+    },
+    {
+      "parameters": {
         "source": "database",
         "workflowId": "mt-manager-desk-stage-9",
         "mode": "each",
@@ -417,7 +464,7 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1,
       "position": [
-        960,
+        1400,
         -60
       ]
     },
@@ -425,7 +472,7 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "function parse(v, fallback) { try { return typeof v === \"string\" ? JSON.parse(v) : (v || fallback); } catch (_) { return fallback; } }\nfunction questions(missing) { const wanted = new Set((parse(missing, []) || []).filter(value => ![\"CONTACT\", \"UNIT\", \"PROPERTY\"].includes(value))); const result = []; if (wanted.delete(\"ISSUE_DETAIL\")) result.push(\"What is happening, and is it getting worse?\"); const q = {ACCESS_PERMISSION:\"Can maintenance enter if you are away?\", PET_ON_SITE:\"Are there any pets in the unit?\", ONSET_TIME:\"When did this start?\"}; for (const key of [\"ACCESS_PERMISSION\", \"PET_ON_SITE\", \"ONSET_TIME\"]) if (wanted.has(key)) result.push(q[key]); return result.slice(0, 3); }\nreturn $input.all().map((item) => { const j = item.json; const qs = questions(j.missing_info); const text = j.human_only ? `Request ${j.ref} was received. A manager needs to review it and will update you here.` : (qs.length ? `Request ${j.ref} was received. ${qs.join(\" \")}` : `Request ${j.ref} was received. We will keep you updated here.`); return {json: {...j, message_text: text, intent: qs.length ? \"clarification\" : \"receipt\"}}; });"
+        "jsCode": "function parse(v, fallback) { try { return typeof v === \"string\" ? JSON.parse(v) : (v || fallback); } catch (_) { return fallback; } }\nfunction questions(missing) { const wanted = new Set((parse(missing, []) || []).filter(value => ![\"CONTACT\", \"UNIT\", \"PROPERTY\"].includes(value))); const result = []; if (wanted.delete(\"ISSUE_DETAIL\")) result.push(\"What is happening, and is it getting worse?\"); const q = {ACCESS_PERMISSION:\"Can maintenance enter if you are away?\", PET_ON_SITE:\"Are there any pets in the unit?\", ONSET_TIME:\"When did this start?\"}; for (const key of [\"ACCESS_PERMISSION\", \"PET_ON_SITE\", \"ONSET_TIME\"]) if (wanted.has(key)) result.push(q[key]); return result.slice(0, 3); }\nreturn $input.all().map((item) => { const j = item.json; const qs = questions(j.missing_info); const text = j.human_only ? `Request ${j.ref} was received. A manager needs to review it and will update you here.` : (qs.length ? `Request ${j.ref} was received. ${qs.join(\" \")}` : (j.priority === \"EMERGENCY\" ? `Request ${j.ref} was received and escalated to the manager as an emergency. We will update you here.` : `Request ${j.ref} was received. We will keep you updated here.`)); return {json: {...j, message_text: text, intent: qs.length ? \"clarification\" : \"receipt\"}}; });"
       },
       "id": "prepare-new-ticket-tenant-reply",
       "name": "Prepare New Ticket Tenant Reply",
@@ -666,7 +713,7 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "function parse(v, fallback) { try { return typeof v === 'string' ? JSON.parse(v) : (v || fallback); } catch (_) { return fallback; } }\nfunction questions(missing) { const wanted=new Set((parse(missing,[]) || []).filter(value=>![\"CONTACT\",\"UNIT\",\"PROPERTY\"].includes(value))); const result=[]; if(wanted.delete(\"ISSUE_DETAIL\")) result.push(\"What is happening, and is it getting worse?\"); const q={ACCESS_PERMISSION:'Can maintenance enter if you are away?',PET_ON_SITE:'Are there any pets in the unit?',ONSET_TIME:'When did this start?'}; for(const key of ['ACCESS_PERMISSION','PET_ON_SITE','ONSET_TIME']) if(wanted.has(key)) result.push(q[key]); return result.slice(0,3); }\nreturn $input.all().map(item=>{const j=item.json; const qs=questions(j.missing_info); const hasClarificationPrompt=qs.length>0; const readyForVendor=!hasClarificationPrompt && !j.human_only && j.priority!=='NEEDS_REVIEW'; const needsManager=!hasClarificationPrompt && !readyForVendor; const text=readyForVendor?`Thank you. Your request ${j.ref} is now being reviewed for the right maintenance provider.`:(needsManager?`Thank you. A manager needs to review request ${j.ref} and will update you here.`:`Thank you. ${qs.join(' ')}`); return {json:{...j,should_notify_manager:readyForVendor || needsManager,message_text:text}};});"
+        "jsCode": "function parse(v, fallback) { try { return typeof v === 'string' ? JSON.parse(v) : (v || fallback); } catch (_) { return fallback; } }\nfunction questions(missing) { const wanted=new Set((parse(missing,[]) || []).filter(value=>![\"CONTACT\",\"UNIT\",\"PROPERTY\"].includes(value))); const result=[]; if(wanted.delete(\"ISSUE_DETAIL\")) result.push(\"What is happening, and is it getting worse?\"); const q={ACCESS_PERMISSION:'Can maintenance enter if you are away?',PET_ON_SITE:'Are there any pets in the unit?',ONSET_TIME:'When did this start?'}; for(const key of ['ACCESS_PERMISSION','PET_ON_SITE','ONSET_TIME']) if(wanted.has(key)) result.push(q[key]); return result.slice(0,3); }\nreturn $input.all().map(item=>{const j=item.json; const qs=questions(j.missing_info); const hasClarificationPrompt=qs.length>0; const readyForVendor=!hasClarificationPrompt && !j.human_only && j.priority!=='NEEDS_REVIEW'; const needsManager=!hasClarificationPrompt && !readyForVendor; const text=readyForVendor?(j.priority==='EMERGENCY'?`Thank you. We have escalated request ${j.ref} to the manager as an emergency.`:`Thank you. Your request ${j.ref} is now being reviewed for the right maintenance provider.`):(needsManager?`Thank you. A manager needs to review request ${j.ref} and will update you here.`:`Thank you. ${qs.join(' ')}`); return {json:{...j,should_notify_manager:readyForVendor || needsManager,message_text:text}};});"
       },
       "id": "prepare-clarification-response",
       "name": "Prepare Clarification Response",
@@ -939,7 +986,7 @@
       "main": [
         [
           {
-            "node": "Execute Manager Desk For Tenant",
+            "node": "Decide New Ticket Manager Notification",
             "type": "main",
             "index": 0
           },
@@ -949,6 +996,29 @@
             "index": 0
           }
         ]
+      ]
+    },
+    "Decide New Ticket Manager Notification": {
+      "main": [
+        [
+          {
+            "node": "New Ticket Needs Manager",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "New Ticket Needs Manager": {
+      "main": [
+        [
+          {
+            "node": "Execute Manager Desk For Tenant",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
       ]
     },
     "Prepare New Ticket Tenant Reply": {

@@ -487,6 +487,19 @@ def build_core():
       if (!right) return left;
       return PRIORITY_RANK[left] >= PRIORITY_RANK[right] ? left : right;
     }
+    function labeledValue(text, label) {
+      const match = String(text || "").match(new RegExp(`(?:^|\\n)${label}:\\s*([^\\n]+)`, "i"));
+      return match ? match[1].trim() : "";
+    }
+    function safetyTrade(signals) {
+      const values = new Set(signals || []);
+      if (values.has("ELECTRICAL")) return "ELECTRICAL";
+      if (values.has("FLOOD") || values.has("SEWAGE") || values.has("NO_WATER")) return "PLUMBING";
+      if (values.has("NO_HEAT") || values.has("NO_COOLING")) return "HVAC";
+      if (values.has("SECURITY")) return "LOCKS_SECURITY";
+      if (values.has("GAS") || values.has("CARBON_MONOXIDE") || values.has("SMOKE_FIRE")) return "GENERAL";
+      return "";
+    }
     function lowInformation(model, message, mergedSignals) {
       const missing = Array.isArray(model?.missing_info) ? model.missing_info : [];
       const text = String(message).toLowerCase();
@@ -540,14 +553,28 @@ def build_core():
       let priorityReason = reviewReason || "";
 
       if (modelJson) {
-        // Every supported intake path retains a reply channel; do not ask tenants for a phone number.
-        if (String(j.from_address || "").trim() && Array.isArray(modelJson.missing_info)) {
-          modelJson = {...modelJson, missing_info: modelJson.missing_info.filter(value => value !== "CONTACT")};
-        }
+        // Trusted intake context fills profile fields when the model leaves them out.
+        const profileText = j.body_raw || j.body_clean || "";
+        const knownTenant = labeledValue(profileText, "Tenant");
+        const knownProperty = labeledValue(profileText, "Property");
+        const knownUnit = labeledValue(profileText, "Unit");
+        const knownContact = labeledValue(profileText, "Contact") || String(j.from_address || "").trim();
+        const missing = Array.isArray(modelJson.missing_info) ? modelJson.missing_info : [];
+        modelJson = {
+          ...modelJson,
+          tenant_name: knownTenant || modelJson.tenant_name,
+          tenant_contact: knownContact || modelJson.tenant_contact,
+          unit_identifier: knownUnit || modelJson.unit_identifier,
+          missing_info: missing.filter(value => value !== "CONTACT" && !(knownUnit && value === "UNIT") && !(knownProperty && value === "PROPERTY")),
+        };
         const modelSignals = normalizeSignals(modelJson.safety_signals);
         const merged = new Set(modelSignals.filter(v => v !== "NONE"));
         for (const sig of ruleSignals) merged.add(sig);
         mergedSignals = merged.size ? [...merged].sort() : ["NONE"];
+        const fallbackTrade = safetyTrade(mergedSignals);
+        if (fallbackTrade && (!modelJson.trade || modelJson.trade === "UNKNOWN")) {
+          modelJson = {...modelJson, trade: fallbackTrade};
+        }
         priority = maxPriority(modelJson.priority, ruleSignals.length ? "EMERGENCY" : null);
         if (modelJson.confidence === "LOW" && mergedSignals[0] !== "NONE") {
           priority = "NEEDS_REVIEW";

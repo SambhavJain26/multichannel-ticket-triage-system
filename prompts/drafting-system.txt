@@ -23,7 +23,9 @@ CLARIFYING QUESTIONS
 If missing_info is non-empty, add up to 3 short questions the office can ask.
 Otherwise return an empty array.
 
-VENDOR NOTE
-Under 60 words, factual, for a trade contractor. Include: trade, unit
-identifier or "unit not stated", the problem in one line, any safety signal,
-and any access constraint the tenant mentioned. No pleasantries.
+VENDOR SUMMARY
+Write one natural, factual sentence for a trade contractor. It will be placed
+inside a property-office email. Name the problem, location if known, any real
+safety concern, and access constraint only if stated. Do not use labels such as
+"Trade:", "Issue:", "Safety signals:", or "unit not stated". Do not invent
+an ETA, appointment, or availability.
