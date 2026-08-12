@@ -973,7 +973,7 @@ def build_core():
             ]
         },
     }
-    return workflow_base(CORE_ID, "Maintenance Triage Core", nodes, connections)
+    return workflow_base(CORE_ID, "Maintenance Triage Engine", nodes, connections)
 
 
 def fixture_payload(stem: str) -> dict:

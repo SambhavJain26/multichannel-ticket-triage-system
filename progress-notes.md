@@ -4,7 +4,7 @@ Read this file first at the start of every session.
 
 ## Current Status
 
-Stage 8 demo hardening is implemented and verified. Docker Compose runs local n8n, Postgres, and GreenMail. The `triage` Postgres schema, config seed, 30-fixture corpus, Stage 3 OpenAI harness, Stage 4 reusable core workflow, Stage 5 read-only board workflow, Stage 6 alert/approval workflows, Stage 7 email/form/fixture/import connectors, and Stage 8 digest/heartbeat workflows exist. Live Gmail SMTP, Gmail IMAP ingestion, roster matching, board rendering, real Telegram alert dispatch, digest email, and operator heartbeat have passed through the current local/tunnel setup. Tunnel URL, chat ID, and mailbox secrets remain local configuration and are not committed.
+Stage 9 Telegram/Airtable implementation is structurally complete. Docker Compose runs local n8n, Postgres, and GreenMail. The build now includes tenant Telegram conversation state, pairing links, Airtable roster/workspace tooling, vendor-send idempotency, a renamed Triage Engine, and five generated consolidated workflows. Live Stage 9 publication is intentionally pending a separate tenant Telegram bot credential, Airtable credential/base, and current public HTTPS callback URL. Existing Stage 8 live Gmail/manager-Telegram flows remain in place until `import-stage-9-workflows.ps1 -PublishLiveTriggers -CleanupLegacy` is run.
 
 The staged plan is saved in `build-plan.md`.
 
@@ -20,6 +20,7 @@ The staged plan is saved in `build-plan.md`.
 | 6 | Alerts, Approval Gate, and Outbound Email | Implemented | Hybrid validation passed: mock Telegram dispatch/callback behavior plus real GreenMail SMTP approved reply. Live Telegram alert, approve callback, message edit, and GreenMail delivery passed once through a Cloudflare Tunnel. |
 | 7 | Ingestion Paths and Follow-Up Importer | Implemented and live-tested | Real Gmail/Workspace IMAP+SMTP credential path is active. Fixture, batch-import, live email, roster matching, board, and real Telegram alert paths verified. |
 | 8 | Digest, Aging, Heartbeat, and Demo Hardening | Implemented and verified | Daily digest and operator heartbeat workflows are active but gated off by config defaults. Clean reset/snapshot/restore, five-run fixture rehearsal, live digest/heartbeat smoke, and demo collateral are in place. |
+| 9 | Telegram Conversation, Airtable, and Vendor Approval | Implemented structurally | Migration, workflow generation, Airtable bootstrap, import/cleanup, reset/snapshot, validation, and operating docs exist. Awaiting tenant bot and Airtable credentials for import/publish and live smoke checks. |
 
 ## Planning Decisions Already Made
 
@@ -39,6 +40,7 @@ The staged plan is saved in `build-plan.md`.
 - Default model is `gpt-5-nano`. Fallback model is `gpt-5.6-luna` if nano misses safety cases, under-escalates too often, has unstable schema output, or produces weak drafts. Use standard pricing for live workflow estimates; batch pricing is only relevant for offline batch harness/report runs.
 - Early approved outbound replies should go to controlled test inboxes until the approval gate and double-approve guard are verified.
 - Stage 7 real-mailbox path uses one Gmail/Workspace mailbox with two n8n credentials: `maintenance-triage-demo-imap-domain` and `maintenance-triage-demo-smtp-domain`. The app password must be entered locally, not committed or pasted into chat.
+- Stage 9 uses a separate tenant Telegram bot while retaining the existing manager Telegram bot. Airtable is the manager-facing workspace and vendor/tenant roster source; Postgres remains the durable source for ticket, conversation, and one-send-only state. Email/form intake sends only a `[MT-SYSTEM]` Telegram onboarding email. The IMAP path ignores this prefix so a shared Gmail test mailbox cannot loop its own system messages back into triage.
 
 ## Open Questions Before Stage 1
 
@@ -72,7 +74,7 @@ The staged plan is saved in `build-plan.md`.
 - `AGENTS.md` was rewritten using lessons from a similar local n8n AI automation project, adapted for maintenance triage: read order, local service rules, n8n workflow gotchas, fixture expectations, security rules, and completion/documentation discipline.
 - User requested a durable rule to commit and push after every completed task. `AGENTS.md` now requires committing and pushing to `main` after task completion, while still avoiding secrets/local data/generated temp output.
 - User split the two demo docs by audience and renamed `docs/demo-script.md` to `docs/operating-guide.md` (no repo file referenced the old name, so the rename was a plain delete-and-recreate). `docs/how-the-system-works.md` stays client-facing: plain language throughout, but still names the specific automation, database, AI model, and channel responsible for each behavior, per the user's instruction that "non-technical does not mean hiding what is actually being used." `docs/operating-guide.md` is the operator's own reference: every capability written as Do / Expect / Verify, UI-first, with a script or a direct database command used only where n8n's own interface has no screen for the task, for example toggling `digest.enabled`/`heartbeat.enabled` or resetting demo state, both called out explicitly with the reason no UI path exists.
-- Stage 9 note carried forward into the rewritten docs: neither doc mentions Stage 9 or a text-message channel, since Stage 9 was fully reverted. Both state plainly that email is the only outbound tenant channel today.
+- Stage 9 replaced the custom board for the manager demo with Airtable and changes tenant follow-up from email threading to a separate tenant Telegram bot. The generated tenant intake, tenant conversation, manager desk, operations, and inactive demo-tools workflows are not published until local Airtable/tenant-bot credentials and HTTPS callbacks are configured. The pairing link intentionally has no production identity proof because this is a demo-only Telegram substitute for SMS.
 
 ## Verification Log
 
@@ -118,6 +120,7 @@ The staged plan is saved in `build-plan.md`.
 - 2026-08-01: Ran `.\scripts\run-stage-8-rehearsal.ps1 -Runs 5`; it passed after the Stage 7 `test_mode` propagation fix and Stage 4 deterministic boundary fixes. The rehearsal covered 30 total live-demo fixture tickets across five clean runs, 30/30 expected priorities, 0 real Telegram sends in fixture mode, 2 expected safety overrides per run, roster display checks, and board HTTP 200.
 - 2026-08-01: Ran `.\scripts\validate-stage-8.ps1 -LiveNotifications`; it passed. Gmail SMTP accepted one digest email to the configured demo/operator mailbox, the operator Telegram heartbeat returned message id `16`, and the immediate second heartbeat run was skipped by repeat suppression. The validation then disabled both config gates again.
 - 2026-08-01: Final Stage 8 cleanup removed the temporary Stage 4 driver workflow from n8n again. Current local n8n has 13 active main workflows and 5 required `maintenance-triage-*` credentials. Local demo state was reset to 0 tickets, `triage.config.digest.enabled=false`, `triage.config.heartbeat.enabled=false`, saved ignored snapshot `data/demo-snapshots/clean.sql`, and board HTTP 200 empty state.
+- 2026-08-12: Implemented Stage 9 structural support: `008-stage-9-telegram-airtable.sql`, tenant pairing/chat/message/vendor-send tables, source-safe Telegram ticket support, Airtable bootstrap/configuration tooling, five generated workflow exports, an inactive six-fixture demo-tools workflow, Stage 9 reset/snapshot/restore/rehearsal/validation scripts, and updated operating/client docs. `validate-stage-9.ps1` passed twice, including Compose, generated JSON, schema, configuration, and a transaction-rolled-back pairing/message/vendor-candidate contract check. The Stage 9 reset/snapshot/restore smoke passed and left local operational state at 0 tickets/messages/vendor attempts. Live import/publication and real Gmail/Telegram/Airtable smoke are pending creation of the separate tenant Telegram and Airtable n8n credentials.
 
 ## Outstanding Risks To Recheck During Build
 

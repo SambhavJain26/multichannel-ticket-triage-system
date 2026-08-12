@@ -1,6 +1,6 @@
 {
   "id": "maintenance-triage-core-stage-4",
-  "name": "Maintenance Triage Core",
+  "name": "Maintenance Triage Engine",
   "active": false,
   "nodes": [
     {

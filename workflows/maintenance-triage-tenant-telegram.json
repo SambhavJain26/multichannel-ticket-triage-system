@@ -1,0 +1,931 @@
+{
+  "id": "mt-tenant-telegram-stage-9",
+  "name": "Maintenance Tenant Telegram",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "id": "tenanttelegramtrigger",
+      "name": "TenantTelegramTrigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -1020,
+        0
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "stage9TenantTelegram",
+          "name": "maintenance-triage-tenant-telegram-bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "return $input.all().map((item) => { const u = item.json.message || item.json; const text = String(u.text || \"\").trim(); const match = text.match(/^\\/start\\s+([a-zA-Z0-9_-]+)$/); return {json: {chat_id: String(u.chat?.id || \"\"), user_id: String(u.from?.id || \"\"), username: u.from?.username || \"\", text, message_id: String(u.message_id || \"\"), pairing_token: match?.[1] || \"\", is_pairing: Boolean(match), is_new_command: /^\\/new\\b/i.test(text)}}; });"
+      },
+      "id": "normalize-tenant-telegram-event",
+      "name": "Normalize Tenant Telegram Event",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -800,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "is-pairing-start-condition",
+              "leftValue": "={{ $json.is_pairing }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "is-pairing-start",
+      "name": "Is Pairing Start",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -580,
+        -100
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "database",
+        "operation": "executeQuery",
+        "query": "WITH input_values AS (SELECT $1::text AS token, $2::text AS chat_id, NULLIF($3::text, '') AS user_id, NULLIF($4::text, '') AS username),\nclaimed AS (\n  UPDATE triage.tenant_pairing_tokens p SET consumed_at = now(), consumed_chat_id = i.chat_id\n  FROM input_values i WHERE p.token = i.token AND p.consumed_at IS NULL AND p.expires_at > now() RETURNING p.ticket_id, p.tenant_email\n), chat AS (\n  INSERT INTO triage.tenant_chats (telegram_chat_id, telegram_user_id, telegram_username, tenant_email, active_ticket_id)\n  SELECT i.chat_id, i.user_id, i.username, c.tenant_email, c.ticket_id FROM claimed c CROSS JOIN input_values i\n  ON CONFLICT (telegram_chat_id) DO UPDATE SET active_ticket_id = EXCLUDED.active_ticket_id, tenant_email = EXCLUDED.tenant_email, updated_at = now()\n  RETURNING *\n)\nUPDATE triage.tickets t SET tenant_chat_id = c.telegram_chat_id FROM chat c WHERE t.id = c.active_ticket_id\nRETURNING t.id AS ticket_id, t.ref, t.priority, t.missing_info, t.human_only, t.vendor_status, c.telegram_chat_id AS chat_id;",
+        "options": {
+          "queryReplacement": "={{ [$json.pairing_token, $json.chat_id, $json.user_id, $json.username] }}"
+        }
+      },
+      "id": "postgres-claim-pairing-token",
+      "name": "Postgres Claim Pairing Token",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -360,
+        -180
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "stage1PgLocal",
+          "name": "maintenance-triage-postgres-local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "function parse(v, fallback) { try { return typeof v === \"string\" ? JSON.parse(v) : (v || fallback); } catch (_) { return fallback; } }\nfunction questions(missing) { const q = {UNIT:\"Which unit and property is this for?\", PROPERTY:\"Which property is this at?\", CONTACT:\"What is the best contact number?\", ACCESS_PERMISSION:\"Can maintenance enter if you are away?\", ISSUE_DETAIL:\"Please describe what is happening, where it is happening, and whether it is getting worse.\", ONSET_TIME:\"When did this start?\"}; return (parse(missing, []) || []).filter(x => q[x]).slice(0,3).map(x => q[x]); }\nreturn $input.all().map((item) => { const j = item.json; const qs = questions(j.missing_info); const text = j.human_only ? `Request ${j.ref} was received. A manager needs to review it and will update you here.` : (qs.length ? `Request ${j.ref} was received. ${qs.join(\" \")}` : `Request ${j.ref} was received. We will keep you updated here.`); return {json: {...j, message_text: text, intent: qs.length ? \"clarification\" : \"receipt\"}}; });"
+      },
+      "id": "prepare-pairing-receipt",
+      "name": "Prepare Pairing Receipt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -140,
+        -180
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $json.chat_id }}",
+        "text": "={{ $json.message_text }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "disable_web_page_preview": true,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "telegram-send-pairing-receipt",
+      "name": "Telegram Send Pairing Receipt",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        80,
+        -180
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "stage9TenantTelegram",
+          "name": "maintenance-triage-tenant-telegram-bot"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "resource": "database",
+        "operation": "executeQuery",
+        "query": "SELECT c.telegram_chat_id AS chat_id, c.active_ticket_id, to_jsonb(t) AS ticket\nFROM triage.tenant_chats c LEFT JOIN triage.tickets t ON t.id = c.active_ticket_id\nWHERE c.telegram_chat_id = $1::text;",
+        "options": {
+          "queryReplacement": "={{ [$json.chat_id] }}"
+        }
+      },
+      "id": "postgres-load-tenant-chat",
+      "name": "Postgres Load Tenant Chat",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -580,
+        120
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "stage1PgLocal",
+          "name": "maintenance-triage-postgres-local"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "function parse(v) { try { return typeof v === \"string\" ? JSON.parse(v) : v; } catch (_) { return null; } }\nreturn $input.all().map((item) => { const j = item.json; const ticket = parse(j.ticket); const status = /\\b(when|what time|how soon).{0,30}\\b(arrive|coming|help|someone)\\b/i.test(j.text); let route = \"new\"; if (j.is_new_command) route = \"new_command\"; else if (ticket && status) route = \"status\"; else if (ticket && Number(ticket.clarification_round || 0) < 2 && Array.isArray(ticket.missing_info) && ticket.missing_info.length) route = \"clarification\"; return {json: {...j, ticket, route}}; });"
+      },
+      "id": "route-tenant-message",
+      "name": "Route Tenant Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -360,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "rules",
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.route }}",
+                    "rightValue": "new",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.route }}",
+                    "rightValue": "new_command",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.route }}",
+                    "rightValue": "status",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.route }}",
+                    "rightValue": "clarification",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "tenant-conversation-route",
+      "name": "Tenant Conversation Route",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -140,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "return $input.all().map(item => ({json:{source:'telegram',from_address:'telegram:' + item.json.chat_id,subject:'Telegram maintenance request',body_raw:item.json.text,received_at:new Date().toISOString(),attachment_paths:[],msg_id:'<telegram-' + item.json.chat_id + '-' + item.json.message_id + '@maintenance-triage.local>',in_reply_to:null,refs:null,tenant_chat_id:item.json.chat_id}}));"
+      },
+      "id": "prepare-new-ticket-payload",
+      "name": "Prepare New Ticket Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        80,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "source": "database",
+        "workflowId": "maintenance-triage-core-stage-4",
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "execute-triage-engine-for-tenant",
+      "name": "Execute Triage Engine For Tenant",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [
+        300,
+        0
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const ctx=$(\"Prepare New Ticket Payload\").all(); return ctx.map(item=>({json:{chat_id:item.json.tenant_chat_id,msg_id:item.json.msg_id}}));"
+      },
+      "id": "prepare-new-ticket-link",
+      "name": "Prepare New Ticket Link",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        520,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "database",
+        "operation": "executeQuery",
+        "query": "WITH input_values AS (SELECT $1::text AS chat_id, $2::text AS msg_id), ticket AS (\n  SELECT * FROM triage.tickets WHERE msg_id = (SELECT msg_id FROM input_values) ORDER BY id DESC LIMIT 1\n), upsert_chat AS (\n  INSERT INTO triage.tenant_chats (telegram_chat_id, active_ticket_id) SELECT chat_id, id FROM input_values CROSS JOIN ticket\n  ON CONFLICT (telegram_chat_id) DO UPDATE SET active_ticket_id = EXCLUDED.active_ticket_id, updated_at = now() RETURNING *\n), linked AS (UPDATE triage.tickets SET tenant_chat_id = (SELECT telegram_chat_id FROM upsert_chat) WHERE id = (SELECT id FROM ticket) RETURNING *)\nINSERT INTO triage.ticket_messages (ticket_id, channel, direction, intent, body, external_message_id, delivery_state)\nSELECT id, 'telegram', 'inbound', 'request', body_clean, msg_id, 'RECORDED' FROM linked\nON CONFLICT (channel, direction, external_message_id) DO NOTHING\nRETURNING ticket_id, (SELECT ref FROM linked) AS ref, (SELECT priority FROM linked) AS priority, (SELECT missing_info FROM linked) AS missing_info, (SELECT human_only FROM linked) AS human_only, (SELECT vendor_status FROM linked) AS vendor_status, (SELECT tenant_chat_id FROM linked) AS chat_id;",
+        "options": {
+          "queryReplacement": "={{ [$json.chat_id, $json.msg_id] }}"
+        }
+      },
+      "id": "postgres-link-new-tenant-ticket",
+      "name": "Postgres Link New Tenant Ticket",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        740,
+        0
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "stage1PgLocal",
+          "name": "maintenance-triage-postgres-local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "source": "database",
+        "workflowId": "mt-manager-desk-stage-9",
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "execute-manager-desk-for-tenant",
+      "name": "Execute Manager Desk For Tenant",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [
+        960,
+        -60
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "function parse(v, fallback) { try { return typeof v === \"string\" ? JSON.parse(v) : (v || fallback); } catch (_) { return fallback; } }\nfunction questions(missing) { const q = {UNIT:\"Which unit and property is this for?\", PROPERTY:\"Which property is this at?\", CONTACT:\"What is the best contact number?\", ACCESS_PERMISSION:\"Can maintenance enter if you are away?\", ISSUE_DETAIL:\"Please describe what is happening, where it is happening, and whether it is getting worse.\", ONSET_TIME:\"When did this start?\"}; return (parse(missing, []) || []).filter(x => q[x]).slice(0,3).map(x => q[x]); }\nreturn $input.all().map((item) => { const j = item.json; const qs = questions(j.missing_info); const text = j.human_only ? `Request ${j.ref} was received. A manager needs to review it and will update you here.` : (qs.length ? `Request ${j.ref} was received. ${qs.join(\" \")}` : `Request ${j.ref} was received. We will keep you updated here.`); return {json: {...j, message_text: text, intent: qs.length ? \"clarification\" : \"receipt\"}}; });"
+      },
+      "id": "prepare-new-ticket-tenant-reply",
+      "name": "Prepare New Ticket Tenant Reply",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        60
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $json.chat_id }}",
+        "text": "={{ $json.message_text }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "disable_web_page_preview": true,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "telegram-send-new-ticket-reply",
+      "name": "Telegram Send New Ticket Reply",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1180,
+        60
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "stage9TenantTelegram",
+          "name": "maintenance-triage-tenant-telegram-bot"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "return $input.all().map(item=>({json:{chat_id:item.json.chat_id,message_text:'Tell us what is wrong and include your unit if you can.'}}));"
+      },
+      "id": "prepare-new-conversation-prompt",
+      "name": "Prepare New Conversation Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        80,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $json.chat_id }}",
+        "text": "={{ $json.message_text }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "disable_web_page_preview": true,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "telegram-send-new-conversation-prompt",
+      "name": "Telegram Send New Conversation Prompt",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        300,
+        160
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "stage9TenantTelegram",
+          "name": "maintenance-triage-tenant-telegram-bot"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "return $input.all().map(item => { const j = item.json; const t = typeof j.ticket === \"string\" ? JSON.parse(j.ticket) : j.ticket; const sent = t?.vendor_status === \"SENT\"; return {json: {chat_id: j.chat_id, ticket_id: t?.id, intent: \"status\", message_text: sent ? \"We have contacted a maintenance provider. We will update you when we have an arrival time.\" : \"Your request has been escalated to the manager. We will update you here when there is more information.\"}}; });"
+      },
+      "id": "prepare-tenant-status-reply",
+      "name": "Prepare Tenant Status Reply",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        80,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $json.chat_id }}",
+        "text": "={{ $json.message_text }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "disable_web_page_preview": true,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "telegram-send-status-reply",
+      "name": "Telegram Send Status Reply",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        300,
+        300
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "stage9TenantTelegram",
+          "name": "maintenance-triage-tenant-telegram-bot"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "return $input.all().map(item=>{const t=item.json.ticket; const msgId='<telegram-retriage-' + item.json.chat_id + '-' + item.json.message_id + '@maintenance-triage.local>'; return {json:{original_ticket_id:t.id,chat_id:item.json.chat_id,answer_text:item.json.text,external_message_id:'telegram:' + item.json.chat_id + ':' + item.json.message_id,source:'telegram',from_address:'telegram:' + item.json.chat_id,subject:'Clarification for ' + t.ref,body_raw:(t.body_raw || '') + '\\n\\nTenant clarification: ' + item.json.text,received_at:new Date().toISOString(),attachment_paths:[],msg_id:msgId,in_reply_to:null,refs:null}};});"
+      },
+      "id": "prepare-clarification-retriage",
+      "name": "Prepare Clarification Retriage",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        80,
+        440
+      ]
+    },
+    {
+      "parameters": {
+        "source": "database",
+        "workflowId": "maintenance-triage-core-stage-4",
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "execute-clarification-retriage",
+      "name": "Execute Clarification Retriage",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [
+        300,
+        440
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const ctx=$(\"Prepare Clarification Retriage\").all(); return ctx.map(item=>({json:{original_ticket_id:item.json.original_ticket_id,child_msg_id:item.json.msg_id,chat_id:item.json.chat_id,body:item.json.answer_text,external_message_id:item.json.external_message_id}}));"
+      },
+      "id": "prepare-clarification-merge",
+      "name": "Prepare Clarification Merge",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        520,
+        440
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "database",
+        "operation": "executeQuery",
+        "query": "WITH input_values AS (SELECT $1::bigint AS original_ticket_id, NULLIF($2::text, '') AS child_msg_id, $3::text AS chat_id, $4::text AS body, $5::text AS external_message_id),\nchild AS (SELECT * FROM triage.tickets WHERE msg_id = (SELECT child_msg_id FROM input_values) ORDER BY id DESC LIMIT 1),\nmerged AS (\n  UPDATE triage.tickets t SET\n    model_json = c.model_json, model_priority = c.model_priority, model_name = c.model_name, model_latency_ms = c.model_latency_ms,\n    prompt_tokens = t.prompt_tokens + c.prompt_tokens, completion_tokens = t.completion_tokens + c.completion_tokens,\n    is_maintenance_request = c.is_maintenance_request, request_type = c.request_type, priority = CASE WHEN t.clarification_round + 1 >= 2 AND jsonb_array_length(c.missing_info) > 0 THEN 'NEEDS_REVIEW' ELSE c.priority END,\n    priority_reason = c.priority_reason, override_applied = c.override_applied, override_reason = c.override_reason, human_only = c.human_only,\n    trade = c.trade, unit_identifier = coalesce(c.unit_identifier, t.unit_identifier), issue_summary = c.issue_summary,\n    habitability_flag = c.habitability_flag, habitability_reason = c.habitability_reason, safety_signals = c.safety_signals,\n    access_notes = c.access_notes, accommodation_or_legal_flag = c.accommodation_or_legal_flag, accommodation_or_legal_reason = c.accommodation_or_legal_reason,\n    missing_info = c.missing_info, confidence = c.confidence, ambiguity_note = c.ambiguity_note, language = c.language,\n    draft_subject = c.draft_subject, draft_body = c.draft_body, vendor_note = c.vendor_note, clarifying_qs = c.clarifying_qs,\n    clarification_round = t.clarification_round + 1, vendor_status = 'NOT_STARTED', status = 'NEW'\n  FROM child c WHERE t.id = (SELECT original_ticket_id FROM input_values) RETURNING t.*\n), child_closed AS (UPDATE triage.tickets SET status='CLOSED', closed_at=now(), thread_root_id=(SELECT original_ticket_id FROM input_values) WHERE id=(SELECT id FROM child)),\nmessage AS (INSERT INTO triage.ticket_messages(ticket_id,channel,direction,intent,body,external_message_id,delivery_state)\n  SELECT original_ticket_id,'telegram','inbound','clarification_answer',body,external_message_id,'RECORDED' FROM input_values ON CONFLICT (channel,direction,external_message_id) DO NOTHING),\nevent AS (INSERT INTO triage.events(ticket_id,actor,action,detail) SELECT id,'system','tenant_clarification_retriaged',jsonb_build_object('round',clarification_round) FROM merged)\nSELECT id AS ticket_id, ref, priority, missing_info, human_only, vendor_status, clarification_round, tenant_chat_id AS chat_id FROM merged;",
+        "options": {
+          "queryReplacement": "={{ [$json.original_ticket_id, $json.child_msg_id, $json.chat_id, $json.body, $json.external_message_id] }}"
+        }
+      },
+      "id": "postgres-merge-clarification-result",
+      "name": "Postgres Merge Clarification Result",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        740,
+        440
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "stage1PgLocal",
+          "name": "maintenance-triage-postgres-local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "function parse(v, fallback) { try { return typeof v === 'string' ? JSON.parse(v) : (v || fallback); } catch (_) { return fallback; } }\nfunction questions(missing) { const q={UNIT:'Which unit and property is this for?',PROPERTY:'Which property is this at?',CONTACT:'What is the best contact number?',ACCESS_PERMISSION:'Can maintenance enter if you are away?',ISSUE_DETAIL:'Please describe what is happening, where it is happening, and whether it is getting worse.',ONSET_TIME:'When did this start?'}; return (parse(missing,[]) || []).filter(x=>q[x]).slice(0,3).map(x=>q[x]); }\nreturn $input.all().map(item=>{const j=item.json; const qs=questions(j.missing_info); const done=!qs.length && !j.human_only && j.priority!=='NEEDS_REVIEW'; const text=done?`Thank you. Your request ${j.ref} is now being reviewed for the right maintenance provider.`:(j.priority==='NEEDS_REVIEW'||j.human_only?`Thank you. A manager needs to review request ${j.ref} and will update you here.`:`Thank you. ${qs.join(' ')}`); return {json:{...j,should_notify_manager:done,message_text:text}};});"
+      },
+      "id": "prepare-clarification-response",
+      "name": "Prepare Clarification Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        440
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "clarification-needs-manager-condition",
+              "leftValue": "={{ Boolean($json.should_notify_manager) }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "clarification-needs-manager",
+      "name": "Clarification Needs Manager",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1180,
+        380
+      ]
+    },
+    {
+      "parameters": {
+        "source": "database",
+        "workflowId": "mt-manager-desk-stage-9",
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "execute-manager-desk-after-clarification",
+      "name": "Execute Manager Desk After Clarification",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [
+        1400,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $json.chat_id }}",
+        "text": "={{ $json.message_text }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "disable_web_page_preview": true,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "telegram-send-clarification-reply",
+      "name": "Telegram Send Clarification Reply",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1400,
+        500
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "stage9TenantTelegram",
+          "name": "maintenance-triage-tenant-telegram-bot"
+        }
+      },
+      "continueOnFail": true
+    }
+  ],
+  "connections": {
+    "TenantTelegramTrigger": {
+      "main": [
+        [
+          {
+            "node": "Normalize Tenant Telegram Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Tenant Telegram Event": {
+      "main": [
+        [
+          {
+            "node": "Is Pairing Start",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Pairing Start": {
+      "main": [
+        [
+          {
+            "node": "Postgres Claim Pairing Token",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Postgres Load Tenant Chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Claim Pairing Token": {
+      "main": [
+        [
+          {
+            "node": "Prepare Pairing Receipt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Pairing Receipt": {
+      "main": [
+        [
+          {
+            "node": "Telegram Send Pairing Receipt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Load Tenant Chat": {
+      "main": [
+        [
+          {
+            "node": "Route Tenant Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route Tenant Message": {
+      "main": [
+        [
+          {
+            "node": "Tenant Conversation Route",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tenant Conversation Route": {
+      "main": [
+        [
+          {
+            "node": "Prepare New Ticket Payload",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare New Conversation Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Tenant Status Reply",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Clarification Retriage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare New Ticket Payload": {
+      "main": [
+        [
+          {
+            "node": "Execute Triage Engine For Tenant",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Triage Engine For Tenant": {
+      "main": [
+        [
+          {
+            "node": "Prepare New Ticket Link",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare New Ticket Link": {
+      "main": [
+        [
+          {
+            "node": "Postgres Link New Tenant Ticket",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Link New Tenant Ticket": {
+      "main": [
+        [
+          {
+            "node": "Execute Manager Desk For Tenant",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Prepare New Ticket Tenant Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare New Ticket Tenant Reply": {
+      "main": [
+        [
+          {
+            "node": "Telegram Send New Ticket Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare New Conversation Prompt": {
+      "main": [
+        [
+          {
+            "node": "Telegram Send New Conversation Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Tenant Status Reply": {
+      "main": [
+        [
+          {
+            "node": "Telegram Send Status Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Clarification Retriage": {
+      "main": [
+        [
+          {
+            "node": "Execute Clarification Retriage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Clarification Retriage": {
+      "main": [
+        [
+          {
+            "node": "Prepare Clarification Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Clarification Merge": {
+      "main": [
+        [
+          {
+            "node": "Postgres Merge Clarification Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Merge Clarification Result": {
+      "main": [
+        [
+          {
+            "node": "Prepare Clarification Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Clarification Response": {
+      "main": [
+        [
+          {
+            "node": "Clarification Needs Manager",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Telegram Send Clarification Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clarification Needs Manager": {
+      "main": [
+        [
+          {
+            "node": "Execute Manager Desk After Clarification",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "pinData": {},
+  "meta": {
+    "stage": 9,
+    "generatedBy": "scripts/build-stage-9-workflows.py"
+  },
+  "versionId": "stage-9-generated",
+  "triggerCount": 0,
+  "tags": []
+}

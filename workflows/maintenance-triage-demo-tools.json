@@ -1,0 +1,114 @@
+{
+  "id": "mt-demo-tools-stage-9",
+  "name": "Maintenance Triage Demo Tools",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "manual-demo-tool-trigger",
+      "name": "Manual Demo Tool Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -360,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "return [{\"source\": \"fixture\", \"from_address\": \"01-understated-gas@fixture.example\", \"subject\": \"01-understated-gas\", \"body_raw\": \"hi sorry to bother you this is dana in 2B at maple court. i think theres a smell of gas in the hallway near our door, probably nothing but it has been there since dinner.\", \"received_at\": \"2026-08-12T12:00:00Z\", \"attachment_paths\": [], \"msg_id\": \"<stage9-01-understated-gas@fixture.example>\", \"in_reply_to\": null, \"refs\": null}, {\"source\": \"fixture\", \"from_address\": \"02-panicked-burst-pipe-no-unit@fixture.example\", \"subject\": \"02-panicked-burst-pipe-no-unit\", \"body_raw\": \"water everywhere please help pipe under sink burst i dont know what to do its going into the hallway and downstairs please send someone now\", \"received_at\": \"2026-08-12T12:00:00Z\", \"attachment_paths\": [], \"msg_id\": \"<stage9-02-panicked-burst-pipe-no-unit@fixture.example>\", \"in_reply_to\": null, \"refs\": null}, {\"source\": \"fixture\", \"from_address\": \"03-urgent-squeaky-door@fixture.example\", \"subject\": \"03-urgent-squeaky-door\", \"body_raw\": \"URGENT!!! i need someone here today. the bathroom door squeaks every time my kid opens it and it is driving us crazy. unit 14A.\", \"received_at\": \"2026-08-12T12:00:00Z\", \"attachment_paths\": [], \"msg_id\": \"<stage9-03-urgent-squeaky-door@fixture.example>\", \"in_reply_to\": null, \"refs\": null}, {\"source\": \"fixture\", \"from_address\": \"04-buried-lede@fixture.example\", \"subject\": \"04-buried-lede\", \"body_raw\": \"This is getting ridiculous. First the dog upstairs is barking every night and nobody answers the phone. The trash bins were also left out again and parking spot 12 keeps getting taken by visitors. I have called twice about the hallway light too. Also the bedroom ceiling has been dripping since Saturday and I put a bucket under it. Anyway can someone finally call me back because this place is not cheap. Unit 6C, Jordan.\", \"received_at\": \"2026-08-12T12:00:00Z\", \"attachment_paths\": [], \"msg_id\": \"<stage9-04-buried-lede@fixture.example>\", \"in_reply_to\": null, \"refs\": null}, {\"source\": \"fixture\", \"from_address\": \"05-spanish-no-hot-water@fixture.example\", \"subject\": \"05-spanish-no-hot-water\", \"body_raw\": \"Hola, soy Marisol en el apartamento 3D. No tenemos agua caliente desde hace tres dias y hay un nino pequeno en la casa. Por favor avisen cuando puedan venir.\", \"received_at\": \"2026-08-12T12:00:00Z\", \"attachment_paths\": [], \"msg_id\": \"<stage9-05-spanish-no-hot-water@fixture.example>\", \"in_reply_to\": null, \"refs\": null}, {\"source\": \"fixture\", \"from_address\": \"06-accommodation-request@fixture.example\", \"subject\": \"06-accommodation-request\", \"body_raw\": \"My mother moved in with me at 8B and uses a walker. We need grab bars installed in the bathroom and maybe one by the toilet. Her doctor can send a letter if you need it.\", \"received_at\": \"2026-08-12T12:00:00Z\", \"attachment_paths\": [], \"msg_id\": \"<stage9-06-accommodation-request@fixture.example>\", \"in_reply_to\": null, \"refs\": null}].map(json => ({json}));"
+      },
+      "id": "load-six-safe-demo-fixtures",
+      "name": "Load Six Safe Demo Fixtures",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -120,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "source": "database",
+        "workflowId": "maintenance-triage-core-stage-4",
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "execute-triage-engine-for-fixtures",
+      "name": "Execute Triage Engine For Fixtures",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [
+        120,
+        0
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "return [{json:{message:'Six fixture requests processed without manager, vendor, or tenant sends.'}}];"
+      },
+      "id": "finish-safe-fixture-rehearsal",
+      "name": "Finish Safe Fixture Rehearsal",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        360,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Manual Demo Tool Trigger": {
+      "main": [
+        [
+          {
+            "node": "Load Six Safe Demo Fixtures",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load Six Safe Demo Fixtures": {
+      "main": [
+        [
+          {
+            "node": "Execute Triage Engine For Fixtures",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Triage Engine For Fixtures": {
+      "main": [
+        [
+          {
+            "node": "Finish Safe Fixture Rehearsal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "pinData": {},
+  "meta": {
+    "stage": 9,
+    "generatedBy": "scripts/build-stage-9-workflows.py"
+  },
+  "versionId": "stage-9-generated",
+  "triggerCount": 0,
+  "tags": []
+}

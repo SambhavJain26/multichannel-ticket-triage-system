@@ -1,0 +1,451 @@
+{
+  "id": "mt-tenant-intake-stage-9",
+  "name": "Maintenance Tenant Intake",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "mailbox": "INBOX",
+        "postProcessAction": "read",
+        "format": "resolved",
+        "options": {
+          "trackLastMessageId": true,
+          "customEmailConfig": "[\"UNSEEN\"]"
+        }
+      },
+      "id": "demo-mailbox-imap-trigger",
+      "name": "Demo Mailbox IMAP Trigger",
+      "type": "n8n-nodes-base.emailReadImap",
+      "typeVersion": 2.1,
+      "position": [
+        -1000,
+        -180
+      ],
+      "credentials": {
+        "imap": {
+          "id": "stage7DemoImapDomain",
+          "name": "maintenance-triage-demo-imap-domain"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "none",
+        "formTitle": "Report a Maintenance Issue",
+        "formDescription": "You will receive a Telegram link for updates.",
+        "defineForm": "json",
+        "jsonOutput": "[{\"fieldLabel\": \"Name\", \"requiredField\": true}, {\"fieldLabel\": \"Unit\", \"requiredField\": false}, {\"fieldLabel\": \"Email\", \"fieldType\": \"email\", \"requiredField\": true}, {\"fieldLabel\": \"What's wrong?\", \"fieldType\": \"textarea\", \"requiredField\": true}, {\"fieldLabel\": \"Can we enter if you're not home?\", \"fieldType\": \"dropdown\", \"fieldOptions\": {\"values\": [{\"option\": \"Yes\"}, {\"option\": \"No\"}, {\"option\": \"Call first\"}]}, \"requiredField\": false}]",
+        "responseMode": "lastNode",
+        "options": {
+          "path": "report-issue",
+          "buttonLabel": "Submit"
+        }
+      },
+      "id": "tenant-intake-form",
+      "name": "Tenant Intake Form",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        -1000,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "function header(headers, name) {\n  const lower = name.toLowerCase();\n  for (const [key, value] of Object.entries(headers || {})) if (key.toLowerCase() === lower) return Array.isArray(value) ? value.join(\" \") : String(value);\n  return \"\";\n}\nfunction address(value) {\n  const raw = String(value || \"\"); const match = raw.match(/<([^>]+)>/); return (match ? match[1] : raw).trim();\n}\nreturn $input.all().flatMap((item, index) => {\n  const j = item.json || {}; const subject = String(j.subject || \"(no subject)\");\n  if (/^\\[MT-SYSTEM\\]/i.test(subject)) return [];\n  const body = j.text || j.textPlain || j.body || j.html || \"(empty email body)\";\n  return [{json: {source: \"email\", from_address: address(j.from || j.sender || j.replyTo), subject, body_raw: body,\n    received_at: j.date || new Date().toISOString(), attachment_paths: [],\n    msg_id: j.messageId || header(j.headers, \"message-id\") || `<email-${Date.now()}-${index}@maintenance-triage.local>`,\n    in_reply_to: j.inReplyTo || header(j.headers, \"in-reply-to\") || null, refs: j.references || header(j.headers, \"references\") || null}}];\n});"
+      },
+      "id": "normalize-email-intake",
+      "name": "Normalize Email Intake",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -760,
+        -180
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "function field(j, names) { for (const name of names) if (j[name] !== undefined && String(j[name]).trim()) return String(j[name]).trim(); return \"\"; }\nreturn $input.all().map((item, index) => {\n  const j = item.json || {}; const name = field(j, [\"Name\", \"name\", \"field-0\"]); const unit = field(j, [\"Unit\", \"unit\", \"field-1\"]);\n  const email = field(j, [\"Email\", \"email\", \"field-2\"]); const issue = field(j, [\"What's wrong?\", \"Issue\", \"issue\", \"field-3\"]);\n  const entry = field(j, [\"Can we enter if you're not home?\", \"entry_permission\", \"field-4\"]);\n  return {json: {source: \"form\", from_address: email, subject: unit ? `Form report - ${unit}` : \"Form report\",\n    body_raw: [`Tenant: ${name || \"Not stated\"}`, `Unit: ${unit || \"Not stated\"}`, `Contact: ${email}`, `Entry permission: ${entry || \"Not stated\"}`, \"\", issue || \"(empty form issue)\"].join(\"\\n\"),\n    received_at: new Date().toISOString(), attachment_paths: [], msg_id: `<form-${Date.now()}-${index}@maintenance-triage.local>`, in_reply_to: null, refs: null}};\n});"
+      },
+      "id": "normalize-form-intake",
+      "name": "Normalize Form Intake",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -760,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "source": "database",
+        "workflowId": "maintenance-triage-core-stage-4",
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "execute-triage-engine",
+      "name": "Execute Triage Engine",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [
+        -500,
+        0
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const contexts = [...$(\"Normalize Email Intake\").all(), ...$(\"Normalize Form Intake\").all()]; return contexts.map(item => ({json: {msg_id: item.json.msg_id, source: item.json.source}}));"
+      },
+      "id": "prepare-pairing-lookup",
+      "name": "Prepare Pairing Lookup",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -260,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "database",
+        "operation": "executeQuery",
+        "query": "WITH input_values AS (SELECT NULLIF($1::text, '') AS msg_id, NULLIF($2::text, '') AS source),\nticket AS (\n  SELECT t.* FROM triage.tickets t, input_values i WHERE t.msg_id = i.msg_id AND t.source = i.source ORDER BY t.id DESC LIMIT 1\n), pair AS (\n  INSERT INTO triage.tenant_pairing_tokens (ticket_id, tenant_email)\n  SELECT id, coalesce(from_address, tenant_contact) FROM ticket\n  WHERE coalesce(from_address, tenant_contact) IS NOT NULL\n  RETURNING ticket_id, token, expires_at\n)\nSELECT t.id AS ticket_id, t.ref, t.source, t.from_address, t.priority, t.missing_info, t.human_only,\n       p.token, p.expires_at, cfg.value AS tenant_telegram, mail.value AS system_mail\nFROM ticket t LEFT JOIN pair p ON p.ticket_id = t.id\nCROSS JOIN (SELECT value FROM triage.config WHERE key = 'tenant_telegram') cfg\nCROSS JOIN (SELECT value FROM triage.config WHERE key = 'system_mail') mail;",
+        "options": {
+          "queryReplacement": "={{ [$json.msg_id, $json.source] }}"
+        }
+      },
+      "id": "postgres-create-pairing-token",
+      "name": "Postgres Create Pairing Token",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -20,
+        0
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "stage1PgLocal",
+          "name": "maintenance-triage-postgres-local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "source": "database",
+        "workflowId": "mt-manager-desk-stage-9",
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "execute-manager-desk",
+      "name": "Execute Manager Desk",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [
+        220,
+        -140
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "function json(value, fallback) { try { return typeof value === \"string\" ? JSON.parse(value) : (value || fallback); } catch (_) { return fallback; } }\nreturn $input.all().map((item) => {\n  const j = item.json; const bot = json(j.tenant_telegram, {}); const mail = json(j.system_mail, {}); const username = String(bot.bot_username || \"\");\n  const link = username && !username.startsWith(\"PLACEHOLDER\") && j.token ? `https://t.me/${username}?start=${j.token}` : \"\";\n  return {json: {...j, should_send: Boolean(j.from_address && link), chat_link: link,\n    from_email: \"Demo Maintenance Desk <sambhavn8n@gmail.com>\", to_email: j.from_address,\n    email_subject: mail.onboarding_subject || \"[MT-SYSTEM] Continue your maintenance request in Telegram\",\n    email_body: `Your maintenance request ${j.ref} was received. Continue updates in Telegram: ${link}\\n\\nThis link is for the demo and expires ${j.expires_at || \"soon\"}.`}};\n});"
+      },
+      "id": "prepare-onboarding-email",
+      "name": "Prepare Onboarding Email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "should-send-onboarding-email-condition",
+              "leftValue": "={{ Boolean($json.should_send) }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "should-send-onboarding-email",
+      "name": "Should Send Onboarding Email",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        460,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "={{ $json.from_email }}",
+        "toEmail": "={{ $json.to_email }}",
+        "subject": "={{ $json.email_subject }}",
+        "emailFormat": "text",
+        "text": "={{ $json.email_body }}",
+        "options": {
+          "appendAttribution": false,
+          "replyTo": "={{ $json.from_email }}"
+        }
+      },
+      "id": "smtp-send-telegram-onboarding",
+      "name": "SMTP Send Telegram Onboarding",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        700,
+        -20
+      ],
+      "credentials": {
+        "smtp": {
+          "id": "stage7DemoSmtpDomain",
+          "name": "maintenance-triage-demo-smtp-domain"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const ctx = $(\"Prepare Onboarding Email\").all().filter(i => i.json.should_send); return $input.all().map((item, i) => ({json: {...ctx[i].json, email_error: item.json.error || \"\", message_id: item.json.messageId || item.json.message_id || \"\"}}));"
+      },
+      "id": "attach-onboarding-result",
+      "name": "Attach Onboarding Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        920,
+        -20
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "database",
+        "operation": "executeQuery",
+        "query": "INSERT INTO triage.ticket_messages (ticket_id, channel, direction, intent, body, external_message_id, delivery_state, detail)\nVALUES ($1::bigint, 'email', 'outbound', 'pairing', $2::text, NULLIF($3::text, ''), CASE WHEN NULLIF($4::text, '') IS NULL THEN 'SENT' ELSE 'FAILED' END, jsonb_build_object('link', $5::text))\nRETURNING ticket_id;",
+        "options": {
+          "queryReplacement": "={{ [$json.ticket_id, $json.email_body, $json.message_id || '', $json.email_error || '', $json.chat_link] }}"
+        }
+      },
+      "id": "postgres-record-onboarding-email",
+      "name": "Postgres Record Onboarding Email",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1140,
+        -20
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "stage1PgLocal",
+          "name": "maintenance-triage-postgres-local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "respondWith": "text",
+        "completionTitle": "Request received",
+        "completionMessage": "={{ 'Check your email for the Telegram link to continue request ' + ($json.ref || '') }}",
+        "options": {
+          "formTitle": "Maintenance request"
+        }
+      },
+      "id": "show-form-completion",
+      "name": "Show Form Completion",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        1360,
+        140
+      ]
+    }
+  ],
+  "connections": {
+    "Demo Mailbox IMAP Trigger": {
+      "main": [
+        [
+          {
+            "node": "Normalize Email Intake",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tenant Intake Form": {
+      "main": [
+        [
+          {
+            "node": "Normalize Form Intake",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Email Intake": {
+      "main": [
+        [
+          {
+            "node": "Execute Triage Engine",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Form Intake": {
+      "main": [
+        [
+          {
+            "node": "Execute Triage Engine",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Triage Engine": {
+      "main": [
+        [
+          {
+            "node": "Prepare Pairing Lookup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Pairing Lookup": {
+      "main": [
+        [
+          {
+            "node": "Postgres Create Pairing Token",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Create Pairing Token": {
+      "main": [
+        [
+          {
+            "node": "Execute Manager Desk",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Prepare Onboarding Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Onboarding Email": {
+      "main": [
+        [
+          {
+            "node": "Should Send Onboarding Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Should Send Onboarding Email": {
+      "main": [
+        [
+          {
+            "node": "SMTP Send Telegram Onboarding",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Show Form Completion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SMTP Send Telegram Onboarding": {
+      "main": [
+        [
+          {
+            "node": "Attach Onboarding Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Attach Onboarding Result": {
+      "main": [
+        [
+          {
+            "node": "Postgres Record Onboarding Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Record Onboarding Email": {
+      "main": [
+        [
+          {
+            "node": "Show Form Completion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "pinData": {},
+  "meta": {
+    "stage": 9,
+    "generatedBy": "scripts/build-stage-9-workflows.py"
+  },
+  "versionId": "stage-9-generated",
+  "triggerCount": 0,
+  "tags": []
+}

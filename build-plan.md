@@ -297,6 +297,37 @@ Verification:
 - Failure modes have been observed and the response lines are rehearsed.
 - Fallback recording plays offline.
 
+## Stage 9 - Telegram Conversation, Airtable, and Vendor Approval
+
+Goal: make Telegram the tenant conversation channel, make Airtable the manager workspace,
+and make vendor email an explicit manager choice.
+
+In scope:
+
+- Email, form, and Telegram tenant intake through the same triage engine.
+- One onboarding email for email/form requests, containing an expiring tenant-bot deep link.
+- Tenant Telegram receipt, deterministic clarification, and truthful status templates.
+- Two-round clarification limit, followed by `NEEDS_REVIEW`.
+- Airtable `Requests`, `Conversations`, `Tenant Roster`, and `Vendors` tables with synthetic demo data.
+- Trade/property vendor suggestions and one-tap manager vendor selection in Telegram.
+- One-send-only vendor SMTP guard and tenant provider-contacted update after SMTP success.
+- Consolidation to five active workflows: Triage Engine, Tenant Intake, Tenant Telegram,
+  Manager Desk, and Operations. Keep only inactive demo tools for rehearsal.
+
+Out of scope:
+
+- Production tenant identity verification for Telegram pairing.
+- Automatic vendor dispatch, appointment confirmation, or tenant ETA promises.
+- Real tenant/vendor email or SMS testing.
+
+Verification:
+
+- Structural validation of schema, generated workflows, and Docker Compose.
+- Controlled email/form pairing link, direct Telegram request, clarification, and status-query checks.
+- Airtable request/conversation visibility and vendor trade/property selection.
+- One manager vendor selection yields one controlled SMTP email; duplicate selection does not.
+- Vendor failure and no-match paths keep the tenant update unsent and remain visible to the manager.
+
 ## Post-Demo Production Backlog
 
 These are deliberately not part of the demo stages:

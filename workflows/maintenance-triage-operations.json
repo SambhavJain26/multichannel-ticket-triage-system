@@ -1,0 +1,534 @@
+{
+  "id": "mt-operations-stage-9",
+  "name": "Maintenance Operations",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 7 * * *"
+            }
+          ]
+        }
+      },
+      "id": "daily-digest-schedule",
+      "name": "Daily Digest Schedule",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -720,
+        -140
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 15
+            }
+          ]
+        }
+      },
+      "id": "heartbeat-schedule",
+      "name": "Heartbeat Schedule",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -720,
+        20
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 15
+            }
+          ]
+        }
+      },
+      "id": "emergency-escalation-schedule",
+      "name": "Emergency Escalation Schedule",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -720,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 5
+            }
+          ]
+        }
+      },
+      "id": "conversation-sync-schedule",
+      "name": "Conversation Sync Schedule",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -720,
+        340
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "database",
+        "operation": "executeQuery",
+        "query": "SELECT value AS digest, (SELECT value FROM triage.config WHERE key='outbound_email') AS outbound FROM triage.config WHERE key='digest';",
+        "options": {
+          "queryReplacement": "={{ [] }}"
+        }
+      },
+      "id": "postgres-load-digest-config",
+      "name": "Postgres Load Digest Config",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -480,
+        -140
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "stage1PgLocal",
+          "name": "maintenance-triage-postgres-local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "return $input.all().flatMap(item=>{const d=typeof item.json.digest==='string'?JSON.parse(item.json.digest):item.json.digest||{}; const o=typeof item.json.outbound==='string'?JSON.parse(item.json.outbound):item.json.outbound||{}; return d.enabled&&d.to_email?[{json:{from_email:`${o.from_name || 'Demo Maintenance Desk'} <${o.from_email || 'sambhavn8n@gmail.com'}>`,to_email:d.to_email,email_subject:(d.subject_prefix || 'Daily maintenance triage digest'),email_body:'Open maintenance requests are available in Airtable.'}}]:[];});"
+      },
+      "id": "prepare-digest",
+      "name": "Prepare Digest",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -240,
+        -140
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "={{ $json.from_email }}",
+        "toEmail": "={{ $json.to_email }}",
+        "subject": "={{ $json.email_subject }}",
+        "emailFormat": "text",
+        "text": "={{ $json.email_body }}",
+        "options": {
+          "appendAttribution": false,
+          "replyTo": "={{ $json.from_email }}"
+        }
+      },
+      "id": "smtp-send-daily-digest",
+      "name": "SMTP Send Daily Digest",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        -140
+      ],
+      "credentials": {
+        "smtp": {
+          "id": "stage7DemoSmtpDomain",
+          "name": "maintenance-triage-demo-smtp-domain"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "resource": "database",
+        "operation": "executeQuery",
+        "query": "SELECT value AS heartbeat, (SELECT value FROM triage.config WHERE key='contacts') AS contacts FROM triage.config WHERE key='heartbeat';",
+        "options": {
+          "queryReplacement": "={{ [] }}"
+        }
+      },
+      "id": "postgres-load-heartbeat-config",
+      "name": "Postgres Load Heartbeat Config",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -480,
+        20
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "stage1PgLocal",
+          "name": "maintenance-triage-postgres-local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "return $input.all().flatMap(item=>{const h=typeof item.json.heartbeat==='string'?JSON.parse(item.json.heartbeat):item.json.heartbeat||{}; const c=typeof item.json.contacts==='string'?JSON.parse(item.json.contacts):item.json.contacts||{}; return h.enabled&&c.operator_chat_id?[{json:{chat_id:c.operator_chat_id,message_text:'OPERATOR HEARTBEAT: maintenance intake is quiet. Check Airtable.'}}]:[];});"
+      },
+      "id": "prepare-heartbeat",
+      "name": "Prepare Heartbeat",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -240,
+        20
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $json.chat_id }}",
+        "text": "={{ $json.message_text }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "disable_web_page_preview": true,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "telegram-send-operator-heartbeat",
+      "name": "Telegram Send Operator Heartbeat",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        20
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "stage1TelegramLocal",
+          "name": "maintenance-triage-telegram-bot"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "resource": "database",
+        "operation": "executeQuery",
+        "query": "SELECT id AS ticket_id FROM triage.tickets WHERE priority='EMERGENCY' AND vendor_status IN ('NOT_STARTED','AWAITING_VENDOR','NEEDS_VENDOR_ASSIGNMENT') AND closed_at IS NULL AND received_at < now() - interval '15 minutes' ORDER BY received_at LIMIT 10;",
+        "options": {
+          "queryReplacement": "={{ [] }}"
+        }
+      },
+      "id": "postgres-select-unanswered-emergencies",
+      "name": "Postgres Select Unanswered Emergencies",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -480,
+        180
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "stage1PgLocal",
+          "name": "maintenance-triage-postgres-local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "source": "database",
+        "workflowId": "mt-manager-desk-stage-9",
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "execute-manager-desk-escalation",
+      "name": "Execute Manager Desk Escalation",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [
+        -240,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "database",
+        "operation": "executeQuery",
+        "query": "SELECT m.id, t.ref, m.direction, m.channel, m.intent, m.body, m.external_message_id, m.delivery_state, m.created_at, a.value AS airtable FROM triage.ticket_messages m JOIN triage.tickets t ON t.id=m.ticket_id CROSS JOIN (SELECT value FROM triage.config WHERE key='airtable') a WHERE m.airtable_synced_at IS NULL ORDER BY m.id LIMIT 25;",
+        "options": {
+          "queryReplacement": "={{ [] }}"
+        }
+      },
+      "id": "postgres-select-unsynced-conversations",
+      "name": "Postgres Select Unsynced Conversations",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -480,
+        340
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "stage1PgLocal",
+          "name": "maintenance-triage-postgres-local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "return $input.all().flatMap(item=>{const j=item.json; const a=typeof j.airtable==='string'?JSON.parse(j.airtable):j.airtable||{}; return a.enabled&&a.base_id?[{json:{...j,airtable_url:`https://api.airtable.com/v0/${a.base_id}/${encodeURIComponent(a.conversations_table||'Conversations')}`,airtable_body:{records:[{fields:{'Reference':j.ref,'Direction':j.direction,'Channel':j.channel,'Intent':j.intent,'Body':j.body,'External Message ID':j.external_message_id||'','Delivery State':j.delivery_state,'At':j.created_at}}]}}}]:[];});"
+      },
+      "id": "prepare-airtable-conversation-append",
+      "name": "Prepare Airtable Conversation Append",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -240,
+        340
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.airtable_url }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.airtable_body }}"
+      },
+      "id": "http-airtable-append-conversation",
+      "name": "HTTP Airtable Append Conversation",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        0,
+        340
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "stage9Airtable",
+          "name": "maintenance-triage-airtable"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const ctx=$(\"Prepare Airtable Conversation Append\").all(); return $input.all().map((item,i)=>({json:{id:ctx[i].json.id,airtable_record_id:item.json.body?.records?.[0]?.id || item.json.records?.[0]?.id || '',sync_error:item.json.error || ''}}));"
+      },
+      "id": "attach-conversation-sync-result",
+      "name": "Attach Conversation Sync Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        340
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "database",
+        "operation": "executeQuery",
+        "query": "UPDATE triage.ticket_messages SET airtable_record_id=NULLIF($2::text,''), airtable_synced_at=CASE WHEN NULLIF($3::text,'') IS NULL THEN now() ELSE NULL END WHERE id=$1::bigint RETURNING id;",
+        "options": {
+          "queryReplacement": "={{ [$json.id,$json.airtable_record_id || '',$json.sync_error || ''] }}"
+        }
+      },
+      "id": "postgres-mark-conversation-synced",
+      "name": "Postgres Mark Conversation Synced",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        480,
+        340
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "stage1PgLocal",
+          "name": "maintenance-triage-postgres-local"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Daily Digest Schedule": {
+      "main": [
+        [
+          {
+            "node": "Postgres Load Digest Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Load Digest Config": {
+      "main": [
+        [
+          {
+            "node": "Prepare Digest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Digest": {
+      "main": [
+        [
+          {
+            "node": "SMTP Send Daily Digest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Heartbeat Schedule": {
+      "main": [
+        [
+          {
+            "node": "Postgres Load Heartbeat Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Load Heartbeat Config": {
+      "main": [
+        [
+          {
+            "node": "Prepare Heartbeat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Heartbeat": {
+      "main": [
+        [
+          {
+            "node": "Telegram Send Operator Heartbeat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Emergency Escalation Schedule": {
+      "main": [
+        [
+          {
+            "node": "Postgres Select Unanswered Emergencies",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Select Unanswered Emergencies": {
+      "main": [
+        [
+          {
+            "node": "Execute Manager Desk Escalation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Conversation Sync Schedule": {
+      "main": [
+        [
+          {
+            "node": "Postgres Select Unsynced Conversations",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Select Unsynced Conversations": {
+      "main": [
+        [
+          {
+            "node": "Prepare Airtable Conversation Append",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Airtable Conversation Append": {
+      "main": [
+        [
+          {
+            "node": "HTTP Airtable Append Conversation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Airtable Append Conversation": {
+      "main": [
+        [
+          {
+            "node": "Attach Conversation Sync Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Attach Conversation Sync Result": {
+      "main": [
+        [
+          {
+            "node": "Postgres Mark Conversation Synced",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "pinData": {},
+  "meta": {
+    "stage": 9,
+    "generatedBy": "scripts/build-stage-9-workflows.py"
+  },
+  "versionId": "stage-9-generated",
+  "triggerCount": 0,
+  "tags": []
+}
