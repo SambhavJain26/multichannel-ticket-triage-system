@@ -172,7 +172,7 @@
       "parameters": {
         "resource": "database",
         "operation": "executeQuery",
-        "query": "WITH input_values AS (SELECT $1::bigint AS ticket_id, NULLIF($2::text, '') AS message_id, NULLIF($3::text, '') AS error),\nupdated AS (UPDATE triage.tickets t SET vendor_status=CASE WHEN i.error IS NULL THEN 'SENT' ELSE 'FAILED' END, vendor_email_message_id=i.message_id, vendor_email_sent_at=CASE WHEN i.error IS NULL THEN now() ELSE NULL END, vendor_email_error=i.error FROM input_values i WHERE t.id=i.ticket_id RETURNING t.*),\nattempt AS (UPDATE triage.vendor_send_attempts a SET state=CASE WHEN i.error IS NULL THEN 'SENT' ELSE 'FAILED' END,smtp_message_id=i.message_id,error=i.error,finished_at=now() FROM input_values i WHERE a.ticket_id=i.ticket_id AND a.state='CLAIMED' RETURNING a.*),\nevents AS (INSERT INTO triage.events(ticket_id,actor,action,detail) SELECT id,'manager','vendor_email_sent',jsonb_build_object('vendor',selected_vendor_name,'email',selected_vendor_email) FROM updated WHERE (SELECT error FROM input_values) IS NULL UNION ALL SELECT id,'system','vendor_email_failed',jsonb_build_object('error',(SELECT error FROM input_values)) FROM updated WHERE (SELECT error FROM input_values) IS NOT NULL)\nSELECT to_jsonb(u) AS ticket, CASE WHEN (SELECT error FROM input_values) IS NULL THEN 'sent' ELSE 'failed' END AS result FROM updated u;",
+        "query": "WITH input_values AS (SELECT $1::bigint AS ticket_id, NULLIF($2::text, '') AS message_id, NULLIF($3::text, '') AS error),\nupdated AS (UPDATE triage.tickets t SET vendor_status=CASE WHEN i.error IS NULL THEN 'SENT' ELSE 'FAILED' END, vendor_email_message_id=i.message_id, vendor_email_sent_at=CASE WHEN i.error IS NULL THEN now() ELSE NULL END, vendor_email_error=i.error FROM input_values i WHERE t.id=i.ticket_id RETURNING t.*),\nattempt AS (UPDATE triage.vendor_send_attempts a SET state=CASE WHEN i.error IS NULL THEN 'SENT' ELSE 'FAILED' END,smtp_message_id=i.message_id,error=i.error,finished_at=now() FROM input_values i WHERE a.ticket_id=i.ticket_id AND a.state='CLAIMED' RETURNING a.*),\nevents AS (INSERT INTO triage.events(ticket_id,actor,action,detail) SELECT id,'manager','vendor_email_sent',jsonb_build_object('vendor',selected_vendor_name,'email',selected_vendor_email) FROM updated WHERE (SELECT error FROM input_values) IS NULL UNION ALL SELECT id,'system','vendor_email_failed',jsonb_build_object('error',(SELECT error FROM input_values)) FROM updated WHERE (SELECT error FROM input_values) IS NOT NULL)\nSELECT to_jsonb(u) AS ticket,\n       CASE WHEN (SELECT error FROM input_values) IS NULL THEN 'sent' ELSE 'failed' END AS result,\n       (SELECT value FROM triage.config WHERE key = 'airtable') AS airtable\nFROM updated u;",
         "options": {
           "queryReplacement": "={{ [$json.ticket?.id || $json.ticket_id, $json.smtp_message_id || '', $json.email_error || ''] }}"
         }
@@ -237,9 +237,99 @@
     },
     {
       "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const ctx=$(\"Prepare Tenant Vendor Update\").all(); return $input.all().map((item,i)=>({json:{...ctx[i].json,delivery_error:item.json.error || '',delivery_external_message_id:String(item.json.message_id || item.json.messageId || `telegram:vendor-dispatch:${ctx[i].json.ticket_id}:${Date.now()}`)}}));"
+      },
+      "id": "attach-tenant-vendor-update-delivery",
+      "name": "Attach Tenant Vendor Update Delivery",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1020,
+        100
+      ]
+    },
+    {
+      "parameters": {
         "resource": "database",
         "operation": "executeQuery",
-        "query": "WITH input_values AS (SELECT NULLIF($1::text, '')::bigint AS ticket_id), cfg AS (\n  SELECT (SELECT value FROM triage.config WHERE key = 'contacts') AS contacts, (SELECT value FROM triage.config WHERE key = 'airtable') AS airtable,\n         (SELECT value FROM triage.config WHERE key = 'company') AS company, (SELECT value FROM triage.config WHERE key = 'system_mail') AS system_mail\n)\nSELECT to_jsonb(t) AS ticket, cfg.contacts, cfg.airtable, cfg.company, cfg.system_mail\nFROM triage.tickets t CROSS JOIN cfg JOIN input_values i ON t.id = i.ticket_id;",
+        "query": "INSERT INTO triage.ticket_messages (ticket_id, channel, direction, intent, body, external_message_id, delivery_state, detail)\nVALUES ($1::bigint, 'telegram', 'outbound', 'vendor_dispatch', $2::text, NULLIF($3::text, ''), CASE WHEN NULLIF($4::text, '') IS NULL THEN 'SENT' ELSE 'FAILED' END, jsonb_build_object('error', NULLIF($4::text, '')))\nON CONFLICT (channel, direction, external_message_id) DO UPDATE SET delivery_state = EXCLUDED.delivery_state, detail = EXCLUDED.detail\nRETURNING id;",
+        "options": {
+          "queryReplacement": "={{ [$json.ticket_id,$json.message_text,$json.delivery_external_message_id,$json.delivery_error] }}"
+        }
+      },
+      "id": "postgres-record-tenant-vendor-update",
+      "name": "Postgres Record Tenant Vendor Update",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1240,
+        100
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "stage1PgLocal",
+          "name": "maintenance-triage-postgres-local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "function parse(v, fallback) { try { return typeof v === 'string' ? JSON.parse(v) : (v || fallback); } catch (_) { return fallback; } }\nreturn $input.all().flatMap(item => {\n  const t = parse(item.json.ticket, {}); const cfg = parse(item.json.airtable, {});\n  if (!cfg.enabled || !cfg.base_id || !t.ref) return [];\n  const fields = {'Reference':t.ref, 'Vendor Status':t.vendor_status || '', 'Telegram Chat ID':t.tenant_chat_id || ''};\n  if (t.selected_vendor_id) fields['Selected Vendor'] = [t.selected_vendor_id];\n  return [{json:{airtable_url:`https://api.airtable.com/v0/${cfg.base_id}/${encodeURIComponent(cfg.requests_table || 'Requests')}`, airtable_body:{performUpsert:{fieldsToMergeOn:['Reference']},records:[{fields}]}}}];\n});"
+      },
+      "id": "prepare-airtable-vendor-send-sync",
+      "name": "Prepare Airtable Vendor Send Sync",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        580,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $json.airtable_url }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.airtable_body }}"
+      },
+      "id": "http-airtable-sync-vendor-send",
+      "name": "HTTP Airtable Sync Vendor Send",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        800,
+        180
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "stage9Airtable",
+          "name": "maintenance-triage-airtable"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "resource": "database",
+        "operation": "executeQuery",
+        "query": "WITH input_values AS (SELECT NULLIF($1::text, '')::bigint AS ticket_id), cfg AS (\n  SELECT (SELECT value FROM triage.config WHERE key = 'contacts') AS contacts,\n         (SELECT value FROM triage.config WHERE key = 'airtable') AS airtable\n)\nSELECT to_jsonb(t) AS ticket, cfg.contacts, cfg.airtable,\n       (SELECT airtable_record_id FROM triage.airtable_roster_links\n        WHERE roster_kind = 'tenant' AND lookup_key = lower(coalesce(t.from_address, t.tenant_contact, ''))\n        LIMIT 1) AS tenant_airtable_record_id\nFROM triage.tickets t CROSS JOIN cfg JOIN input_values i ON t.id = i.ticket_id;",
         "options": {
           "queryReplacement": "={{ [$json.ticket_id || $json.id || ''] }}"
         }
@@ -342,7 +432,7 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "function parse(value, fallback) { try { return typeof value === 'string' ? JSON.parse(value) : (value || fallback); } catch (_) { return fallback; } }\nfunction records(value) { const body = parse(value?.body ?? value ?? {}, {}); return Array.isArray(body?.records) ? body.records : []; }\nconst context = $(\"Postgres Load Ticket For Manager\").all()[0]?.json || {};\nconst ticket = parse(context.ticket, {}); const cfg = parse(context.airtable, {}); const contacts = parse(context.contacts, {});\nlet rows = []; try { rows = records($input.all()[0]?.json); } catch (_) {}\nconst trade = String(ticket.trade || '').toUpperCase(); const propertyMatch = String(ticket.body_raw || '').match(/(?:^|\\\\n)Property:\\\\s*([^\\\\n]+)/i); const property = [ticket.unit_match_display, ticket.unit_identifier, propertyMatch?.[1]].filter(Boolean).join(' ').toUpperCase();\nconst candidates = rows.map(r => ({id:r.id, name:r.fields?.['Vendor Name'] || '', email:r.fields?.Email || '', active:String(r.fields?.Active || '').toLowerCase() !== 'no', trades:String(r.fields?.Trades || '').toUpperCase(), properties:String(r.fields?.Properties || '').toUpperCase(), priority:Number(r.fields?.Priority || 999)}))\n  .filter(v => v.active && v.name && v.email && v.trades.includes(trade) && (!v.properties || property.includes(v.properties) || v.properties.includes(property.split(' - ')[0] || '')))\n  .sort((a,b) => a.priority - b.priority).slice(0,3);\nconst labels = [0,1,2].map(i => candidates[i] ? `Send to ${candidates[i].name}` : 'No additional vendor');\nconst callbacks = [0,1,2].map(i => candidates[i] ? `vendor:${ticket.id}:${candidates[i].id}` : `vendor:${ticket.id}:none`);\nconst missing = Array.isArray(ticket.missing_info) ? ticket.missing_info : [];\nconst canChoose = Boolean(ticket.id && !ticket.human_only && ticket.priority !== 'NEEDS_REVIEW' && missing.length === 0 && ticket.source !== 'fixture' && ticket.source !== 'import');\nreturn [{json:{ticket_id:ticket.id, ticket, airtable:cfg, contacts, candidates, should_send_manager:Boolean(canChoose && (contacts.primary_chat_id || contacts.operator_chat_id)), should_sync:Boolean(cfg.enabled && cfg.base_id), chat_id:contacts.primary_chat_id || contacts.operator_chat_id || '', vendor_1_label:labels[0], vendor_2_label:labels[1], vendor_3_label:labels[2], vendor_1_callback:callbacks[0], vendor_2_callback:callbacks[1], vendor_3_callback:callbacks[2], message_text: canChoose ? [`VENDOR APPROVAL: ${ticket.ref}`, `Priority: ${ticket.priority}`, `Trade: ${ticket.trade || 'UNKNOWN'}`, `Unit: ${ticket.unit_match_display || ticket.unit_identifier || 'not stated'}`, `Issue: ${ticket.issue_summary || ticket.subject || 'Maintenance request'}`, '', 'Select a vendor to send this exact email:', String(ticket.vendor_note || 'No vendor note was drafted.')].join('\\n') : `${ticket.ref}: manager review required. No vendor email will be sent automatically.`}}];"
+        "jsCode": "function parse(value, fallback) { try { return typeof value === 'string' ? JSON.parse(value) : (value || fallback); } catch (_) { return fallback; } }\nfunction records(value) { const body = parse(value?.body ?? value ?? {}, {}); return Array.isArray(body?.records) ? body.records : []; }\nfunction list(value) { return Array.isArray(value) ? value.map(String).join(',').toUpperCase() : String(value || '').toUpperCase(); }\nconst context = $(\"Postgres Load Ticket For Manager\").all()[0]?.json || {};\nconst ticket = parse(context.ticket, {}); const cfg = parse(context.airtable, {}); const contacts = parse(context.contacts, {});\nlet rows = []; try { rows = records($input.all()[0]?.json); } catch (_) {}\nconst trade = String(ticket.trade || '').toUpperCase();\nconst propertyMatch = String(ticket.body_raw || '').match(/(?:^|\\n)Property:\\s*([^\\n]+)/i);\nconst property = [ticket.unit_match_display, ticket.unit_identifier, propertyMatch?.[1]].filter(Boolean).join(' ').toUpperCase();\nconst candidates = rows.map(r => ({\n  id:r.id, name:r.fields?.['Vendor Name'] || '', email:r.fields?.Email || '',\n  active:r.fields?.Active !== false && String(r.fields?.Active || '').toLowerCase() !== 'no',\n  trades:list(r.fields?.Trades), properties:list(r.fields?.Properties), priority:Number(r.fields?.Priority || 999)\n})).filter(v => v.active && v.name && v.email && v.trades.includes(trade) && (!v.properties || property.includes(v.properties) || v.properties.includes(property.split(' - ')[0] || '')))\n  .sort((a,b) => a.priority - b.priority).slice(0,3);\nconst missing = Array.isArray(ticket.missing_info) ? ticket.missing_info : [];\nconst eligible = Boolean(ticket.id && !ticket.human_only && ticket.priority !== 'NEEDS_REVIEW' && missing.length === 0 && ticket.source !== 'fixture' && ticket.source !== 'import');\nconst canChoose = eligible && candidates.length > 0;\nconst text = canChoose ? [\n  `VENDOR APPROVAL: ${ticket.ref}`, `Priority: ${ticket.priority}`, `Trade: ${ticket.trade || 'UNKNOWN'}`,\n  `Unit: ${ticket.unit_match_display || ticket.unit_identifier || 'not stated'}`,\n  `Issue: ${ticket.issue_summary || ticket.subject || 'Maintenance request'}`, '',\n  'Select a vendor to send this exact email:', String(ticket.vendor_note || 'No vendor note was drafted.')\n].join('\\n') : (eligible ? `${ticket.ref}: no active vendor matches this property and trade. Assign a vendor manually; no email has been sent.` : `${ticket.ref}: manager review required. No vendor email will be sent automatically.`);\nreturn [{json:{\n  ticket_id:ticket.id, ticket, airtable:cfg, contacts, candidates, vendor_count:candidates.length,\n  tenant_record_id:context.tenant_airtable_record_id || '', should_send_manager:Boolean(eligible && (contacts.primary_chat_id || contacts.operator_chat_id)),\n  should_sync:Boolean(cfg.enabled && cfg.base_id), chat_id:contacts.primary_chat_id || contacts.operator_chat_id || '',\n  vendor_1_label:candidates[0] ? `Send to ${candidates[0].name}` : '', vendor_2_label:candidates[1] ? `Send to ${candidates[1].name}` : '', vendor_3_label:candidates[2] ? `Send to ${candidates[2].name}` : '',\n  vendor_1_callback:candidates[0] ? `vendor:${ticket.id}:${candidates[0].id}` : '', vendor_2_callback:candidates[1] ? `vendor:${ticket.id}:${candidates[1].id}` : '', vendor_3_callback:candidates[2] ? `vendor:${ticket.id}:${candidates[2].id}` : '',\n  message_text:text\n}}];"
       },
       "id": "prepare-manager-vendor-alert",
       "name": "Prepare Manager Vendor Alert",
@@ -394,122 +484,9 @@
     },
     {
       "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict"
-          },
-          "conditions": [
-            {
-              "id": "should-notify-manager-condition",
-              "leftValue": "={{ Boolean($json.should_send_manager) }}",
-              "rightValue": true,
-              "operator": {
-                "type": "boolean",
-                "operation": "true",
-                "singleValue": true
-              }
-            }
-          ],
-          "combinator": "and"
-        }
-      },
-      "id": "should-notify-manager",
-      "name": "Should Notify Manager",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        580,
-        -180
-      ]
-    },
-    {
-      "parameters": {
-        "resource": "message",
-        "operation": "sendMessage",
-        "chatId": "={{ $json.chat_id }}",
-        "text": "={{ $json.message_text }}",
-        "additionalFields": {
-          "appendAttribution": false,
-          "disable_web_page_preview": true,
-          "parse_mode": "HTML"
-        },
-        "replyMarkup": "inlineKeyboard",
-        "inlineKeyboard": {
-          "rows": [
-            {
-              "row": {
-                "buttons": [
-                  {
-                    "text": "={{ $json.vendor_1_label }}",
-                    "additionalFields": {
-                      "callback_data": "={{ $json.vendor_1_callback }}"
-                    }
-                  }
-                ]
-              }
-            },
-            {
-              "row": {
-                "buttons": [
-                  {
-                    "text": "={{ $json.vendor_2_label }}",
-                    "additionalFields": {
-                      "callback_data": "={{ $json.vendor_2_callback }}"
-                    }
-                  }
-                ]
-              }
-            },
-            {
-              "row": {
-                "buttons": [
-                  {
-                    "text": "={{ $json.vendor_3_label }}",
-                    "additionalFields": {
-                      "callback_data": "={{ $json.vendor_3_callback }}"
-                    }
-                  }
-                ]
-              }
-            },
-            {
-              "row": {
-                "buttons": [
-                  {
-                    "text": "Hold",
-                    "additionalFields": {
-                      "callback_data": "={{ 'vendor:' + $json.ticket_id + ':hold' }}"
-                    }
-                  }
-                ]
-              }
-            }
-          ]
-        }
-      },
-      "id": "telegram-send-vendor-approval",
-      "name": "Telegram Send Vendor Approval",
-      "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1.2,
-      "position": [
-        800,
-        -260
-      ],
-      "credentials": {
-        "telegramApi": {
-          "id": "stage1TelegramLocal",
-          "name": "maintenance-triage-telegram-bot"
-        }
-      },
-      "continueOnFail": true
-    },
-    {
-      "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "return $input.all().map(item=>{const j=item.json; const t=j.ticket||{}; const cfg=j.airtable||{}; const propertyMatch=String(t.body_raw||'').match(/(?:^|\\n)Property:\\s*([^\\n]+)/i); return {json:{...j,should_sync:Boolean(cfg.enabled&&cfg.base_id),airtable_url:`https://api.airtable.com/v0/${cfg.base_id}/${encodeURIComponent(cfg.requests_table||'Requests')}`,airtable_body:{performUpsert:{fieldsToMergeOn:['Reference']},records:[{fields:{'Reference':t.ref||'',Status:t.status||'NEW',Priority:t.priority||'',Source:t.source||'', 'Tenant Name':t.tenant_name||'', 'Tenant Email':t.from_address||t.tenant_contact||'',Property:propertyMatch?.[1]||'',Unit:t.unit_identifier||'',Trade:t.trade||'',Summary:t.issue_summary||t.subject||'', 'Missing Info':JSON.stringify(t.missing_info||[]), 'Human Only':String(Boolean(t.human_only)), 'Vendor Status':t.vendor_status||'', 'Suggested Vendors':(j.candidates||[]).map(v=>v.name).join(', '), 'Telegram Chat ID':t.tenant_chat_id||''}}]}}};});"
+        "jsCode": "return $input.all().map(item => {\n  const j = item.json; const t = j.ticket || {}; const cfg = j.airtable || {};\n  const propertyMatch = String(t.body_raw || '').match(/(?:^|\\n)Property:\\s*([^\\n]+)/i);\n  const fields = {\n    'Reference':t.ref || '', Status:t.status || 'NEW', Priority:t.priority || '', Source:t.source || '',\n    'Tenant Email':(t.from_address || t.tenant_contact || '').startsWith('telegram:') ? '' : (t.from_address || t.tenant_contact || ''),\n    Property:propertyMatch?.[1] || '', Unit:t.unit_identifier || '', Trade:t.trade || '', Summary:t.issue_summary || t.subject || '',\n    'Missing Info':Array.isArray(t.missing_info) ? t.missing_info : [], 'Human Only':Boolean(t.human_only),\n    'Vendor Status':t.vendor_status || '', 'Telegram Chat ID':t.tenant_chat_id || ''\n  };\n  if (j.tenant_record_id) fields.Tenant = [j.tenant_record_id];\n  if ((j.candidates || []).length) fields['Suggested Vendors'] = j.candidates.map(v => v.id);\n  if (t.selected_vendor_id) fields['Selected Vendor'] = [t.selected_vendor_id];\n  return {json:{...j, should_sync:Boolean(cfg.enabled && cfg.base_id), airtable_url:`https://api.airtable.com/v0/${cfg.base_id}/${encodeURIComponent(cfg.requests_table || 'Requests')}`, airtable_body:{performUpsert:{fieldsToMergeOn:['Reference']},records:[{fields}]}}};\n});"
       },
       "id": "prepare-airtable-request-upsert",
       "name": "Prepare Airtable Request Upsert",
@@ -626,6 +603,386 @@
           "name": "maintenance-triage-postgres-local"
         }
       }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "should-send-manager-keyboard-0-condition",
+              "leftValue": "={{ Boolean($json.should_send_manager && $json.vendor_count === 0) }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "should-send-manager-keyboard-0",
+      "name": "Should Send Manager Keyboard 0",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        580,
+        -260
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $json.chat_id }}",
+        "text": "={{ $json.message_text }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "disable_web_page_preview": true,
+          "parse_mode": "HTML"
+        },
+        "replyMarkup": "inlineKeyboard",
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "Hold",
+                    "additionalFields": {
+                      "callback_data": "={{ 'vendor:' + $json.ticket_id + ':hold' }}"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "id": "telegram-send-manager-keyboard-0",
+      "name": "Telegram Send Manager Keyboard 0",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        820,
+        -260
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "stage1TelegramLocal",
+          "name": "maintenance-triage-telegram-bot"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "should-send-manager-keyboard-1-condition",
+              "leftValue": "={{ Boolean($json.should_send_manager && $json.vendor_count === 1) }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "should-send-manager-keyboard-1",
+      "name": "Should Send Manager Keyboard 1",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        580,
+        -140
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $json.chat_id }}",
+        "text": "={{ $json.message_text }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "disable_web_page_preview": true,
+          "parse_mode": "HTML"
+        },
+        "replyMarkup": "inlineKeyboard",
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "={{ $json.vendor_1_label }}",
+                    "additionalFields": {
+                      "callback_data": "={{ $json.vendor_1_callback }}"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "Hold",
+                    "additionalFields": {
+                      "callback_data": "={{ 'vendor:' + $json.ticket_id + ':hold' }}"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "id": "telegram-send-manager-keyboard-1",
+      "name": "Telegram Send Manager Keyboard 1",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        820,
+        -140
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "stage1TelegramLocal",
+          "name": "maintenance-triage-telegram-bot"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "should-send-manager-keyboard-2-condition",
+              "leftValue": "={{ Boolean($json.should_send_manager && $json.vendor_count === 2) }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "should-send-manager-keyboard-2",
+      "name": "Should Send Manager Keyboard 2",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        580,
+        -20
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $json.chat_id }}",
+        "text": "={{ $json.message_text }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "disable_web_page_preview": true,
+          "parse_mode": "HTML"
+        },
+        "replyMarkup": "inlineKeyboard",
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "={{ $json.vendor_1_label }}",
+                    "additionalFields": {
+                      "callback_data": "={{ $json.vendor_1_callback }}"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "={{ $json.vendor_2_label }}",
+                    "additionalFields": {
+                      "callback_data": "={{ $json.vendor_2_callback }}"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "Hold",
+                    "additionalFields": {
+                      "callback_data": "={{ 'vendor:' + $json.ticket_id + ':hold' }}"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "id": "telegram-send-manager-keyboard-2",
+      "name": "Telegram Send Manager Keyboard 2",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        820,
+        -20
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "stage1TelegramLocal",
+          "name": "maintenance-triage-telegram-bot"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "should-send-manager-keyboard-3-condition",
+              "leftValue": "={{ Boolean($json.should_send_manager && $json.vendor_count === 3) }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "should-send-manager-keyboard-3",
+      "name": "Should Send Manager Keyboard 3",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        580,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $json.chat_id }}",
+        "text": "={{ $json.message_text }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "disable_web_page_preview": true,
+          "parse_mode": "HTML"
+        },
+        "replyMarkup": "inlineKeyboard",
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "={{ $json.vendor_1_label }}",
+                    "additionalFields": {
+                      "callback_data": "={{ $json.vendor_1_callback }}"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "={{ $json.vendor_2_label }}",
+                    "additionalFields": {
+                      "callback_data": "={{ $json.vendor_2_callback }}"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "={{ $json.vendor_3_label }}",
+                    "additionalFields": {
+                      "callback_data": "={{ $json.vendor_3_callback }}"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "Hold",
+                    "additionalFields": {
+                      "callback_data": "={{ 'vendor:' + $json.ticket_id + ':hold' }}"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "id": "telegram-send-manager-keyboard-3",
+      "name": "Telegram Send Manager Keyboard 3",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        820,
+        100
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "stage1TelegramLocal",
+          "name": "maintenance-triage-telegram-bot"
+        }
+      },
+      "continueOnFail": true
     }
   ],
   "connections": {
@@ -656,17 +1013,6 @@
         [
           {
             "node": "Postgres Claim Vendor Send",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Postgres Claim Vendor Send": {
-      "main": [
-        [
-          {
-            "node": "Prepare Vendor Email",
             "type": "main",
             "index": 0
           }
@@ -725,6 +1071,11 @@
             "node": "Prepare Tenant Vendor Update",
             "type": "main",
             "index": 0
+          },
+          {
+            "node": "Prepare Airtable Vendor Send Sync",
+            "type": "main",
+            "index": 0
           }
         ]
       ]
@@ -734,6 +1085,39 @@
         [
           {
             "node": "Telegram Send Tenant Vendor Update",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Send Tenant Vendor Update": {
+      "main": [
+        [
+          {
+            "node": "Attach Tenant Vendor Update Delivery",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Attach Tenant Vendor Update Delivery": {
+      "main": [
+        [
+          {
+            "node": "Postgres Record Tenant Vendor Update",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Airtable Vendor Send Sync": {
+      "main": [
+        [
+          {
+            "node": "HTTP Airtable Sync Vendor Send",
             "type": "main",
             "index": 0
           }
@@ -817,7 +1201,22 @@
       "main": [
         [
           {
-            "node": "Should Notify Manager",
+            "node": "Should Send Manager Keyboard 0",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Should Send Manager Keyboard 1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Should Send Manager Keyboard 2",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Should Send Manager Keyboard 3",
             "type": "main",
             "index": 0
           },
@@ -827,18 +1226,6 @@
             "index": 0
           }
         ]
-      ]
-    },
-    "Should Notify Manager": {
-      "main": [
-        [
-          {
-            "node": "Telegram Send Vendor Approval",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        []
       ]
     },
     "Prepare Airtable Request Upsert": {
@@ -884,6 +1271,65 @@
             "index": 0
           }
         ]
+      ]
+    },
+    "Postgres Claim Vendor Send": {
+      "main": [
+        [
+          {
+            "node": "Prepare Vendor Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Should Send Manager Keyboard 0": {
+      "main": [
+        [
+          {
+            "node": "Telegram Send Manager Keyboard 0",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Should Send Manager Keyboard 1": {
+      "main": [
+        [
+          {
+            "node": "Telegram Send Manager Keyboard 1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Should Send Manager Keyboard 2": {
+      "main": [
+        [
+          {
+            "node": "Telegram Send Manager Keyboard 2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Should Send Manager Keyboard 3": {
+      "main": [
+        [
+          {
+            "node": "Telegram Send Manager Keyboard 3",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
       ]
     }
   },

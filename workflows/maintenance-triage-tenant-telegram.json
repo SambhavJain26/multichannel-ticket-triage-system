@@ -29,7 +29,7 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "return $input.all().map((item) => { const u = item.json.message || item.json; const text = String(u.text || \"\").trim(); const match = text.match(/^\\/start\\s+([a-zA-Z0-9_-]+)$/); return {json: {chat_id: String(u.chat?.id || \"\"), user_id: String(u.from?.id || \"\"), username: u.from?.username || \"\", text, message_id: String(u.message_id || \"\"), pairing_token: match?.[1] || \"\", is_pairing: Boolean(match), is_new_command: /^\\/new\\b/i.test(text)}}; });"
+        "jsCode": "return $input.all().map((item) => { const u = item.json.message || item.json; const text = String(u.text || \"\").trim(); const match = text.match(/^\\/start\\s+([a-zA-Z0-9_-]+)$/); return {json: {chat_id: String(u.chat?.id || \"\"), user_id: String(u.from?.id || \"\"), username: u.from?.username || \"\", text, message_id: String(u.message_id || \"\"), pairing_token: match?.[1] || \"\", is_pairing: Boolean(match), is_bare_start: /^\\/start$/i.test(text), is_new_command: /^\\/new\\b/i.test(text)}}; });"
       },
       "id": "normalize-tenant-telegram-event",
       "name": "Normalize Tenant Telegram Event",
@@ -168,7 +168,7 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "function parse(v) { try { return typeof v === \"string\" ? JSON.parse(v) : v; } catch (_) { return null; } }\nreturn $input.all().map((item) => { const j = item.json; const ticket = parse(j.ticket); const status = /\\b(when|what time|how soon).{0,30}\\b(arrive|coming|help|someone)\\b/i.test(j.text); let route = \"new\"; if (j.is_new_command) route = \"new_command\"; else if (ticket && status) route = \"status\"; else if (ticket && Number(ticket.clarification_round || 0) < 2 && Array.isArray(ticket.missing_info) && ticket.missing_info.length) route = \"clarification\"; return {json: {...j, ticket, route}}; });"
+        "jsCode": "function parse(v) { try { return typeof v === \"string\" ? JSON.parse(v) : v; } catch (_) { return null; } }\nreturn $input.all().map((item) => { const j = item.json; const ticket = parse(j.ticket); const status = /\\b(when|what time|how soon).{0,30}\\b(arrive|coming|help|someone)\\b/i.test(j.text); let route = \"new\"; if (j.is_bare_start) route = \"welcome\"; else if (j.is_new_command) route = \"new_command\"; else if (ticket && status) route = \"status\"; else if (ticket && Number(ticket.clarification_round || 0) < 2 && Array.isArray(ticket.missing_info) && ticket.missing_info.length) route = \"clarification\"; return {json: {...j, ticket, route}}; });"
       },
       "id": "route-tenant-message",
       "name": "Route Tenant Message",
@@ -184,6 +184,21 @@
         "mode": "rules",
         "rules": {
           "values": [
+            {
+              "conditions": {
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.route }}",
+                    "rightValue": "welcome",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
             {
               "conditions": {
                 "conditions": [
@@ -256,6 +271,49 @@
         -140,
         120
       ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "return $input.all().map(item => ({json:{chat_id:item.json.chat_id,message_text:'Tell us what is wrong and include your property and unit if you can.'}}));"
+      },
+      "id": "prepare-direct-telegram-welcome",
+      "name": "Prepare Direct Telegram Welcome",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        80,
+        -120
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $json.chat_id }}",
+        "text": "={{ $json.message_text }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "disable_web_page_preview": true,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "telegram-send-direct-welcome",
+      "name": "Telegram Send Direct Welcome",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        300,
+        -120
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "stage9TenantTelegram",
+          "name": "maintenance-triage-tenant-telegram-bot"
+        }
+      },
+      "continueOnFail": true
     },
     {
       "parameters": {
@@ -476,6 +534,45 @@
         }
       },
       "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const ctx=$(\"Prepare Tenant Status Reply\").all(); return $input.all().map((item,i)=>({json:{...ctx[i].json,delivery_error:item.json.error || '',delivery_external_message_id:String(item.json.message_id || item.json.messageId || `telegram:status:${ctx[i].json.ticket_id}:${Date.now()}`)}}));"
+      },
+      "id": "attach-status-reply-delivery",
+      "name": "Attach Status Reply Delivery",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        520,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "database",
+        "operation": "executeQuery",
+        "query": "INSERT INTO triage.ticket_messages (ticket_id, channel, direction, intent, body, external_message_id, delivery_state, detail)\nVALUES ($1::bigint, 'telegram', 'outbound', $2::text, $3::text, NULLIF($4::text, ''), CASE WHEN NULLIF($5::text, '') IS NULL THEN 'SENT' ELSE 'FAILED' END, jsonb_build_object('error', NULLIF($5::text, '')))\nON CONFLICT (channel, direction, external_message_id) DO UPDATE SET delivery_state = EXCLUDED.delivery_state, detail = EXCLUDED.detail\nRETURNING id;",
+        "options": {
+          "queryReplacement": "={{ [$json.ticket_id,$json.intent,$json.message_text,$json.delivery_external_message_id,$json.delivery_error] }}"
+        }
+      },
+      "id": "postgres-record-status-reply",
+      "name": "Postgres Record Status Reply",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        740,
+        300
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "stage1PgLocal",
+          "name": "maintenance-triage-postgres-local"
+        }
+      }
     },
     {
       "parameters": {
@@ -733,6 +830,13 @@
       "main": [
         [
           {
+            "node": "Prepare Direct Telegram Welcome",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
             "node": "Prepare New Ticket Payload",
             "type": "main",
             "index": 0
@@ -755,6 +859,17 @@
         [
           {
             "node": "Prepare Clarification Retriage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Direct Telegram Welcome": {
+      "main": [
+        [
+          {
+            "node": "Telegram Send Direct Welcome",
             "type": "main",
             "index": 0
           }
@@ -837,6 +952,28 @@
         [
           {
             "node": "Telegram Send Status Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Send Status Reply": {
+      "main": [
+        [
+          {
+            "node": "Attach Status Reply Delivery",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Attach Status Reply Delivery": {
+      "main": [
+        [
+          {
+            "node": "Postgres Record Status Reply",
             "type": "main",
             "index": 0
           }

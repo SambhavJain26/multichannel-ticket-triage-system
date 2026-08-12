@@ -62,6 +62,14 @@ CREATE TABLE IF NOT EXISTS triage.ticket_messages (
 );
 
 ALTER TABLE triage.ticket_messages
+  DROP CONSTRAINT IF EXISTS ticket_messages_intent_check;
+
+ALTER TABLE triage.ticket_messages
+  ADD CONSTRAINT ticket_messages_intent_check CHECK (
+    intent IN ('request', 'pairing', 'receipt', 'clarification', 'clarification_answer', 'status', 'vendor_update', 'vendor_dispatch', 'manager_note')
+  );
+
+ALTER TABLE triage.ticket_messages
   ADD COLUMN IF NOT EXISTS airtable_record_id TEXT,
   ADD COLUMN IF NOT EXISTS airtable_synced_at TIMESTAMPTZ;
 
@@ -91,6 +99,14 @@ CREATE TABLE IF NOT EXISTS triage.ticket_vendor_candidates (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   PRIMARY KEY (ticket_id, vendor_id),
   UNIQUE (ticket_id, candidate_rank)
+);
+
+CREATE TABLE IF NOT EXISTS triage.airtable_roster_links (
+  roster_kind TEXT NOT NULL CHECK (roster_kind IN ('tenant', 'vendor')),
+  lookup_key TEXT NOT NULL,
+  airtable_record_id TEXT NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (roster_kind, lookup_key)
 );
 
 CREATE INDEX IF NOT EXISTS tenant_pairing_tokens_active_idx

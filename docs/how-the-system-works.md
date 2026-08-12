@@ -17,6 +17,10 @@ Telegram bot directly.
 The email link is a demo convenience, not a production identity check. Before a real
 deployment, the link must be bound to a verified tenant identity.
 
+An unpaired `/start` message only opens the bot and asks the tenant to describe the
+issue. It does not create a request. A normal direct message creates a request; `/new`
+opens a separate request after an existing conversation.
+
 ## What happens to a request
 
 1. The Triage Engine reads the request and checks for safety concerns such as gas, fire,
@@ -60,7 +64,9 @@ tap cannot send a second vendor email.
 
 Telegram is the manager decision channel. For each complete maintenance request, the
 manager gets the request summary, safety/priority context, the drafted vendor note, and
-vendor-selection buttons. A selected vendor is the explicit approval to send that email.
+only the vendor-selection buttons that have an active matching vendor. A selected vendor
+is the explicit approval to send that email. When there is no match, the manager sees a
+manual-assignment message and Hold only.
 
 ## What it does not do
 

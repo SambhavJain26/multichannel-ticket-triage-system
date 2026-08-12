@@ -13,13 +13,25 @@ Create a separate bot with BotFather. In n8n, create a Telegram credential named
 
 ### 2. Create Airtable workspace data
 
-Create an empty Airtable base. Create a local Airtable personal access token with the
-schema and record read/write scopes for that base, then set it only in the current terminal:
+Create a local Airtable personal access token with the schema and record read/write scopes
+for the base, then set it only in the current terminal:
 
 ```powershell
 $env:AIRTABLE_PAT = "your-local-token"
 python .\scripts\setup-stage-9-airtable.py --base-id appYourBaseId --apply
 ```
+
+For the existing text-only demo tables, delete only `Requests`, `Conversations`, `Tenant
+Roster`, and `Vendors` in the Airtable UI first. Airtable's public API cannot delete or
+convert existing table schemas. Then rebuild and replay the local demo state:
+
+```powershell
+.\scripts\rebuild-stage-9-airtable.ps1 -BaseId appYourBaseId
+```
+
+The rebuild creates typed linked records, single/multiple selects, email, phone, checkbox,
+number, long-text, date, lookup, and audit-time fields. It leaves any other Airtable tables
+untouched and re-syncs the local Postgres demo tickets and conversation history.
 
 Create an n8n Airtable credential named `maintenance-triage-airtable` using the same token.
 The setup script creates `Requests`, `Conversations`, `Tenant Roster`, and `Vendors`, then
@@ -76,7 +88,8 @@ are intentionally ignored by IMAP, so they cannot create a loop.
 
 ### Direct tenant Telegram request
 
-**Do:** Message the tenant bot with a maintenance issue. Use `/new` before reporting a
+**Do:** Message the tenant bot with a maintenance issue. An unpaired `/start` only opens
+the conversation and does not create a ticket. Use `/new`, then send the next message as a
 second unrelated issue.
 
 **Expect:** The bot records the request, asks only the details required for classification,
@@ -99,8 +112,8 @@ second request.
 
 **Do:** Open the manager Telegram alert for a complete request.
 
-**Expect:** The alert shows the request summary, proposed vendor email, up to three vendor
-buttons, and Hold.
+**Expect:** The alert shows the request summary, proposed vendor email, only the active
+matching vendor buttons, and Hold. There are never empty placeholder buttons.
 
 **Verify:** Tap one vendor button once. A single email is sent to
 `sambhavn8n@gmail.com`, Airtable records the selected vendor and send state, and the tenant

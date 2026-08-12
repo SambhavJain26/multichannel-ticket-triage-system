@@ -91,6 +91,7 @@ Known n8n gotchas to account for:
 - Telegram inline keyboard URL buttons require valid public HTTP(S) URLs. For live local Telegram tests, set `triage.config.board.public_base_url` to the current HTTPS tunnel URL before sending real alerts.
 - Telegram Trigger node names should avoid spaces in local n8n `2.29.10`; space-bearing trigger names can register webhook paths that do not match Telegram's configured callback path.
 - Telegram inline keyboards should be represented as explicit fixed-collection rows/buttons in the Telegram node. Do not pass the whole `inlineKeyboard` object as a single expression; it can send a plain text message with no buttons.
+- Airtable's public API can create typed tables and fields but cannot delete or convert an existing table schema. For the local demo typed-table rebuild, delete only the four known Stage 9 demo tables in Airtable's UI first, then run the guarded bootstrap/replay scripts. Never apply that procedure to a client or production base.
 - Telegram `answerQuery` responses do not preserve the upstream approval/context payload. Reattach the approval result before downstream edit-message or audit nodes need chat/message IDs.
 - Alert recording must never regress handled tickets. Successful re-alerts can update alert metadata, but `ACKED`, `ACK_SENT`, and `HELD` statuses must not be overwritten back to `ALERTED`.
 - Board and detail pages are manager-facing by default. Render model outputs, rule outcomes, and event details in plain language first; keep raw JSON only behind collapsed technical audit controls.
