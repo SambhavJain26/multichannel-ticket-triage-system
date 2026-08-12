@@ -67,6 +67,7 @@ try {
     if ($CleanupLegacy -and -not $PublishLiveTriggers) {
         throw "-CleanupLegacy requires -PublishLiveTriggers. Do not retire working workflows before the replacement triggers are live."
     }
+    .\scripts\apply-stage-4.ps1 | Out-Host
     python .\scripts\build-stage-4-workflows.py
     python .\scripts\build-stage-9-workflows.py
     $files = @(

@@ -51,6 +51,21 @@ try {
             -v ON_ERROR_STOP=1 `
             -f - | Out-Host
 
+    $repairTicketRefSequence = @"
+WITH max_ref AS (
+  SELECT max(substring(ref FROM '^MR-([0-9]+)$')::bigint) AS value
+  FROM triage.tickets
+  WHERE ref ~ '^MR-[0-9]+$'
+)
+SELECT setval('triage.ticket_ref_seq', coalesce(value, 1), value IS NOT NULL)
+FROM max_ref;
+"@
+    $repairTicketRefSequence | docker compose exec -T postgres psql `
+        -U $postgresUser `
+        -d $postgresDb `
+        -v ON_ERROR_STOP=1 `
+        -f - | Out-Host
+
     Write-Host "Restored local demo snapshot from $snapshotPath"
 }
 finally {

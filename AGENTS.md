@@ -129,6 +129,8 @@ Build reset paths for local demo data only. Never run destructive reset/delete s
 
 Stage 8 clean snapshots are intended for local clean demo state. Data-only dumps of populated threaded tickets can warn on the self-referential ticket foreign key; test restore before relying on any populated snapshot.
 
+Data-only snapshots do not include `triage.ticket_ref_seq`. Any restore that repopulates `triage.tickets` must realign the sequence to the highest restored `MR-xxxx` reference before new ingestion. The core allocator uses `triage.next_ticket_ref()` as a second guard and skips existing references if a local sequence is stale.
+
 ## Commit And Completion Guidelines
 
 Use short imperative commits, for example `docs: update triage workflow guidance` or `feat: add fixture harness`.

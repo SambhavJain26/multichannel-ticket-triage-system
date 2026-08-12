@@ -610,7 +610,7 @@ def build_core():
         ambiguity_note, language, status, sla_due_at
       )
       SELECT
-        'MR-' || lpad(nextval('triage.ticket_ref_seq')::text, 4, '0'),
+        triage.next_ticket_ref(),
         $1::text,
         coalesce(NULLIF($2::text, '')::timestamptz, now()),
         NULLIF($3::text, ''),

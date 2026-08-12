@@ -17,11 +17,14 @@ try {
     python .\scripts\build-stage-9-workflows.py | Out-Host
     @("maintenance-triage-core.json","maintenance-triage-tenant-intake.json","maintenance-triage-tenant-telegram.json","maintenance-triage-manager-desk.json","maintenance-triage-operations.json","maintenance-triage-demo-tools.json") | ForEach-Object { Get-Content -Raw "workflows\$_" | ConvertFrom-Json | Out-Null }
     docker compose config | Out-Null
+    .\scripts\apply-stage-4.ps1 | Out-Host
     .\scripts\apply-stage-9.ps1
     $user=Get-DotEnvValue "POSTGRES_USER" "maintenance_triage"; $db=Get-DotEnvValue "POSTGRES_DB" "maintenance_triage"
     Assert-Scalar "Stage 9 tables" "select count(*) from information_schema.tables where table_schema='triage' and table_name in ('tenant_chats','tenant_pairing_tokens','ticket_messages','vendor_send_attempts','ticket_vendor_candidates','airtable_roster_links');" "6" $user $db
     Assert-Scalar "Stage 9 ticket columns" "select count(*) from information_schema.columns where table_schema='triage' and table_name='tickets' and column_name in ('tenant_chat_id','clarification_round','vendor_status','selected_vendor_id','airtable_record_id');" "5" $user $db
     Assert-Scalar "Stage 9 configuration" "select count(*) from triage.config where key in ('tenant_telegram','airtable','system_mail');" "3" $user $db
+    Assert-Scalar "Ticket reference allocator" "select count(*) from pg_proc where oid = 'triage.next_ticket_ref()'::regprocedure;" "1" $user $db
+    if((Get-Content -Raw workflows\maintenance-triage-core.json) -notmatch 'triage\.next_ticket_ref\(\)') { throw "Core workflow does not use the safe ticket-reference allocator." }
     $managerWorkflow = Get-Content -Raw workflows\maintenance-triage-manager-desk.json | ConvertFrom-Json
     $keyboardNodes = @($managerWorkflow.nodes | Where-Object { $_.name -like 'Telegram Send Manager Keyboard *' })
     $emptyKeyboardNodes = @($keyboardNodes | Where-Object { $_.parameters.inlineKeyboard.rows.Count -eq 0 })
