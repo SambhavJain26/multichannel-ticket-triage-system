@@ -63,3 +63,23 @@ workflow remains inactive and contains only the six synthetic fixture messages:
 
 Do not use a real tenant or vendor during this demo. The pairing link is deliberately
 unverified and is not production-ready identity handling.
+
+## Forget previous demo requests
+
+Preview the exact local and Airtable record counts without deleting anything:
+
+```powershell
+.\scripts\reset-demo.ps1
+```
+
+Then perform the reset:
+
+```powershell
+.\scripts\reset-demo.ps1 -Apply
+```
+
+This clears only operational demo state and resets the next reference to `MR-0001`. It
+preserves Tenant Roster, Vendors, configuration, credentials, workflow definitions, and
+secrets. Use `-LocalOnly` only when the Airtable request history should deliberately remain.
+Previously delivered Telegram/email messages are not erased, but old manager approval
+buttons cannot affect future tickets because internal ticket IDs are never reused.

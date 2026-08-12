@@ -12,7 +12,7 @@ function Assert-Scalar { param([string]$Label,[string]$Sql,[string]$Expected,[st
 $repoRoot = Split-Path -Parent $PSScriptRoot
 Push-Location $repoRoot
 try {
-    python -m py_compile scripts\build-stage-4-workflows.py scripts\build-stage-9-workflows.py scripts\setup-stage-9-airtable.py scripts\sync-stage-9-airtable.py
+    python -m py_compile scripts\build-stage-4-workflows.py scripts\build-stage-9-workflows.py scripts\setup-stage-9-airtable.py scripts\sync-stage-9-airtable.py scripts\clear-stage-9-airtable-state.py
     python .\scripts\build-stage-4-workflows.py | Out-Host
     python .\scripts\build-stage-9-workflows.py | Out-Host
     @("maintenance-triage-core.json","maintenance-triage-tenant-intake.json","maintenance-triage-tenant-telegram.json","maintenance-triage-manager-desk.json","maintenance-triage-operations.json","maintenance-triage-demo-tools.json") | ForEach-Object { Get-Content -Raw "workflows\$_" | ConvertFrom-Json | Out-Null }
@@ -63,6 +63,9 @@ try {
     if($vendorEmail.parameters.jsCode -notmatch 'Could you please take a look at') { throw "Vendor email body is not the natural property-office format." }
     if($vendorEmail.parameters.jsCode -notmatch 'vendor_subject_prefix' -or $vendorEmail.parameters.jsCode -notmatch '\[MT-SYSTEM\]\[VENDOR\]') { throw "Vendor email does not carry the shared-mailbox loop marker." }
     if((Get-Content -Raw scripts\setup-stage-9-airtable.py) -notmatch 'PET_ON_SITE') { throw "New Airtable demo tables omit the PET_ON_SITE Missing Info option." }
+    $resetScript = Get-Content -Raw scripts\reset-demo.ps1
+    if($resetScript -notmatch 'clear-stage-9-airtable-state.py --apply' -or $resetScript -notmatch 'reset-stage-9-demo-state.ps1') { throw "The complete demo reset does not clear Airtable and local state." }
+    if((Get-Content -Raw scripts\reset-stage-9-demo-state.ps1) -match 'restart identity') { throw "Stage 9 reset reuses internal IDs and can reactivate old Telegram approval buttons." }
     Write-Host "OK: manager keyboard variants and direct Telegram intake"
     if($LivePrerequisites) {
       Assert-Scalar "Airtable configured" "select count(*) from triage.config where key='airtable' and value->>'enabled'='true' and coalesce(value->>'base_id','')<>'';" "1" $user $db

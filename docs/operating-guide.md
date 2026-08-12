@@ -154,7 +154,9 @@ Run the five-pass fixture rehearsal after Stage 9 workflows are published:
 Clear local operational data before a call:
 
 ```powershell
-.\scripts\reset-stage-9-demo-state.ps1
+.\scripts\reset-demo.ps1
+# Review the reported local and Airtable record counts, then apply:
+.\scripts\reset-demo.ps1 -Apply
 .\scripts\save-stage-9-demo-snapshot.ps1 -Name clean
 ```
 
@@ -164,9 +166,14 @@ Restore the clean state between calls:
 .\scripts\restore-stage-9-demo-snapshot.ps1 -Name clean
 ```
 
-These commands clear only local demo tickets, conversation rows, pairing tokens, vendor-send
-attempts, event history, and generated local artifacts. They preserve Airtable configuration,
-unit roster, credentials, workflow definitions, and all secrets.
+The complete reset clears Postgres tickets, conversations, pairing tokens, vendor-send
+attempts, event history, generated local artifacts, Airtable Requests and Airtable
+Conversations. It resets the next reference to `MR-0001`. It preserves Airtable Tenant
+Roster and Vendors, local units and configuration, credentials, workflow definitions, and
+all secrets. The command is a dry run unless `-Apply` is supplied. Use `-LocalOnly` only
+when Airtable should deliberately retain its current records. Previously delivered Telegram
+and email messages remain visible in those external services. Internal ticket IDs are not
+reused, so old manager approval buttons cannot affect requests created after the reset.
 
 ## Failure checks
 
