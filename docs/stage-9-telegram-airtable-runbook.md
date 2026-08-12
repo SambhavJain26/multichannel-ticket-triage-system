@@ -33,6 +33,9 @@ python .\scripts\setup-stage-9-airtable.py --base-id appYourBaseId --apply
 Publish only after the credentials and tunnel are ready:
 
 ```powershell
+.\scripts\start-cloudflare-tunnel.ps1
+# In a second terminal, set the printed HTTPS URL as N8N_WEBHOOK_URL in .env,
+# then run: docker compose up -d --force-recreate n8n
 .\scripts\import-stage-9-workflows.ps1 -PublishLiveTriggers -CleanupLegacy
 ```
 

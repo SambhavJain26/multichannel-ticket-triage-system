@@ -11,6 +11,6 @@ if (-not (Get-Command cloudflared -ErrorAction SilentlyContinue)) {
 }
 
 Write-Host "Starting temporary Cloudflare Tunnel for $Url"
-Write-Host "Copy the trycloudflare.com HTTPS URL into n8n only for temporary callback testing."
+Write-Host "Copy the trycloudflare.com HTTPS URL into .env as N8N_WEBHOOK_URL, then recreate n8n before activating Telegram triggers."
 Write-Host "Keep this terminal open while testing Telegram callback webhooks."
 cloudflared tunnel --url $Url
