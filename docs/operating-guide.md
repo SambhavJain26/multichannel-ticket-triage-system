@@ -96,7 +96,7 @@ second unrelated issue.
 and keeps replies on the same active ticket.
 
 **Verify:** Check Airtable `Requests` and `Conversations`. A vague request receives at most
-two clarification rounds before the manager review state.
+two clarification rounds before the manager review state and a Hold-only manager alert.
 
 ### Tenant status question
 
@@ -122,7 +122,8 @@ handled and does not send again.
 
 ### No vendor and sensitive requests
 
-**Do:** Remove matching vendors from Airtable, or submit an accommodation/legal request.
+**Do:** Remove matching vendors from Airtable, submit an accommodation/legal request, or
+leave the required clarification details unanswered.
 
 **Expect:** The manager receives a review path, but there is no vendor-send button that can
 send mail.

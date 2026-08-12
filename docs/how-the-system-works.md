@@ -29,7 +29,8 @@ opens a separate request after an existing conversation.
    record in Airtable.
 3. If the description is too vague, the tenant Telegram bot asks focused follow-up
    questions. It asks at most two rounds, with no more than three questions in a round.
-   A request still lacking enough detail becomes `NEEDS_REVIEW` for the manager.
+   A request still lacking enough detail becomes `NEEDS_REVIEW`; the manager receives a
+   review alert, while no vendor email can be sent from it.
 4. For a complete maintenance request, it selects up to three active vendors whose trade
    and property coverage match the request.
 5. The manager receives a Telegram approval message containing the exact vendor email and
@@ -66,7 +67,9 @@ Telegram is the manager decision channel. For each complete maintenance request,
 manager gets the request summary, safety/priority context, the drafted vendor note, and
 only the vendor-selection buttons that have an active matching vendor. A selected vendor
 is the explicit approval to send that email. When there is no match, the manager sees a
-manual-assignment message and Hold only.
+manual-assignment message and Hold only. Incomplete, sensitive, or `NEEDS_REVIEW`
+requests also send a manager review message with Hold only, never a vendor-selection
+button.
 
 ## What it does not do
 

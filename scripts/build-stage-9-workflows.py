@@ -299,7 +299,7 @@ SELECT id AS ticket_id, ref, priority, missing_info, human_only, vendor_status, 
     clarification_response = r"""
 function parse(v, fallback) { try { return typeof v === 'string' ? JSON.parse(v) : (v || fallback); } catch (_) { return fallback; } }
 function questions(missing) { const q={UNIT:'Which unit and property is this for?',PROPERTY:'Which property is this at?',CONTACT:'What is the best contact number?',ACCESS_PERMISSION:'Can maintenance enter if you are away?',ISSUE_DETAIL:'Please describe what is happening, where it is happening, and whether it is getting worse.',ONSET_TIME:'When did this start?'}; return (parse(missing,[]) || []).filter(x=>q[x]).slice(0,3).map(x=>q[x]); }
-return $input.all().map(item=>{const j=item.json; const qs=questions(j.missing_info); const done=!qs.length && !j.human_only && j.priority!=='NEEDS_REVIEW'; const text=done?`Thank you. Your request ${j.ref} is now being reviewed for the right maintenance provider.`:(j.priority==='NEEDS_REVIEW'||j.human_only?`Thank you. A manager needs to review request ${j.ref} and will update you here.`:`Thank you. ${qs.join(' ')}`); return {json:{...j,should_notify_manager:done,message_text:text}};});
+return $input.all().map(item=>{const j=item.json; const qs=questions(j.missing_info); const done=!qs.length && !j.human_only && j.priority!=='NEEDS_REVIEW'; const needsManager=done || j.priority==='NEEDS_REVIEW' || j.human_only || Number(j.clarification_round || 0) >= 2; const text=done?`Thank you. Your request ${j.ref} is now being reviewed for the right maintenance provider.`:(needsManager?`Thank you. A manager needs to review request ${j.ref} and will update you here.`:`Thank you. ${qs.join(' ')}`); return {json:{...j,should_notify_manager:needsManager,message_text:text}};});
 """
     normalize = r"""
 return $input.all().map((item) => { const u = item.json.message || item.json; const text = String(u.text || "").trim(); const match = text.match(/^\/start\s+([a-zA-Z0-9_-]+)$/); return {json: {chat_id: String(u.chat?.id || ""), user_id: String(u.from?.id || ""), username: u.from?.username || "", text, message_id: String(u.message_id || ""), pairing_token: match?.[1] || "", is_pairing: Boolean(match), is_bare_start: /^\/start$/i.test(text), is_new_command: /^\/new\b/i.test(text)}}; });
@@ -356,16 +356,16 @@ SELECT to_jsonb(t) AS ticket, cfg.contacts, cfg.airtable, cfg.company, cfg.syste
 FROM triage.tickets t CROSS JOIN cfg JOIN input_values i ON t.id = i.ticket_id;
 """
     candidate_query = r"""
-WITH input_values AS (SELECT $1::bigint AS ticket_id, $2::jsonb AS candidates), removed AS (
+WITH input_values AS (SELECT $1::bigint AS ticket_id, $2::jsonb AS candidates, $3::boolean AS dispatch_eligible), removed AS (
   DELETE FROM triage.ticket_vendor_candidates WHERE ticket_id = (SELECT ticket_id FROM input_values)
 ), inserted AS (
   INSERT INTO triage.ticket_vendor_candidates (ticket_id, vendor_id, vendor_name, vendor_email, candidate_rank)
   SELECT i.ticket_id, c->>'id', c->>'name', c->>'email', ord::smallint FROM input_values i, jsonb_array_elements(i.candidates) WITH ORDINALITY AS x(c, ord)
-  WHERE c->>'id' IS NOT NULL AND ord <= 3
+  WHERE i.dispatch_eligible AND c->>'id' IS NOT NULL AND ord <= 3
   ON CONFLICT (ticket_id, vendor_id) DO UPDATE SET vendor_name = EXCLUDED.vendor_name, vendor_email = EXCLUDED.vendor_email, candidate_rank = EXCLUDED.candidate_rank
   RETURNING *
 ), updated AS (
-  UPDATE triage.tickets SET vendor_status = CASE WHEN EXISTS (SELECT 1 FROM inserted) THEN 'AWAITING_VENDOR' ELSE 'NEEDS_VENDOR_ASSIGNMENT' END
+  UPDATE triage.tickets SET vendor_status = CASE WHEN NOT (SELECT dispatch_eligible FROM input_values) THEN 'NOT_STARTED' WHEN EXISTS (SELECT 1 FROM inserted) THEN 'AWAITING_VENDOR' ELSE 'NEEDS_VENDOR_ASSIGNMENT' END
   WHERE id = (SELECT ticket_id FROM input_values) RETURNING *
 )
 SELECT (SELECT ticket_id FROM input_values) AS ticket_id, count(*)::int AS candidate_count FROM inserted;
@@ -480,19 +480,21 @@ const candidates = rows.map(r => ({
   .sort((a,b) => a.priority - b.priority).slice(0,3);
 const missing = Array.isArray(ticket.missing_info) ? ticket.missing_info : [];
 const eligible = Boolean(ticket.id && !ticket.human_only && ticket.priority !== 'NEEDS_REVIEW' && missing.length === 0 && ticket.source !== 'fixture' && ticket.source !== 'import');
-const canChoose = eligible && candidates.length > 0;
+const dispatchCandidates = eligible ? candidates : [];
+const canChoose = dispatchCandidates.length > 0;
+const reviewReason = ticket.human_only ? 'This request requires human handling.' : (missing.length ? `Missing details: ${missing.join(', ')}.` : 'The request needs manual review.');
 const text = canChoose ? [
   `VENDOR APPROVAL: ${ticket.ref}`, `Priority: ${ticket.priority}`, `Trade: ${ticket.trade || 'UNKNOWN'}`,
   `Unit: ${ticket.unit_match_display || ticket.unit_identifier || 'not stated'}`,
   `Issue: ${ticket.issue_summary || ticket.subject || 'Maintenance request'}`, '',
   'Select a vendor to send this exact email:', String(ticket.vendor_note || 'No vendor note was drafted.')
-].join('\n') : (eligible ? `${ticket.ref}: no active vendor matches this property and trade. Assign a vendor manually; no email has been sent.` : `${ticket.ref}: manager review required. No vendor email will be sent automatically.`);
+].join('\n') : (eligible ? `${ticket.ref}: no active vendor matches this property and trade. Assign a vendor manually; no email has been sent.` : [`MANAGER REVIEW: ${ticket.ref}`, `Priority: ${ticket.priority}`, `Issue: ${ticket.issue_summary || ticket.subject || 'Maintenance request'}`, `Reason: ${reviewReason}`, '', 'No vendor email has been sent.'].join('\n'));
 return [{json:{
-  ticket_id:ticket.id, ticket, airtable:cfg, contacts, candidates, vendor_count:candidates.length,
-  tenant_record_id:context.tenant_airtable_record_id || '', should_send_manager:Boolean(eligible && (contacts.primary_chat_id || contacts.operator_chat_id)),
+  ticket_id:ticket.id, ticket, airtable:cfg, contacts, candidates:dispatchCandidates, vendor_count:canChoose ? dispatchCandidates.length : 0, vendor_dispatch_eligible:eligible,
+  tenant_record_id:context.tenant_airtable_record_id || '', should_send_manager:Boolean(ticket.id && ticket.source !== 'fixture' && ticket.source !== 'import' && (contacts.primary_chat_id || contacts.operator_chat_id)),
   should_sync:Boolean(cfg.enabled && cfg.base_id), chat_id:contacts.primary_chat_id || contacts.operator_chat_id || '',
-  vendor_1_label:candidates[0] ? `Send to ${candidates[0].name}` : '', vendor_2_label:candidates[1] ? `Send to ${candidates[1].name}` : '', vendor_3_label:candidates[2] ? `Send to ${candidates[2].name}` : '',
-  vendor_1_callback:candidates[0] ? `vendor:${ticket.id}:${candidates[0].id}` : '', vendor_2_callback:candidates[1] ? `vendor:${ticket.id}:${candidates[1].id}` : '', vendor_3_callback:candidates[2] ? `vendor:${ticket.id}:${candidates[2].id}` : '',
+  vendor_1_label:dispatchCandidates[0] ? `Send to ${dispatchCandidates[0].name}` : '', vendor_2_label:dispatchCandidates[1] ? `Send to ${dispatchCandidates[1].name}` : '', vendor_3_label:dispatchCandidates[2] ? `Send to ${dispatchCandidates[2].name}` : '',
+  vendor_1_callback:dispatchCandidates[0] ? `vendor:${ticket.id}:${dispatchCandidates[0].id}` : '', vendor_2_callback:dispatchCandidates[1] ? `vendor:${ticket.id}:${dispatchCandidates[1].id}` : '', vendor_3_callback:dispatchCandidates[2] ? `vendor:${ticket.id}:${dispatchCandidates[2].id}` : '',
   message_text:text
 }}];
 """.strip()
@@ -501,12 +503,15 @@ return $input.all().map(item => {
   const j = item.json; const t = j.ticket || {}; const cfg = j.airtable || {};
   const propertyMatch = String(t.body_raw || '').match(/(?:^|\n)Property:\s*([^\n]+)/i);
   const fields = {
-    'Reference':t.ref || '', Status:t.status || 'NEW', Priority:t.priority || '', Source:t.source || '',
-    'Tenant Email':(t.from_address || t.tenant_contact || '').startsWith('telegram:') ? '' : (t.from_address || t.tenant_contact || ''),
-    Property:propertyMatch?.[1] || '', Unit:t.unit_identifier || '', Trade:t.trade || '', Summary:t.issue_summary || t.subject || '',
-    'Missing Info':Array.isArray(t.missing_info) ? t.missing_info : [], 'Human Only':Boolean(t.human_only),
-    'Vendor Status':t.vendor_status || '', 'Telegram Chat ID':t.tenant_chat_id || ''
+    'Reference':t.ref || '', Status:t.status || 'NEW', Priority:t.priority || 'NEEDS_REVIEW', Source:t.source || 'telegram',
+    Summary:t.issue_summary || t.subject || 'Maintenance request', 'Missing Info':Array.isArray(t.missing_info) ? t.missing_info : [],
+    'Human Only':Boolean(t.human_only), 'Vendor Status':t.vendor_status || 'NOT_STARTED'
   };
+  const add = (name, value) => { if (value !== null && value !== undefined && String(value).trim() !== '') fields[name] = value; };
+  const tenantEmail = (t.from_address || t.tenant_contact || '');
+  const property = propertyMatch?.[1]?.trim();
+  add('Tenant Email', tenantEmail.startsWith('telegram:') ? '' : tenantEmail);
+  add('Property', property); add('Unit', t.unit_identifier); add('Trade', t.trade); add('Telegram Chat ID', t.tenant_chat_id);
   if (j.tenant_record_id) fields.Tenant = [j.tenant_record_id];
   if ((j.candidates || []).length) fields['Suggested Vendors'] = j.candidates.map(v => v.id);
   if (t.selected_vendor_id) fields['Selected Vendor'] = [t.selected_vendor_id];
@@ -531,6 +536,12 @@ return $input.all().flatMap(item => {
     flow["nodes"] = nodes
 
     connections = flow["connections"]
+    by_name["Postgres Store Vendor Candidates"]["parameters"]["options"]["queryReplacement"] = "={{ [$json.ticket_id, JSON.stringify($json.candidates || []), Boolean($json.vendor_dispatch_eligible)] }}"
+    by_name["Reattach Manager Alert"]["parameters"]["jsCode"] = """return $("Prepare Manager Vendor Alert").all().map(item => {
+  const j = item.json;
+  const vendorStatus = j.vendor_dispatch_eligible ? ((j.candidates || []).length ? 'AWAITING_VENDOR' : 'NEEDS_VENDOR_ASSIGNMENT') : 'NOT_STARTED';
+  return {json:{...j,ticket:{...j.ticket,vendor_status:vendorStatus}}};
+});"""
     connections["Postgres Claim Vendor Send"] = {"main":[[{"node":"Prepare Vendor Email","type":"main","index":0}]]}
     connections.pop("Should Notify Manager", None)
     connections.pop("Telegram Send Vendor Approval", None)

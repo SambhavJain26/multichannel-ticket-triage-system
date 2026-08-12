@@ -129,7 +129,9 @@ SELECT jsonb_build_object(
   'missing_info', missing_info, 'human_only', human_only, 'vendor_status', vendor_status,
   'tenant_chat_id', tenant_chat_id, 'selected_vendor_id', selected_vendor_id
 )::text
-FROM triage.tickets ORDER BY id;
+FROM triage.tickets
+WHERE NOT (status = 'CLOSED' AND thread_root_id IS NOT NULL)
+ORDER BY id;
 """)
     request_ids: dict[int, str] = {}
     for ticket in tickets:
@@ -161,7 +163,8 @@ FROM triage.tickets ORDER BY id;
         field(fields, "Telegram Chat ID", ticket.get("tenant_chat_id"))
         if email.lower() in tenant_by_email:
             fields["Tenant"] = [tenant_by_email[email.lower()]]
-        candidate_rows = json_rows("SELECT jsonb_build_object('vendor_id', vendor_id)::text FROM triage.ticket_vendor_candidates WHERE ticket_id = %s ORDER BY candidate_rank;" % int(ticket["id"]))
+        can_suggest_vendor = ticket.get("priority") != "NEEDS_REVIEW" and not bool(ticket.get("human_only")) and not missing_info
+        candidate_rows = json_rows("SELECT jsonb_build_object('vendor_id', vendor_id)::text FROM triage.ticket_vendor_candidates WHERE ticket_id = %s ORDER BY candidate_rank;" % int(ticket["id"])) if can_suggest_vendor else []
         if candidate_rows:
             fields["Suggested Vendors"] = [row["vendor_id"] for row in candidate_rows]
         if ticket.get("selected_vendor_id"):
@@ -175,7 +178,10 @@ FROM triage.tickets ORDER BY id;
 SELECT jsonb_build_object('id', m.id, 'ticket_id', m.ticket_id, 'ref', t.ref, 'direction', m.direction,
   'channel', m.channel, 'intent', m.intent, 'body', m.body, 'external_message_id', m.external_message_id,
   'delivery_state', m.delivery_state, 'created_at', m.created_at)::text
-FROM triage.ticket_messages m JOIN triage.tickets t ON t.id = m.ticket_id ORDER BY m.id;
+FROM triage.ticket_messages m JOIN triage.tickets t ON t.id = m.ticket_id
+WHERE m.airtable_record_id IS NULL
+  AND NOT (t.status = 'CLOSED' AND t.thread_root_id IS NOT NULL)
+ORDER BY m.id;
 """)
     synced = 0
     for message in messages:
