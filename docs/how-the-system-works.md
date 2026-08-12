@@ -29,7 +29,9 @@ opens a separate request after an existing conversation.
    record in Airtable.
 3. If the description is too vague, the tenant Telegram bot keeps asking focused follow-up
    questions until it has the details needed to classify the request, with no more than
-   three questions in a round. It does not send a vendor email while details are missing.
+   three questions in a round. It treats the active email or Telegram chat as the tenant
+   contact channel, so it does not ask for a phone number. It does not send a vendor email
+   while details are missing.
    Sensitive or human-only cases go to manager review instead.
 4. For a complete maintenance request, it selects up to three active vendors whose trade
    and property coverage match the request.

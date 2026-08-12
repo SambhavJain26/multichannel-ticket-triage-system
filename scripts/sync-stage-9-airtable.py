@@ -14,6 +14,7 @@ from pathlib import Path
 
 
 API = "https://api.airtable.com/v0"
+META_API = f"{API}/meta"
 PROPERTIES = {"Maple Court", "Oak Terrace", "Pine House"}
 INTENTS = {"request", "pairing", "receipt", "clarification", "clarification_answer", "status", "vendor_update", "vendor_dispatch", "manager_note"}
 
@@ -45,6 +46,13 @@ def request(token: str, method: str, url: str, payload=None):
 
 def table_url(base_id: str, table: str) -> str:
     return f"{API}/{base_id}/{urllib.parse.quote(table, safe='')}"
+
+
+def missing_info_choices(token: str, base_id: str, table_name: str) -> set[str]:
+    schema = request(token, "GET", f"{META_API}/bases/{base_id}/tables")
+    table = next((item for item in schema.get("tables", []) if item.get("name") == table_name), {})
+    field_def = next((item for item in table.get("fields", []) if item.get("name") == "Missing Info"), {})
+    return {str(choice.get("name")) for choice in field_def.get("options", {}).get("choices", []) if choice.get("name")}
 
 
 def psql(sql: str) -> str:
@@ -107,6 +115,7 @@ def main() -> int:
     conversations_table = config.get("conversations_table", "Conversations")
     tenant_table = config.get("tenant_roster_table", "Tenant Roster")
     vendors_table = config.get("vendors_table", "Vendors")
+    supported_missing_info = missing_info_choices(token, base_id, requests_table)
 
     if args.reset_links:
         psql("UPDATE triage.tickets SET airtable_record_id = NULL; UPDATE triage.ticket_messages SET airtable_record_id = NULL, airtable_synced_at = NULL; DELETE FROM triage.airtable_roster_links;")
@@ -151,7 +160,7 @@ ORDER BY id;
         fields = {
             "Reference": ticket["ref"], "Status": ticket.get("status") or "NEW", "Priority": ticket.get("priority") or "NEEDS_REVIEW",
             "Source": ticket.get("source") or "telegram", "Summary": ticket.get("issue_summary") or "Maintenance request",
-            "Missing Info": missing_info if isinstance(missing_info, list) else [],
+            "Missing Info": [value for value in missing_info if value in supported_missing_info] if isinstance(missing_info, list) else [],
             "Human Only": bool(ticket.get("human_only")), "Vendor Status": ticket.get("vendor_status") or "NOT_STARTED",
             "Created At": airtable_datetime(ticket["received_at"]),
             "Last Synced": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.000Z"),

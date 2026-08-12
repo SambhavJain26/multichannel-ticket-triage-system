@@ -96,9 +96,11 @@ second unrelated issue.
 and keeps replies on the same active ticket.
 
 **Verify:** Check Airtable `Requests` and `Conversations`. A vague request keeps receiving
-focused clarification prompts until the required details are supplied. Once clear, the
-manager receives the vendor-choice alert; sensitive or human-only requests receive the
-Hold-only manager review alert.
+focused clarification prompts until the required details are supplied. Telegram is already
+the tenant contact channel, so the bot does not ask for a phone number. When location is
+missing, it asks one combined property-and-unit question. Once clear, the manager receives
+the vendor-choice alert; sensitive or human-only requests receive the Hold-only manager
+review alert.
 
 ### Tenant status question
 

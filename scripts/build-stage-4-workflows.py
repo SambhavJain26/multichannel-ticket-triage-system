@@ -540,6 +540,10 @@ def build_core():
       let priorityReason = reviewReason || "";
 
       if (modelJson) {
+        // Every supported intake path retains a reply channel; do not ask tenants for a phone number.
+        if (String(j.from_address || "").trim() && Array.isArray(modelJson.missing_info)) {
+          modelJson = {...modelJson, missing_info: modelJson.missing_info.filter(value => value !== "CONTACT")};
+        }
         const modelSignals = normalizeSignals(modelJson.safety_signals);
         const merged = new Set(modelSignals.filter(v => v !== "NONE"));
         for (const sig of ruleSignals) merged.add(sig);

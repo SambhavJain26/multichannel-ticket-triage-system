@@ -21,6 +21,7 @@ API = "https://api.airtable.com/v0"
 META_API = f"{API}/meta"
 PROPERTIES = ["Maple Court", "Oak Terrace", "Pine House"]
 TRADES = ["PLUMBING", "HVAC", "ELECTRICAL", "GENERAL", "APPLIANCE", "STRUCTURAL", "PEST", "LOCKS_SECURITY"]
+MISSING_INFO = ["UNIT", "PROPERTY", "CONTACT", "ACCESS_PERMISSION", "PET_ON_SITE", "ISSUE_DETAIL", "ONSET_TIME"]
 
 TENANTS = [
     ("Demo Tenant", "sambhavn8n@gmail.com", "Maple Court", "2B"),
@@ -109,6 +110,17 @@ def ensure_field(token: str, base_id: str, table: dict, field: dict) -> dict:
     return created
 
 
+def ensure_choice_options(token: str, base_id: str, table: dict, field_name: str, names: list[str]) -> None:
+    """Report old select lists that Airtable's public schema API cannot amend."""
+    current = next(field for field in table["fields"] if field["name"] == field_name)
+    existing = current.get("options", {}).get("choices", [])
+    existing_names = {choice.get("name") for choice in existing}
+    if all(name in existing_names for name in names):
+        return
+    missing = ", ".join(name for name in names if name not in existing_names)
+    print(f"Existing {table['name']}.{field_name} is missing select options: {missing}. New demo tables include them.")
+
+
 def ensure_conversation_timestamp(token: str, base_id: str, table: dict) -> None:
     """Repair an empty partial rebuild where Airtable created `At` as date-only."""
     at_field = next((field for field in table["fields"] if field["name"] == "At"), None)
@@ -171,7 +183,7 @@ def build_schema(token: str, base_id: str, existing: list[dict]) -> dict[str, di
         {"name": "Unit", "type": "singleLineText"},
         {"name": "Trade", "type": "singleSelect", "options": choices(TRADES)},
         {"name": "Summary", "type": "multilineText"},
-        {"name": "Missing Info", "type": "multipleSelects", "options": choices(["UNIT", "PROPERTY", "CONTACT", "ACCESS_PERMISSION", "ISSUE_DETAIL", "ONSET_TIME"])},
+        {"name": "Missing Info", "type": "multipleSelects", "options": choices(MISSING_INFO)},
         {"name": "Human Only", "type": "checkbox", "options": {"icon": "check", "color": "orangeBright"}},
         {"name": "Vendor Status", "type": "singleSelect", "options": choices(["NOT_STARTED", "AWAITING_VENDOR", "NEEDS_VENDOR_ASSIGNMENT", "SENDING", "SENT", "FAILED", "HELD"])},
         {"name": "Suggested Vendors", "type": "multipleRecordLinks", "options": {"linkedTableId": vendor_table["id"]}},
@@ -197,6 +209,7 @@ def build_schema(token: str, base_id: str, existing: list[dict]) -> dict[str, di
         {"name": "At", "type": "dateTime", "options": timestamp_options()},
     ])
     ensure_conversation_timestamp(token, base_id, conversation_table)
+    ensure_choice_options(token, base_id, request_table, "Missing Info", MISSING_INFO)
     ensure_inverse_link_name(token, base_id, request_table, "Suggested Vendors", vendor_table, "Suggested Requests")
     ensure_inverse_link_name(token, base_id, request_table, "Selected Vendor", vendor_table, "Selected Requests")
     # Airtable's public schema endpoint cannot create native created/modified-time fields.

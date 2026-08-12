@@ -264,11 +264,11 @@ WITH input_values AS (SELECT $1::text AS chat_id, $2::text AS msg_id), ticket AS
 INSERT INTO triage.ticket_messages (ticket_id, channel, direction, intent, body, external_message_id, delivery_state)
 SELECT id, 'telegram', 'inbound', 'request', body_clean, msg_id, 'RECORDED' FROM linked
 ON CONFLICT (channel, direction, external_message_id) DO NOTHING
-RETURNING ticket_id, (SELECT ref FROM linked) AS ref, (SELECT priority FROM linked) AS priority, (SELECT missing_info FROM linked) AS missing_info, (SELECT human_only FROM linked) AS human_only, (SELECT vendor_status FROM linked) AS vendor_status, (SELECT tenant_chat_id FROM linked) AS chat_id;
+RETURNING ticket_id, (SELECT ref FROM linked) AS ref, (SELECT priority FROM linked) AS priority, (SELECT issue_summary FROM linked) AS issue_summary, (SELECT missing_info FROM linked) AS missing_info, (SELECT human_only FROM linked) AS human_only, (SELECT vendor_status FROM linked) AS vendor_status, (SELECT tenant_chat_id FROM linked) AS chat_id;
 """
     start_message = r"""
 function parse(v, fallback) { try { return typeof v === "string" ? JSON.parse(v) : (v || fallback); } catch (_) { return fallback; } }
-function questions(missing) { const q = {UNIT:"Which unit and property is this for?", PROPERTY:"Which property is this at?", CONTACT:"What is the best contact number?", ACCESS_PERMISSION:"Can maintenance enter if you are away?", ISSUE_DETAIL:"Please describe what is happening, where it is happening, and whether it is getting worse.", ONSET_TIME:"When did this start?"}; return (parse(missing, []) || []).filter(x => q[x]).slice(0,3).map(x => q[x]); }
+function questions(missing) { const wanted = new Set((parse(missing, []) || []).filter(value => value !== "CONTACT")); const result = []; if (wanted.delete("ISSUE_DETAIL")) result.push("What is happening, and is it getting worse?"); if (wanted.delete("UNIT") || wanted.delete("PROPERTY")) result.push("Which property and unit is this for?"); const q = {ACCESS_PERMISSION:"Can maintenance enter if you are away?", PET_ON_SITE:"Are there any pets in the unit?", ONSET_TIME:"When did this start?"}; for (const key of ["ACCESS_PERMISSION", "PET_ON_SITE", "ONSET_TIME"]) if (wanted.has(key)) result.push(q[key]); return result.slice(0, 3); }
 return $input.all().map((item) => { const j = item.json; const qs = questions(j.missing_info); const text = j.human_only ? `Request ${j.ref} was received. A manager needs to review it and will update you here.` : (qs.length ? `Request ${j.ref} was received. ${qs.join(" ")}` : `Request ${j.ref} was received. We will keep you updated here.`); return {json: {...j, message_text: text, intent: qs.length ? "clarification" : "receipt"}}; });
 """
     status_message = r"""
@@ -281,7 +281,7 @@ merged AS (
   UPDATE triage.tickets t SET
     model_json = c.model_json, model_priority = c.model_priority, model_name = c.model_name, model_latency_ms = c.model_latency_ms,
     prompt_tokens = t.prompt_tokens + c.prompt_tokens, completion_tokens = t.completion_tokens + c.completion_tokens,
-    is_maintenance_request = c.is_maintenance_request, request_type = c.request_type, priority = CASE WHEN t.clarification_round + 1 >= 2 AND jsonb_array_length(c.missing_info) > 0 THEN 'NEEDS_REVIEW' ELSE c.priority END,
+    is_maintenance_request = c.is_maintenance_request, request_type = c.request_type, priority = c.priority,
     priority_reason = c.priority_reason, override_applied = c.override_applied, override_reason = c.override_reason, human_only = c.human_only,
     trade = c.trade, unit_identifier = coalesce(c.unit_identifier, t.unit_identifier), issue_summary = c.issue_summary,
     habitability_flag = c.habitability_flag, habitability_reason = c.habitability_reason, safety_signals = c.safety_signals,
@@ -294,11 +294,11 @@ merged AS (
 message AS (INSERT INTO triage.ticket_messages(ticket_id,channel,direction,intent,body,external_message_id,delivery_state)
   SELECT original_ticket_id,'telegram','inbound','clarification_answer',body,external_message_id,'RECORDED' FROM input_values ON CONFLICT (channel,direction,external_message_id) DO NOTHING),
 event AS (INSERT INTO triage.events(ticket_id,actor,action,detail) SELECT id,'system','tenant_clarification_retriaged',jsonb_build_object('round',clarification_round) FROM merged)
-SELECT id AS ticket_id, ref, priority, missing_info, human_only, vendor_status, clarification_round, tenant_chat_id AS chat_id FROM merged;
+SELECT id AS ticket_id, ref, priority, issue_summary, missing_info, human_only, vendor_status, clarification_round, tenant_chat_id AS chat_id FROM merged;
 """
     clarification_response = r"""
 function parse(v, fallback) { try { return typeof v === 'string' ? JSON.parse(v) : (v || fallback); } catch (_) { return fallback; } }
-function questions(missing) { const q={UNIT:'Which unit and property is this for?',PROPERTY:'Which property is this at?',CONTACT:'What is the best contact number?',ACCESS_PERMISSION:'Can maintenance enter if you are away?',ISSUE_DETAIL:'Please describe what is happening, where it is happening, and whether it is getting worse.',ONSET_TIME:'When did this start?'}; return (parse(missing,[]) || []).filter(x=>q[x]).slice(0,3).map(x=>q[x]); }
+function questions(missing) { const wanted=new Set((parse(missing,[]) || []).filter(value=>value!=="CONTACT")); const result=[]; if(wanted.delete("ISSUE_DETAIL")) result.push("What is happening, and is it getting worse?"); if(wanted.delete("UNIT") || wanted.delete("PROPERTY")) result.push("Which property and unit is this for?"); const q={ACCESS_PERMISSION:'Can maintenance enter if you are away?',PET_ON_SITE:'Are there any pets in the unit?',ONSET_TIME:'When did this start?'}; for(const key of ['ACCESS_PERMISSION','PET_ON_SITE','ONSET_TIME']) if(wanted.has(key)) result.push(q[key]); return result.slice(0,3); }
 return $input.all().map(item=>{const j=item.json; const qs=questions(j.missing_info); const hasClarificationPrompt=qs.length>0; const readyForVendor=!hasClarificationPrompt && !j.human_only && j.priority!=='NEEDS_REVIEW'; const needsManager=!hasClarificationPrompt && !readyForVendor; const text=readyForVendor?`Thank you. Your request ${j.ref} is now being reviewed for the right maintenance provider.`:(needsManager?`Thank you. A manager needs to review request ${j.ref} and will update you here.`:`Thank you. ${qs.join(' ')}`); return {json:{...j,should_notify_manager:readyForVendor || needsManager,message_text:text}};});
 """
     normalize = r"""
@@ -504,7 +504,7 @@ return $input.all().map(item => {
   const propertyMatch = String(t.body_raw || '').match(/(?:^|\n)Property:\s*([^\n]+)/i);
   const fields = {
     'Reference':t.ref || '', Status:t.status || 'NEW', Priority:t.priority || 'NEEDS_REVIEW', Source:t.source || 'telegram',
-    Summary:t.issue_summary || t.subject || 'Maintenance request', 'Missing Info':Array.isArray(t.missing_info) ? t.missing_info : [],
+    Summary:t.issue_summary || t.subject || 'Maintenance request', 'Missing Info':Array.isArray(t.missing_info) ? t.missing_info.filter(value => value !== 'PET_ON_SITE') : [],
     'Human Only':Boolean(t.human_only), 'Vendor Status':t.vendor_status || 'NOT_STARTED'
   };
   const add = (name, value) => { if (value !== null && value !== undefined && String(value).trim() !== '') fields[name] = value; };

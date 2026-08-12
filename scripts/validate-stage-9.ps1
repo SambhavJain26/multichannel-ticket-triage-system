@@ -34,15 +34,24 @@ try {
     $managerUpsert = $managerWorkflow.nodes | Where-Object { $_.name -eq 'Prepare Airtable Request Upsert' } | Select-Object -First 1
     if($managerAlert.parameters.jsCode -notmatch 'vendor_dispatch_eligible' -or $managerAlert.parameters.jsCode -notmatch 'should_send_manager:Boolean\(ticket.id') { throw "Manager review notifications are not safely routed." }
     if($managerUpsert.parameters.jsCode -notmatch 'const add =') { throw "Airtable request sync can write empty select values." }
+    if($managerUpsert.parameters.jsCode -notmatch "PET_ON_SITE") { throw "Airtable request sync does not handle legacy Missing Info choice sets." }
     $tenantWorkflow = Get-Content -Raw workflows\maintenance-triage-tenant-telegram.json | ConvertFrom-Json
     if(-not ($tenantWorkflow.nodes | Where-Object { $_.name -eq 'Prepare Direct Telegram Welcome' })) { throw "Tenant direct Telegram welcome path is missing." }
     if(-not ($tenantWorkflow.nodes | Where-Object { $_.name -eq 'Reattach Tenant Event Context' })) { throw "Tenant Telegram database lookup drops its event context." }
     if($tenantWorkflow.connections.'Postgres Load Tenant Chat'.main[0][0].node -ne 'Reattach Tenant Event Context') { throw "Tenant Telegram context is not restored before routing." }
     $tenantRoute = $tenantWorkflow.nodes | Where-Object { $_.name -eq 'Route Tenant Message' } | Select-Object -First 1
     if($tenantRoute.parameters.jsCode -match 'clarification_round\s*\|\|\s*0\)\s*<\s*2') { throw "Tenant clarification still has a two-round cap." }
+    $tenantReceipt = $tenantWorkflow.nodes | Where-Object { $_.name -eq 'Prepare New Ticket Tenant Reply' } | Select-Object -First 1
     $clarificationResponse = $tenantWorkflow.nodes | Where-Object { $_.name -eq 'Prepare Clarification Response' } | Select-Object -First 1
+    if($tenantReceipt.parameters.jsCode -match 'contact number' -or $clarificationResponse.parameters.jsCode -match 'contact number') { throw "Tenant Telegram still asks for a phone number despite having a reply channel." }
+    if($tenantReceipt.parameters.jsCode -notmatch 'Which property and unit is this for\?' -or $clarificationResponse.parameters.jsCode -notmatch 'Which property and unit is this for\?') { throw "Tenant location clarification is not combined into one question." }
+    if($tenantReceipt.parameters.jsCode -notmatch 'PET_ON_SITE' -or $clarificationResponse.parameters.jsCode -notmatch 'PET_ON_SITE') { throw "Tenant clarification does not cover pet access details." }
     if($clarificationResponse.parameters.jsCode -notmatch 'hasClarificationPrompt') { throw "Tenant clarification does not keep asking while required details are missing." }
     if($clarificationResponse.parameters.jsCode -notmatch 'should_notify_manager:readyForVendor \|\| needsManager') { throw "Completed or review-required clarification replies do not reach the manager." }
+    $coreWorkflow = Get-Content -Raw workflows\maintenance-triage-core.json | ConvertFrom-Json
+    $coreRules = $coreWorkflow.nodes | Where-Object { $_.name -eq 'Apply Safety Rules' } | Select-Object -First 1
+    if($coreRules.parameters.jsCode -notmatch 'missing_info\.filter\(value => value !== "CONTACT"\)') { throw "The triage engine does not remove CONTACT when a reply channel is already available." }
+    if((Get-Content -Raw scripts\setup-stage-9-airtable.py) -notmatch 'PET_ON_SITE') { throw "New Airtable demo tables omit the PET_ON_SITE Missing Info option." }
     Write-Host "OK: manager keyboard variants and direct Telegram intake"
     if($LivePrerequisites) {
       Assert-Scalar "Airtable configured" "select count(*) from triage.config where key='airtable' and value->>'enabled'='true' and coalesce(value->>'base_id','')<>'';" "1" $user $db

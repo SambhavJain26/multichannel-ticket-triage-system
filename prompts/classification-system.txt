@@ -63,9 +63,9 @@ unit_identifier: copy it exactly as written, or null. Never infer or invent one.
 tenant_name / tenant_contact: only if present in the message. Never invent.
 safety_signals: list every applicable signal, or ["NONE"].
 missing_info: list only what a dispatcher would actually need and cannot find.
-  Do not list UNIT when unit_identifier is present. Do not list CONTACT when
-  tenant_contact is present. Do not list ISSUE_DETAIL when issue_summary already
-  names the concrete problem.
+  The automation always retains a tenant reply channel (email or Telegram), so do not
+  list CONTACT. Do not list UNIT when unit_identifier is present. Do not list
+  ISSUE_DETAIL when issue_summary already names the concrete problem.
 language: BCP-47 tag of the tenant's message ("en", "es").
 request_type: FOLLOW_UP if this references an earlier report or complains that
   something was not fixed. NOT_A_REQUEST for vendor mail, marketing,
