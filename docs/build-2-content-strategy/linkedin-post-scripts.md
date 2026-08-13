@@ -12,6 +12,18 @@ Every post below has been checked for: zero accuracy percentages across the full
 
 **Standing note on honesty.** The $12,000 water-damage claim and the $340 weekend call-out are documented industry patterns from `02-maintenance-triage.md`, not incidents I witnessed. No post presents them as my own experience. Where a post opens on a specific message, it is a synthetic fixture I wrote, and the copy says so.
 
+**Standing note on hashtags: there are none, and that is deliberate.**
+
+An earlier draft of this file carried three hashtags per post. They were removed on 2026-08-13 after checking what LinkedIn hashtags actually do now. LinkedIn disabled hashtag pages in October 2024 and removed hashtag following, hashtag suggestions, and the "Talks About" section. Hashtags are no longer clickable on desktop and no longer function as a distribution channel. What survives is a topical signal to the algorithm and a search term.
+
+That surviving function is the reason to avoid them here rather than a reason to keep them. If a hashtag now tells LinkedIn's algorithm which audience a post belongs to, then `#ai` and `#automation` instruct it to route this work toward people interested in AI. That is the opposite of what this plan needs. Build 1's plan states the constraint directly: who comments decides who sees the post next, and six comments from property managers beats sixty from developers. Nine of the fifteen posts had been tagged `#ai`, including post 8, which is the single most likely post in the set to be picked up by an engineering audience.
+
+The reach and engagement figures circulating for LinkedIn hashtags (roughly 9% more reach, up to 30% more engagement) all trace to companies selling LinkedIn tools and appear to be recycled between them. They are not independently verified and are treated here the same way `customer-language.md` treats vendor marketing.
+
+`#propertymanagement` alone would be defensible, since niche and specific is the only hashtag pattern with any support left. It is still omitted, for three reasons: build 1's finished scripts use none, so a mixed convention across builds reads as unconsidered; the audience here is being built by commenting and connecting rather than by discovery, so hashtags contribute nothing to the actual growth mechanism; and a row of tags under an incident-report post reads as broadcasting.
+
+**YouTube hashtags are kept.** They are a different mechanism. The first three in a description still render above the video title as working links, so post 2's description retains its three.
+
 **Standing note on naming competitors.** Post 3 quotes two competitor claims accurately but does not name the companies. Naming them would be more verifiable to the reader and is a defensible choice; leaving them unnamed avoids a public argument with a funded company and stays consistent with the understated register. The named variant is included in the production notes if you prefer it.
 
 ---
@@ -49,8 +61,6 @@ The three posts that go up before driving anyone to the profile. They answer, in
 > The description is a different thing entirely. "There's a smell in the hallway" is a report of what's actually in front of someone, in their own words. That's evidence, and none of it is in the dropdown they picked.
 >
 > Nine slides on why the two mistakes cost such different amounts, and what to read instead.
->
-> #propertymanagement #propertymaintenance #ai
 
 *Word count: 264. Characters: 1,486. Em dashes: 0. First 210 characters end inside "with three exclamation marks after it", so both reveals are withheld past the fold.*
 
@@ -159,8 +169,6 @@ The three posts that go up before driving anyone to the profile. They answer, in
 > The accommodation request is the one I'd watch. It gets no drafted reply at all, because that's a legal-sensitive matter and the correct output there is a person, not a paragraph.
 >
 > Everything in the video is synthetic. Test roster, controlled mailbox, invented residents. Nobody was contacted to make it.
->
-> #propertymanagement #propertymaintenance #automation
 
 *Word count: 143. Characters: 831. Em dashes: 0. First 210 characters end mid-list, which stands alone and earns the expand.*
 
@@ -232,8 +240,6 @@ Leads with the searchable phrase, stays inside the visible truncation point, and
 > That costs something. It over-escalates sometimes, and the manager stays involved in work they might rather hand off entirely.
 >
 > Both designs are real. The question isn't which is smarter on a good day. It's which one you want on the day it's wrong, because that's the only day the difference shows up.
->
-> #propertymanagement #ai #automation
 
 *Word count: 293. Characters: 1,714. Em dashes: 0. First 210 characters end inside "if the AI makes an error", which stands alone and withholds the turn.*
 
@@ -297,8 +303,6 @@ Three carousels, two text posts, one image post. Post 8 carries the tightest hon
 > I'm aware this makes it harder to describe. "Custom automation, built into your operation" doesn't fit on a pricing page, and there's no free trial to click.
 >
 > It's a different transaction. You're not adopting a tool. You're getting one specific part of your operation handled.
->
-> #propertymanagement #automation #ai
 
 *Word count: 236. Characters: 1,393. Em dashes: 0. First 210 characters end inside "What I build runs in", with the full negative stated and the alternative withheld.*
 
@@ -333,8 +337,6 @@ Three carousels, two text posts, one image post. Post 8 carries the tightest hon
 > There's a real cost here and I'd rather say it than have you find it. The system over-escalates. A manager occasionally gets an alert for something that could have waited until Tuesday. I decided that was the cheaper mistake and I'd make the same call again.
 >
 > Seven slides on pricing your own two errors. Worth finding one judgment call in your business where the mistakes cost wildly different amounts, and checking whether your process knows that.
->
-> #propertymanagement #operations #ai
 
 *Word count: 259. Characters: 1,536. Em dashes: 0. First 210 characters end on "a resident who doesn't renew", so the full asymmetry lands before the fold.*
 
@@ -398,8 +400,6 @@ Three carousels, two text posts, one image post. Post 8 carries the tightest hon
 > You can't write these in advance. Nobody sits down and predicts the ceiling fan. They're discovered one incident at a time, which makes the number of them a better signal that something has actually been run against reality than any accuracy figure a vendor quotes you.
 >
 > Eight slides on all three, with the run that produced each one.
->
-> #propertymanagement #ai #automation
 
 *Word count: 272. Characters: 1,614. Em dashes: 0. First 210 characters end inside "A live test came", with the rule stated and its origin withheld.*
 
@@ -461,8 +461,6 @@ Three carousels, two text posts, one image post. Post 8 carries the tightest hon
 > The fix took ten minutes: drop contact from the missing-field list whenever a reply channel is already open, and only ask about location when it's genuinely unknown, since vendor matching is property-specific.
 >
 > Automation asks for what you told it to collect, not what it already has. If you run an intake form, there's a fair chance it's doing this to someone today.
->
-> #propertymanagement #automation #ux
 
 *Word count: 143. Characters: 872. Em dashes: 0. First 210 characters end inside "Contact det", with the absurdity stated and the explanation withheld.*
 
@@ -500,8 +498,6 @@ Three carousels, two text posts, one image post. Post 8 carries the tightest hon
 > When a vendor gives you an accuracy figure, ask what it got wrong and what changed as a result. A number with no failures attached came from a test nobody tried hard enough to fail.
 >
 > Nine slides, including the entry where I wrote the failure down.
->
-> #propertymanagement #ai #automation
 
 *Word count: 294. Characters: 1,738. Em dashes: 0. First 210 characters end inside "Six under-escalations, meaning", with the number and the scale stated.*
 
@@ -571,8 +567,6 @@ Three carousels, two text posts, one image post. Post 8 carries the tightest hon
 > The list took longer to write than the code that enforces it. It's also the first thing I'd ask to see from anyone else selling this.
 >
 > If something is talking to your residents, there should be a written list of what it's permitted to say. If that list doesn't exist, the list is whatever the model thought of. And the reassuring message is always what a model thinks of first.
->
-> #propertymanagement #ai #customerexperience
 
 *Word count: 285. Characters: 1,668. Em dashes: 0. First 210 characters end inside "the natural thing for any", with the refusal stated and the reasoning withheld.*
 
@@ -662,8 +656,6 @@ Two 60-second videos, two text posts, one image post, and the only post that ask
 > It doesn't announce itself, which is the actual problem. A loop looks exactly like real work until you count.
 >
 > This was a controlled test mailbox with synthetic vendors. Nobody real was emailed.
->
-> #propertymanagement #automation #ai
 
 *Word count: 205. Characters: 1,232. Em dashes: 0. First 210 characters end inside "the same mailbox it was also", with the setup stated and the consequence withheld.*
 
@@ -695,8 +687,6 @@ Two 60-second videos, two text posts, one image post, and the only post that ask
 > Every alert you add makes every existing alert slightly less effective. That isn't an argument for having no alerts. It's an argument for being able to say, about each one, what actually happens if nobody looks at it for four hours.
 >
 > Worth knowing which of yours fire for things that could have waited until Tuesday.
->
-> #propertymanagement #operations #alerting
 
 *Word count: 236. Characters: 1,403. Em dashes: 0. First 210 characters end inside "it's worth explaining why, because it", with the unbuilt feature stated and the reasoning withheld.*
 
@@ -752,8 +742,6 @@ Two 60-second videos, two text posts, one image post, and the only post that ask
 > It now recognizes status, progress, update and completion language, answers once across every open request in that conversation, and doesn't touch triage at all. The verification run created no ticket and sent the manager nothing.
 >
 > Anything reading an inbox needs an explicit answer for what is not a request. That list is longer than the list of what is.
->
-> #propertymanagement #automation #ai
 
 *Word count: 213. Characters: 1,289. Em dashes: 0. First 210 characters end inside "It was a ques", with the absurdity stated and the explanation withheld.*
 
@@ -786,8 +774,6 @@ Two 60-second videos, two text posts, one image post, and the only post that ask
 > Every automation you own has a give-up path. It fires when the retries run out, or the confidence drops, or the timeout hits, and it hands the problem to somebody. That somebody is usually whoever is busiest, and almost nobody checks what arrives in their lap.
 >
 > Escalating something unactionable is worse than not escalating it. Now it's a person's problem and it still can't be solved.
->
-> #propertymanagement #automation #operations
 
 *Word count: 271. Characters: 1,606. Em dashes: 0. First 210 characters end inside "Two roun", with the sensible rule stated and its failure withheld.*
 
@@ -814,8 +800,6 @@ Two 60-second videos, two text posts, one image post, and the only post that ask
 > That's four lines of schema, and it's the difference between one plumber and two.
 >
 > Ask any vendor what happens if someone taps twice, or if the network drops halfway through a send. It's a small question and the answer tells you whether anybody thought about the day it goes wrong. "Nobody's tried that" is a real answer you'll sometimes get.
->
-> #propertymanagement #automation #ai
 
 *Word count: 148. Characters: 891. Em dashes: 0. First 210 characters end inside "and the secon", with the failure mode stated and the mechanism withheld.*
 
@@ -851,8 +835,6 @@ Two 60-second videos, two text posts, one image post, and the only post that ask
 > On the data. I'd receive the messages you send, they'd sit on a machine I control for as long as it takes to run them and write the reply, and then they're deleted. Nothing goes into a training set. Happy to put that in writing before you send anything.
 >
 > Asking someone to forward real resident messages to a stranger on the internet is the part of this that deserves an answer before it's asked.
->
-> #propertymanagement #propertymaintenance #ai
 
 *Word count: 291. Characters: 1,714. Em dashes: 0. First 210 characters end inside "with names and addresses taken", with the ask fully stated.*
 

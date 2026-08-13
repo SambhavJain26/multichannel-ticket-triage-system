@@ -387,7 +387,9 @@ The sequence alternates weight deliberately: no two carousels adjacent, no two v
 
 **Register:** incident report. Investigate, report precisely, state impact without drama, don't oversell. Short declaratives, real numbers, understated conclusions, first person singular, US spelling.
 
-**Banned:** hype vocabulary (game-changer, unlock, leverage, seamless, powerful, revolutionize, robust, streamline, effortless). LinkedIn broetry — one line per paragraph. "Let that sink in." Rhetorical questions as openers, though they're fine mid-post. Emoji. More than 3–5 hashtags. Any selling in the body of a post that isn't 15.
+**Banned:** hype vocabulary (game-changer, unlock, leverage, seamless, powerful, revolutionize, robust, streamline, effortless). LinkedIn broetry — one line per paragraph. "Let that sink in." Rhetorical questions as openers, though they're fine mid-post. Emoji. Any selling in the body of a post that isn't 15.
+
+**No hashtags on LinkedIn posts.** Not "3–5 maximum" — zero. LinkedIn disabled hashtag pages in October 2024 and removed hashtag following, so they no longer distribute anything. What remains is a topical signal telling the algorithm which audience a post belongs to, which makes `#ai` and `#automation` actively harmful to a plan whose stated goal is fewer developer comments and more property manager ones. Build 1's finished scripts use none. YouTube hashtags are a separate mechanism and are kept, since the first three still render above the video title as working links. Full reasoning is recorded in `linkedin-post-scripts.md`.
 
 **Checks before publishing any draft:**
 
