@@ -1,8 +1,30 @@
 # Operating Guide
 
 This guide runs the Stage 9 Telegram and Airtable demo. It assumes the local Docker stack
-and the existing Gmail IMAP/SMTP, OpenAI, Postgres, and manager Telegram credentials are
-already working.
+and the existing Gmail IMAP/SMTP, OpenAI, Postgres, Airtable, manager Telegram, and tenant
+Telegram credentials are already working. It is a local synthetic-data demo, not a
+production property-management deployment.
+
+## Before a call
+
+1. Start the local services and confirm n8n is available at `http://localhost:5678`.
+2. Start a fresh HTTPS tunnel and update `N8N_WEBHOOK_URL` before publishing Telegram
+   trigger workflows. A quick-tunnel URL is temporary.
+3. In n8n, confirm that exactly five operational workflows are active: Triage Engine,
+   Tenant Intake, Tenant Telegram, Manager Desk, and Operations. `Maintenance Triage Demo
+   Tools` must remain inactive.
+4. Run the guarded reset, apply it only after reviewing its counts, then create or restore a
+   clean snapshot. This removes old demo tickets such as `MR-0002` from both Postgres and
+   the visible Airtable workspace.
+5. Open the Airtable base before beginning the demo. It is the manager workspace; Postgres
+   remains the authoritative automation record.
+
+```powershell
+.\scripts\start-local.ps1
+.\scripts\reset-demo.ps1
+.\scripts\reset-demo.ps1 -Apply
+.\scripts\save-stage-9-demo-snapshot.ps1 -Name clean
+```
 
 ## One-time setup
 

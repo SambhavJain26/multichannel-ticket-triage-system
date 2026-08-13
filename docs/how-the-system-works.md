@@ -1,9 +1,10 @@
 # How The System Works
 
-This is a maintenance-triage assistant for a property manager. It reads requests, makes
-the urgency clear, gathers missing details, suggests an appropriate vendor, and keeps the
-manager in control of vendor contact. It is not a property-management system or an
-automatic dispatch service.
+This is a maintenance-triage assistant for a property manager. Its main value is turning
+messy tenant maintenance messages into a safe, manager-controlled workflow without staff
+having to manually triage every first message. It identifies urgency, gathers the details
+needed to act, suggests an appropriate vendor, and keeps the manager in control of vendor
+contact. It is not a property-management system or an automatic dispatch service.
 
 ## Where a tenant can start
 
@@ -86,6 +87,14 @@ manual-assignment message and Hold only. Incomplete, sensitive, or `NEEDS_REVIEW
 requests also send a manager review message with Hold only, never a vendor-selection
 button.
 
+## Why both Airtable and Telegram are used
+
+Airtable is the manager's visible workspace: it makes open requests, conversations,
+tenant context, vendor coverage, priority, and send outcomes easy to inspect. Telegram is
+the fast decision channel: the manager can approve one proposed vendor without opening a
+separate tool. Postgres sits behind both systems as the durable source of ticket identity,
+conversation history, duplicate protection, and one-send-only approval state.
+
 ## What it does not do
 
 It does not dispatch a vendor, create a work order in another system, confirm an
@@ -95,3 +104,5 @@ reply, apart from the single Telegram onboarding link used for email/form intake
 
 For the demo, all outbound vendor and onboarding emails use the controlled test mailbox
 `sambhavn8n@gmail.com`. No real tenant or vendor should be contacted during rehearsal.
+The full technical design, implementation map, setup, validation, and maintenance rules
+are in `docs/build-description.md`.
