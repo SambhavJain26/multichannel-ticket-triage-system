@@ -1,8 +1,9 @@
 # Prompt for a new session
 
-Paste the block below into a fresh chat, in a project containing the
-`carousel-kit` folder. Replace the bracketed part with your own copy or a
-pointer to where it lives.
+The `linkedin-carousel` skill in `.claude/skills/` should trigger on its own and
+carries these instructions already. This prompt is the belt-and-braces version:
+paste it if the skill does not fire, or if you are somewhere skills do not load
+at all. Replace the bracketed part with your own copy or a pointer to it.
 
 ---
 
@@ -49,8 +50,8 @@ Four rules that matter more than they look:
 
 Then preview it and actually look at the render before telling me it's done:
 
-  .\scripts\preview-carousel.ps1
-  .\scripts\preview-carousel.ps1 -Slide 5
+  .\carousel-kit\scripts\preview-carousel.ps1
+  .\carousel-kit\scripts\preview-carousel.ps1 -Slide 5
 
 Look at both the contact sheet and any slide you changed at full size. Each
 view hides what the other shows — composition problems only show in the sheet,
@@ -62,7 +63,7 @@ the ruled lines, and anything crossing the footer band.
 
 Fix and re-render until it holds. Then:
 
-  .\scripts\render-carousel.ps1
+  .\carousel-kit\scripts\render-carousel.ps1
 
 Show me the contact sheet and tell me what you changed and anything you're
 unsure about. If you added a layout, say so explicitly and show me that slide

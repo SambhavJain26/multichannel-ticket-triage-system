@@ -7,20 +7,28 @@ decks it produces will match the ones already built.
 ## What's here
 
 ```
-carousel-kit/
-├── design-system.md          ← read this first. The rules, and why each exists
-├── carousel-template.css     ← the design itself. Every colour, size and layout
-├── examples/                 ← four finished decks. Clone their structure
-│   ├── post-01-what-ai-should-touch.html
-│   ├── post-04-what-ai-reading-costs.html
-│   ├── post-07-twelve-things-wrong.html
-│   └── post-13-questions-to-ask.html
-├── scripts/
-│   ├── preview-carousel.ps1  ← PNG contact sheet, or one slide full size
-│   └── render-carousel.ps1   ← the upload-ready PDF
-├── out/                      ← rendered PDFs land here
-└── PROMPT.md                 ← paste this into a new chat session
+<your project root>/
+├── .claude/skills/linkedin-carousel/SKILL.md   ← the skill. Loads automatically
+├── PROMPT.md                 ← paste this into a new chat session
+└── carousel-kit/
+    ├── design-system.md      ← read this first. The rules, and why each exists
+    ├── carousel-template.css ← the design itself. Every colour, size and layout
+    ├── examples/             ← four finished decks. Clone their structure
+    │   ├── post-01-what-ai-should-touch.html
+    │   ├── post-04-what-ai-reading-costs.html
+    │   ├── post-07-twelve-things-wrong.html
+    │   └── post-13-questions-to-ask.html
+    ├── scripts/
+    │   ├── preview-carousel.ps1  ← PNG contact sheet, or one slide full size
+    │   └── render-carousel.ps1   ← the upload-ready PDF
+    └── out/                  ← rendered PDFs land here
 ```
+
+Copy the **contents** of this starter into your project root, so that `.claude/`
+sits at the root rather than inside `carousel-kit/`. Claude Code only discovers
+skills at the project root, so a `.claude/` folder nested one level down is
+silently ignored — the deck would still get built, but off whatever design the
+session invented instead of this one.
 
 **New decks go in the kit root**, next to `carousel-template.css`, so they link
 the stylesheet as `href="carousel-template.css"`. The examples sit one level
@@ -29,14 +37,17 @@ you name a deck explicitly with `-Name`.
 
 ## Using it
 
-Open a session in the folder and paste `PROMPT.md`. Then:
+Open a session in the project root. The `linkedin-carousel` skill loads
+automatically and should trigger on any request to build or fix a carousel; if it
+does not, paste `PROMPT.md`, which carries the same instructions and works on its
+own. Then:
 
 ```bash
-.\scripts\preview-carousel.ps1
+.\carousel-kit\scripts\preview-carousel.ps1
 ```
 
 ```bash
-.\scripts\render-carousel.ps1
+.\carousel-kit\scripts\render-carousel.ps1
 ```
 
 `preview` writes a PNG to your temp directory and prints the path — a contact
@@ -75,8 +86,7 @@ an annotation on top of type, or as the page number.
 the stylesheet. If anyone replaces it with an `feTurbulence` SVG filter — which
 looks like the tidier way to do it — Chrome evaluates the filter at output
 resolution and bakes a full-page bitmap into every slide. That takes the PDF
-from ~130 KB to ~24 MB for visually identical output. `render-carousel.ps1`
-warns if it sees more than one image object in the PDF, which is the symptom.
+from ~130 KB to ~24 MB for visually identical output. `render-carousel.ps1` warns if it sees more than one image object in the PDF, which is the symptom.
 
 **Every leading is a multiple of 24px.** That is what puts the type on the ruled
 lines. Changing a type size means checking its leading still divides by 24, or
