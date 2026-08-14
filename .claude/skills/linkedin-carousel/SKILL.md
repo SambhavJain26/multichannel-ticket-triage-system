@@ -47,15 +47,27 @@ the slide is overset and let the user decide.
 1. **Read the copy and any production note attached to it.** A note saying a
    particular slide should get the most air is a decision someone already made
    about the argument, and the layout has to honour it.
-2. **Map each slide to a layout.**
-3. **Write the HTML.** Content and layout classes only. Never a `style`
+2. **Find the deck's payoff word before anything else.** Every deck gets one
+   word of Zodiak if the copy can carry it. Look for one word, ending its
+   sentence, and **nine characters or fewer** — that is measured, not a guess:
+   "evidence." fills the column with 16px to spare and "emergency." clips.
+   Check the inverted slide first. If the deck's landing word sits there, the
+   payoff and the spike share one frame and the mark goes gold, which is the
+   strongest thing this template does; the kit's post 1 example is the
+   reference. Otherwise take it wherever the copy lands, often the close. If
+   nothing passes, say so rather than forcing a word in.
+   This step is first because it is the one that gets skipped: a deck shipped
+   with no Zodiak in it at all because the notes described how to set a payoff
+   without ever saying to go looking for one.
+3. **Map each slide to a layout.**
+4. **Write the HTML.** Content and layout classes only. Never a `style`
    attribute, never a `<style>` block, never a class the stylesheet does not
    define.
-4. **Copy the baseline-snap script verbatim** from the foot of any example into
+5. **Copy the baseline-snap script verbatim** from the foot of any example into
    the new file. Without it the centred content lands off the ruled grid.
-5. **Preview and actually look at it.**
-6. **Fix and re-render** until it holds.
-7. **Render the PDF** and check what the script reports.
+6. **Preview and actually look at it.**
+7. **Fix and re-render** until it holds.
+8. **Render the PDF** and check what the script reports.
 
 ## Mapping slides to layouts
 
@@ -71,6 +83,7 @@ system; this is how to choose.
 | A statement too long for `.lead` and too load-bearing for `.turn` | **Claim** — `.claim`, optionally `.lead-in` |
 | A slide whose subject is a number | **Figure** — `.lead-in` `.fig` `.lead-out` |
 | A heading and a one-word answer | **Payoff** — `.head` `.pay` `.margin-note` |
+| A sentence the slide has built to, ending on one word | **Payoff, statement-led** — `.claim` `.divider` `.lead-in` `.pay` |
 | First slide | **Cover** — `.display` `.kicker` |
 | Last slide | **Close** — `.close-lead` `.divider` `.turn` `.byline` |
 
@@ -87,6 +100,25 @@ This is the actual craft, and it is where a deck either reads as designed or as
 decorated. The marks are the argument made visible: a reader should be able to
 skim only the marked words and come away with the post.
 
+**Decide every mark from the sentence it sits on.** The vocabulary below is
+semantic, not a set of styles to rotate through. Read what the copy is doing —
+asserting, denying, questioning, naming — and take the device that means it.
+Two slides land on the same device when the copy earns it, and on different
+devices when it does not. That is the whole method, and everything after it is
+mechanics.
+
+Three things this rules out, all of which have actually happened here:
+
+- **Copying the previous deck.** A payoff word was circled on one deck purely
+  because the kit's example circles its own. The right mark was the underline:
+  that sentence was an affirmation, and the example's is a provocation.
+- **Copying the previous slide.** A device that fits slide 4 has no claim on
+  slide 5. Marks repeat across a deck because meanings repeat, not for rhythm.
+- **Applying a suggestion uniformly.** When someone proposes a treatment —
+  circle it, box it, use the italic — that is a candidate to test on the slides
+  where it might fit, not an instruction to roll out across every deck. Build
+  it, render it, keep it where it reads and say plainly where it does not.
+
 - **Marker** (`.hl`) — the load-bearing phrase, the thing the slide turns on.
   The deck's most-used signal; it should mean exactly one thing throughout.
 - **Circle** (`.pen--circle`) — a word held up for scrutiny. **One word.**
@@ -97,6 +129,11 @@ skim only the marked words and come away with the post.
 - **Strike** (`.pen--strike`) — negation.
 - **Selection box** (`.sel`) — once per deck, on the cover, on the word the whole
   post is about.
+
+When the deck is finished, count the devices. The marker should lead; it is the
+workhorse. But a set where a second device never appears has stopped reading the
+copy, and two decks with identical tallies usually means the second one was
+built from the first rather than from its own script.
 
 Rules that come from real mistakes:
 

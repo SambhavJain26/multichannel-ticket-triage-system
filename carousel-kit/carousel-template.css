@@ -148,6 +148,7 @@ html, body {
 .slide--invert .lead-out,
 .slide--invert .turn,
 .slide--invert .close-lead,
+.slide--invert .fig,
 .slide--invert .checks li  { color: var(--paper); }
 
 /* Everything that can sit on the dark ground has to be listed here, and this

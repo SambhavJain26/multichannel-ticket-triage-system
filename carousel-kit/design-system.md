@@ -143,6 +143,23 @@ If a deck ever needs an artifact again, state it in prose rather than drawing a
 frame that imitates an interface — a post about not faking your evidence cannot
 be the one that ships a mocked-up screenshot.
 
+**A copy deck that briefs a screenshot is briefing a stage direction, not
+copy.** Problem-Proof decks end on a "receipt" slide and the script will carry a
+bracketed line like `[Screenshot: both requests as classified]` above the real
+sentences. That line is an instruction to the producer and is not set. The
+sentences under it are the copy, they go in a Close, and the slide is the one
+the deck inverts — which is also how it keeps the production note that the last
+slide should break the pattern. Post 13 established this; build 2 post 1 is the
+second instance, and posts 8 and 12 will each hit it again.
+
+**`.lead-in` also works as a label above a `.lead`.** Named for the quiet line
+either side of the thing it frames, it is not restricted to figures and claims.
+Build 2 post 1 uses it to carry "Under-response, as the industry documents it:"
+and "Over-response:" above the money sentence on two consecutive slides, which
+makes a pair of slides structurally identical when their copy is parallel. Note
+the baseline-snap script measures the first listed element in document order, so
+the `.lead-in` becomes the probe host — that is correct and needs nothing.
+
 **A long line drops a size step rather than overrunning.** The display sizes
 assume short lines. Past roughly forty characters `.close-lead` runs to five
 lines at 112px, overruns the `.body--close` band and pushes the turn into the
@@ -165,6 +182,16 @@ point of the slide. `.lead-in` and `.lead-out` are the same treatment above
 and below the figure, because they are one sentence either side of a number
 rather than two voices. Post 4 opens on `$0.002` this way.
 
+**Payoff has a second, statement-led shape: `.claim` `.divider` `.lead-in`
+`.pay`.** The documented Payoff opens on a `.head`, which suits a slide whose
+whole job is to answer a label. Where the payoff word instead ends a sentence
+the slide has already been building — build 2 post 1's "One of these is
+evidence." — the statement carries the weight and the `.lead-in` is just the
+run-up to the word. Two things this shape needs, both learned by overrunning.
+The statement takes `.claim`, not `.lead`: at `.lead` that slide measured 1009px
+against the 918px band, overset at both ends. And nothing else goes below the
+payoff — a `.margin-note` under a 192px word does not fit in any combination.
+
 Annotation classes, usable inside any of them: `.hl` (marker),
 `.pen--circle` / `--under` / `--strike` (inline pen marks), and `.sel` (a word
 boxed with corner handles, once per deck on the cover).
@@ -173,10 +200,94 @@ boxed with corner handles, once per deck on the cover).
 cut: at the sizes this deck runs, a mark floating outside the text block reads
 as debris rather than as annotation.
 
+### The vocabulary is semantic. Read the sentence, then pick
+
+This is the rule the rest of the annotation section hangs off, and it is the one
+most easily lost, because every other rule here reads like a recipe and this one
+is a judgment.
+
+| The copy is | Mark |
+|---|---|
+| naming the load-bearing phrase the slide turns on | marker |
+| holding one word up to be doubted or examined | circle |
+| affirming something, stating a verdict | underline |
+| denying something the sentence itself denies | strike |
+| naming the object the whole post is about | selection box, once, on the cover |
+
+**A treatment that worked on the last deck is not a default for the next one.**
+Build 2 produced this failure twice in one session, both times by copying rather
+than reading. A payoff was circled on post 1 only because the kit example
+circles its own, and a five-character circle limit was written down as a flat
+rule from three inline failures without noticing every one of them shared a
+cause. In both cases the fix was to go back to what the words were doing.
+
+Two decks landing on the same combination is fine when the copy earns it; two
+decks landing on it because one was built after the other is how a set flattens.
+Before a mark goes down, the question is what this sentence is doing — not what
+the previous slide did, not what the previous deck did, and not which device was
+last suggested in conversation. A suggestion is a candidate to test, not an
+instruction to apply everywhere.
+
+**Check the tally when the deck is done.** Count the devices across the finished
+set. The marker should lead — it is the workhorse and the design system says so
+— but a deck where a second device never appears has stopped reading the copy.
+Build 2 post 1 runs 8 markers, 4 circles, 3 underlines, 1 strike, 1 box across
+nine slides; post 5 runs 8 markers, 2 circles, 2 strikes, 1 underline, 1 box
+across seven. Different shapes, because the copy is different.
+
 **A circle goes on one word.** Stretched over a phrase it flattens into a wide
 ellipse that overshoots the last word and cuts through the first, and it stops
 looking drawn. Two of post 7's circles were pulled back to a single word for
 this reason. If a phrase needs marking, that is what the marker is for.
+
+**And, set inline in a running line, on a short one — five characters.** The
+loop is a fixed 1.24em tall and only ever widens, so length alone flattens it,
+and one word is not on its own enough. Build 2's post 1 hit this three times in
+one pass: "apologized" at `.lead` was a flat ellipse struck through the middle
+of the word, "evidence" at `.turn` and "report" at `.lead` both had the stroke
+cutting the last glyph. "guess", "still", "words", "$150" and "$60" all hold.
+When an inline word is longer than that, the marker takes it instead.
+
+**This limit is about sharing a line, not about length.** It was first written
+here as a flat five-character rule and that was wrong — the kit's own post 1
+example circles "nothing." at eight characters and it is one of the best marks
+in the set. What actually breaks an inline circle is that the loop has
+neighbouring words hard against it on both sides and only 1.24em of height to
+work in, so a wide ellipse has nowhere to go and lands across the letterforms.
+A word standing alone on its own line has air around it, so the loop can be as
+wide as it needs to be and still read as drawn. See the payoff note below.
+
+**On an inverted slide, trailing punctuation goes inside the highlight.** The
+padding on `.hl` overhangs the glyphs and the equal negative margin pulls the
+next character back onto that overhang — which is the whole point on paper,
+where an ink comma on gold reads fine and a detached one reads as a typo. On the
+dark ground the following character is `--paper` on gold, a contrast ratio
+around 1.4:1, and it washes out. Build 2 posts 1 and 5 both shipped a draft this
+way before it was caught. Put the comma or period inside the span; the swipe
+simply grows to cover it. On paper slides, leave punctuation outside as normal.
+
+**A marker that wraps at display size reads as two marks.** `.hl` cloning onto
+every line box is correct and is why it is exempt from the pen's line-break
+rule, but at `.close-lead` or `.display` a wrapped phrase becomes two stacked
+full-width gold bars, and on the inverted slide that is the loudest thing in the
+deck saying the wrong number. Build 2 post 1 swiped "sorted on description"
+across the close and pulled it back to "description". At `.lead` and below,
+wrapping is fine — slides 4 and 6 of that deck both do it.
+
+**The selection box stays at one per deck because rarity is what it means.**
+This gets questioned every time, because the box is the boldest device in the
+kit and appears on one slide in nine. The answer is that it is not the only
+once-per-deck mark — the strike is usually the same, and nobody reads that as
+underuse. The box says "this is the object the post is about", and a second one
+stops identifying anything. Three checks before reaching for another: blue is
+probably not actually scarce in the deck (the pen carries it on most slides, and
+every page number is blue — what is scarce is *filled* blue, deliberately); the
+cover is the feed thumbnail and the box is the heaviest mark on the one slide
+that has to stop a scroll alone; and across a multi-deck build, one box per
+cover is what makes the set recognisable as a set. Every candidate second
+location tried on build 2 post 1 failed for a structural reason, not a taste
+one — see the payoff note above, and note that boxing a word in one half of a
+mirrored pair breaks the parallel-marks rule against the other half.
 
 **The marker swipe lives once, in `--swipe`.** Both things that paint it — a
 highlighted phrase and a `.checks--marked` numeral — read the same custom
@@ -189,6 +300,69 @@ it. The same correction is why the inverted slide restates it.
 **Zodiak sets exactly one word in the deck** — the payoff on slide 6. The note
 underneath it takes the same treatment as the second line on every other
 slide, so the second voice speaks once and means something.
+
+**Every deck gets a payoff slide. Go looking for it before writing any HTML.**
+This is a build step, not an option, and it is the one thing in this file that
+has to happen while the slides are still being mapped to layouts — the notes
+below describe how to set a payoff, which is no use to anyone who never asked
+whether the deck has one. Build 2 post 5 was built, rendered and handed over
+with no Zodiak in it at all, because everything recorded here was reference for
+a decision already taken.
+
+Read the copy for the one word the deck lands on. It is usually the last word of
+a sentence that closes a slide, and it is often on the close. Three tests: it
+has to be **one word**, it has to **end its sentence** so the quiet run-up can
+sit above it in `.lead-in`, and it has to be **short enough to set at 192px** —
+about nine characters, since post 1's "evidence." already sat at the margin. If
+nothing in the copy passes all three, the deck genuinely has no payoff and
+Zodiak stays out; say so rather than forcing a word into it.
+
+**Marking the payoff word: the sentence decides, not the precedent.** There is
+no house mark for payoffs. Read what the word is doing and take the device that
+means it — the same way you would for any other word on any other slide.
+
+| The payoff word is | Mark | Live example |
+|---|---|---|
+| an affirmation, a verdict being asserted | underline | post 1, "One of these is **evidence.**" |
+| a word held up to be doubted or interrogated | circle | post 5, "Check whether your process **knows.**" |
+| an answer stated flat, almost as a provocation | circle | the kit example, "What the model decides: **nothing.**" |
+
+Circle it with the **double stroke** — a full loop plus a second sweep at 0.65
+opacity. That second stroke is most of why it reads as a hand rather than an
+ellipse; every circle that failed in build 2 was a single stroke. Length is not
+what limits the *loop* at payoff size, because the word stands alone on its
+line: "evidence." at nine characters and "knows." at six both hold.
+
+**The measure limits the word itself, and it is nine characters.** Measured, not
+estimated: "evidence." fills the 888px column with about 16px to spare and
+"emergency." at ten clips off the right edge. This is what actually decides
+whether a deck can have a payoff, so test the candidate before building the
+slide around it. There is one `.pay` size, 192px, and no smaller step — if a
+deck's landing word is genuinely longer and worth having, that is a new size in
+the scale (a multiple of 24 for its leading, plus its `.slide--invert` colours),
+not something to solve on the slide.
+
+**On the dark ground the pen goes gold**, so an inverted payoff is a gold circle
+or a gold underline. The kit's post 1 example is the reference for this: its
+payoff and its inverted slide are the same slide, which puts both of the deck's
+spikes in one frame. Worth reaching for when a deck's landing word sits on the
+slide the argument turns on. Neither build 2 deck could take it — post 1's
+inverted close lands on "emergency." at ten characters, and post 5's on
+"optimistic." at eleven, and both overrun.
+
+The other two marks are not available here. The marker sits wrong: `--swipe` is
+placed for prose x-height, so at 192px it lands as a gold shelf under the word
+rather than a mark on it, and correcting it would need a `.pay.hl` rule
+restating the swipe the way `.checks--marked li b` does. The selection box is
+worse than wrong, it is silently broken: `.pay` declares `color: var(--ink)` and
+sits later in the stylesheet than `.sel`, so a boxed payoff renders ink on blue
+instead of paper on blue and goes muddy.
+
+**The underline's overhang is outside the box model.** `.pen--under` hangs
+0.18em below its span and that space is not in the layout, so the centred block
+does not account for it. On a payoff slide it put the stroke nine pixels off the
+footer rule while every measurement said the block fitted. Look at the rendered
+slide; the numbers will not tell you.
 
 **Content centers in a bounded band** between the eyebrow and the footer.
 Slide copy runs from 8 words to 24, so a fixed top anchor strands short
@@ -247,6 +421,23 @@ only when it is doing that job, not because it is last.
 because `.byline` is ink and nothing had ever needed it otherwise. `.claim`,
 `.group`, `.lead-in`, `.lead-out` and `.detail` were unhandled for the same
 reason. Add a layout, add its `.slide--invert` line in the same pass.
+
+**`.fig` was missing from that set until build 2 post 6 needed it.** Nothing had
+ever put a figure on the dark ground, so `.fig` kept its ink colour and would
+have rendered navy on navy — invisible, with no error and nothing in the HTML to
+suggest a cause. It is declared now. That deck also found the best use of the
+inverted ground so far: a four-letter figure at 208px, standing alone, is close
+to a true circle rather than a flat ellipse, so the gold loop lands on it
+properly. If a deck's argument turns on a number, that combination is the
+loudest single frame this template can make.
+
+**`.sel` is still missing from that set, and currently works by luck.** It was
+rendered on an inverted close during build 2 post 1 and read fine, but only
+because `--sel` and `--paper` happen to hold on the navy ground; nothing
+declares it. Anyone who retunes `--sel` breaks the inverted case with no warning
+and no reason to look. It is unfixed because that deck kept the box on the cover
+and nothing shipped depending on it. Declare `.slide--invert .sel` explicitly —
+same values are fine — before any deck puts a box on the dark slide.
 
 The cover was briefly inverted too, to establish the dark ground before slide
 6 used it. That was reverted: a light cover keeps the dark slide as the single
