@@ -174,6 +174,17 @@ question at display size and the stroke landed on line one alone. Mark one word,
 or use `.nb`, or drop a size step. `.hl` is exempt: it paints as a background
 and clones onto every line box.
 
+**`.lead-in` and `.lead-out` are framing type, not a size step.** They are
+600-weight at 62px, the same as `.kicker`, so a slide that runs `.fig` over both
+of them has a giant numeral and then two paragraphs at identical size and
+weight — no hierarchy at all under the figure, while every other cover in a set
+runs a heavy statement over a lighter kicker. Build 2 post 8's cover shipped a
+draft that way. Use them where they genuinely frame the number; where the line
+under a figure is a statement in its own right, it takes `.claim`, which gives
+three descending steps at 208, 78 and 62. `.lead` at 96px was tried there and
+crowds the page. `.fig + .claim` and `.fig + .lead` carry the 48px gap, since
+neither class has a margin of its own.
+
 **Figure is for a slide whose subject is a number.** The numeral runs at 208px
 and the sentence framing it is deliberately quiet, so the number is read first
 and the sentence only explains it. A statement layout cannot do this: its lead

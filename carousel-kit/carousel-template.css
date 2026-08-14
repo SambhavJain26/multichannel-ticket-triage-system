@@ -643,3 +643,16 @@ html, body {
 }
 
 
+
+/* A statement set directly under a figure. .lead and .claim carry no margin
+   of their own, so a cover that opens on the number has to declare the gap
+   here. Without it the only class that sits below a .fig with air is
+   .lead-out, which is 600-weight framing type — fine when it genuinely frames
+   the number, wrong when the line under it is a statement in its own right.
+   Build 2 post 8's cover ran .fig + .lead-out + .kicker and had a 208px
+   numeral over two paragraphs at identical size and weight, so the slide had
+   no hierarchy below the figure while every other cover in the set had two
+   clear levels. Needs no .slide--invert entry: both classes already have one.
+*/
+.fig + .lead,
+.fig + .claim { margin-top: 48px; }
