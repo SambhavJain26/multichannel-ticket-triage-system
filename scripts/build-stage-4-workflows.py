@@ -381,7 +381,7 @@ def build_core():
       const testMode = j.test_mode || {{}};
       const forceSkip = Boolean(testMode.mock_model_json || testMode.simulate_model_error || j.degraded || j.over_daily_cap);
       const request = {{
-        model: "gpt-5-nano",
+        model: "gpt-5.6-luna",
         store: false,
         instructions,
         input: `<<<MESSAGE>>>\\n${{j.body_clean}}\\n<<<END MESSAGE>>>`,
@@ -633,7 +633,7 @@ def build_core():
           ...j,
           model_json: modelJson,
           model_error: parseError,
-          model_name: "gpt-5-nano",
+          model_name: "gpt-5.6-luna",
           model_latency_ms: null,
           prompt_tokens: j.classifier_response?.usage?.input_tokens ?? 0,
           completion_tokens: j.classifier_response?.usage?.output_tokens ?? 0,
@@ -855,7 +855,7 @@ def build_core():
         json: {{
           ...j,
           draft_request: {{
-            model: "gpt-5-nano",
+            model: "gpt-5.6-luna",
             store: false,
             instructions,
             input: JSON.stringify({{

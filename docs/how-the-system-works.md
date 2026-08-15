@@ -25,8 +25,10 @@ The email link is a demo convenience, not a production identity check. Before a 
 deployment, the link must be bound to a verified tenant identity.
 
 An unpaired `/start` message only opens the bot and asks the tenant to describe the
-issue. It does not create a request. A normal direct message creates a request; `/new`
-opens a separate request after an existing conversation.
+issue. It does not create a request. A generic direct opening is held as preliminary
+conversation until the tenant names a concrete symptom; only then is one request created
+from the accumulated messages. `/new` clears preliminary text and opens a separate
+conversation.
 
 ## What happens to a request
 

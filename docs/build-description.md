@@ -114,7 +114,8 @@ The workflow injects this trusted context into every direct Telegram request bef
 | Tenant action | Expected result |
 |---|---|
 | Unpaired /start | Welcome message only; no ticket |
-| First normal maintenance message | Creates a Telegram-sourced request |
+| Generic opening message | Buffered outside ticket state and followed by a prompt for a concrete symptom |
+| First message that names a concrete maintenance symptom | Creates a Telegram-sourced request using buffered context |
 | /new | Prompts for a distinct issue; next non-command message starts it |
 | Reply while details are missing | Adds to the same ticket and reruns triage |
 | Status/progress/ETA question | One truthful consolidated status response; no new ticket |
@@ -123,7 +124,7 @@ The workflow injects this trusted context into every direct Telegram request bef
 
 The bot is not a free-form property manager. Its automatic tenant responses are limited to acknowledgement, deterministic prompts for reported missing information, factual status messages, and a provider-contacted update only after a successful manager-approved SMTP send.
 
-Clarification can request missing issue detail, access permission, pets, and onset where material. It asks no more than three questions in one reply and continues whenever a mapped missing field remains. There is no arbitrary two-message cap. A vague request remains in tenant clarification instead of producing premature manager vendor alerts.
+Clarification can request missing issue detail, access permission, pets, and onset where material. Before a ticket exists, a generic opening is buffered in the tenant-chat record and receives a deterministic request for a concrete symptom. Once a symptom is named, the accumulated text is triaged as one request. After ticket creation, it asks no more than three questions in one reply and continues whenever a mapped missing field remains. There is no arbitrary two-message cap. Neither preliminary conversation nor a vague request produces a premature manager vendor alert.
 
 Legal, accommodation, unreadable, prompt-injection, and otherwise human-only cases are routed to manager review. They are not auto-dispatched or given an invented outcome.
 
@@ -137,8 +138,8 @@ The engine calls the OpenAI Responses API through an n8n HTTP Request node. The 
 
 | Use | Model |
 |---|---|
-| Default classifier and drafter | gpt-5-nano |
-| Fallback for unsafe or unstable model behavior | gpt-5.6-luna |
+| Live workflow classifier and drafter | gpt-5.6-luna |
+| Historical Stage 3 benchmark model | gpt-5-nano |
 
 The versioned model contract is kept in:
 

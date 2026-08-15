@@ -23,6 +23,7 @@ try {
     $user=Get-DotEnvValue "POSTGRES_USER" "maintenance_triage"; $db=Get-DotEnvValue "POSTGRES_DB" "maintenance_triage"
     Assert-Scalar "Stage 9 tables" "select count(*) from information_schema.tables where table_schema='triage' and table_name in ('tenant_chats','tenant_pairing_tokens','ticket_messages','vendor_send_attempts','ticket_vendor_candidates','airtable_roster_links');" "6" $user $db
     Assert-Scalar "Stage 9 ticket columns" "select count(*) from information_schema.columns where table_schema='triage' and table_name='tickets' and column_name in ('tenant_chat_id','clarification_round','vendor_status','selected_vendor_id','airtable_record_id');" "5" $user $db
+    Assert-Scalar "Telegram pre-triage columns" "select count(*) from information_schema.columns where table_schema='triage' and table_name='tenant_chats' and column_name in ('pending_intake_body','pending_intake_started_at');" "2" $user $db
     Assert-Scalar "Stage 9 configuration" "select count(*) from triage.config where key in ('tenant_telegram','airtable','system_mail');" "3" $user $db
     Assert-Scalar "Ticket reference allocator" "select count(*) from pg_proc where oid = 'triage.next_ticket_ref()'::regprocedure;" "1" $user $db
     if((Get-Content -Raw workflows\maintenance-triage-core.json) -notmatch 'triage\.next_ticket_ref\(\)') { throw "Core workflow does not use the safe ticket-reference allocator." }
@@ -42,6 +43,8 @@ try {
     if($tenantWorkflow.connections.'Postgres Load Tenant Chat'.main[0][0].node -ne 'Reattach Tenant Event Context') { throw "Tenant Telegram context is not restored before routing." }
     $tenantRoute = $tenantWorkflow.nodes | Where-Object { $_.name -eq 'Route Tenant Message' } | Select-Object -First 1
     if($tenantRoute.parameters.jsCode -notmatch 'isStatusQuestion' -or $tenantRoute.parameters.jsCode -notmatch 'resolved') { throw "Tenant status routing does not cover conversational completion questions." }
+    if($tenantRoute.parameters.jsCode -notmatch 'hasConcreteMaintenanceDetail' -or $tenantRoute.parameters.jsCode -notmatch 'pretriage') { throw "Generic Telegram openings can create tickets before a concrete symptom is provided." }
+    if(-not ($tenantWorkflow.nodes | Where-Object { $_.name -eq 'Postgres Buffer Preliminary Tenant Message' })) { throw "Tenant preliminary clarification does not retain a vague opening outside ticket state." }
     if($tenantRoute.parameters.jsCode -match 'clarification_round\s*\|\|\s*0\)\s*<\s*2') { throw "Tenant clarification still has a two-round cap." }
     $tenantReceipt = $tenantWorkflow.nodes | Where-Object { $_.name -eq 'Prepare New Ticket Tenant Reply' } | Select-Object -First 1
     $clarificationResponse = $tenantWorkflow.nodes | Where-Object { $_.name -eq 'Prepare Clarification Response' } | Select-Object -First 1
@@ -56,6 +59,8 @@ try {
     $coreRules = $coreWorkflow.nodes | Where-Object { $_.name -eq 'Apply Safety Rules' } | Select-Object -First 1
     if($coreRules.parameters.jsCode -notmatch 'value !== "CONTACT"') { throw "The triage engine does not remove CONTACT when a reply channel is already available." }
     if($coreRules.parameters.jsCode -notmatch 'labeledValue' -or $coreRules.parameters.jsCode -notmatch 'safetyTrade' -or $coreRules.parameters.jsCode -notmatch 'routineFanFailure' -or $coreRules.parameters.jsCode -notmatch 'plumbingLeak') { throw "The triage engine does not preserve trusted profile data or known maintenance trade routing." }
+    $classifierRequest = $coreWorkflow.nodes | Where-Object { $_.name -eq 'Prepare Classification Request' } | Select-Object -First 1
+    if($classifierRequest.parameters.jsCode -notmatch 'gpt-5\.6-luna') { throw "The live classifier is not using gpt-5.6-luna." }
     $newTicketPayload = $tenantWorkflow.nodes | Where-Object { $_.name -eq 'Prepare New Ticket Payload' } | Select-Object -First 1
     if($newTicketPayload.parameters.jsCode -notmatch 'tenant_profile' -or $newTicketPayload.parameters.jsCode -notmatch 'Property:') { throw "Dedicated tenant Telegram does not inject its known tenant profile." }
     if($newTicketPayload.parameters.jsCode -notmatch 'tenant_email') { throw "Dedicated tenant Telegram does not preserve its roster identity." }

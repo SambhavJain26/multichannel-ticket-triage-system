@@ -16,7 +16,7 @@ Two instructions from you that override the attached problem statement:
 
 **OpenAI-node amendment.** Current n8n documentation says the OpenAI node V2 supports the Responses API and JSON Schema output for Text -> Generate a Model Response. Use the built-in OpenAI node for workflow model calls when the installed n8n version exposes the required model, reasoning, schema, raw output, and error behavior. Keep HTTP Request as fallback if the built-in node cannot express the required contract. Keep direct API calls in the standalone harness.
 
-**Model-cost amendment.** Current OpenAI pricing includes cheaper models than the old spec considered. Use `gpt-5-nano` as the default model. Use `gpt-5.6-luna` as the fallback if nano does not produce good enough harness results. Use standard pricing for live demo estimates. Batch pricing is lower but only relevant to offline harness/report runs, not live Telegram/board flows. The harness decides whether nano passes based on measured under-escalations, safety-signal misses, schema reliability, latency, and draft quality.
+**Model-cost amendment.** Historical Stage 3 benchmarking used `gpt-5-nano` as the initial default and its scorecard remains a nano measurement. The current live demo workflow uses `gpt-5.6-luna` after direct-demo classification instability. Use standard pricing for live demo estimates. Batch pricing is lower but only relevant to offline harness/report runs, not live Telegram/board flows. Reassess the live model only with recorded safety, schema reliability, latency, and draft-quality results.
 
 ---
 
@@ -246,8 +246,8 @@ APPROVAL (separate workflow)                              BOARD (separate workfl
 | **Domain** | `board.<you>.com`, `hooks.<you>.com` | ~$10–15/yr | — | Needed for HTTPS and Telegram webhooks, and a bare IP in a screen-share looks like a hobby project. |
 | **Telegram Bot API** | Manager alerts + approval buttons | Free | Telegram Bot ToS | Free, native n8n node, works on their real phone during the call, no A2P 10DLC, no TCPA exposure. SMS would need registration (§1.3). |
 | **Gmail (dedicated free account) or any IMAP mailbox** | Demo intake + outbound tenant replies | Free | — | IMAP IDLE gives near-instant trigger; Gmail Trigger polls on a minimum interval, which is too slow for a live demo. Needs an App Password (verify availability). |
-| **OpenAI `gpt-5-nano`** | Default model | Standard: $0.05/$0.40 per 1M tokens | Commercial use permitted | Use first. Keep only if it has zero safety-signal misses, acceptable under-escalations, stable schema output, and usable drafts. |
-| **OpenAI `gpt-5.6-luna`** | Fallback model | Standard: $0.20/$1.20 per 1M short-context tokens | Same | Use if nano misses safety cases, under-escalates too often, has unstable schema output, or produces weak drafts. |
+| **OpenAI `gpt-5-nano`** | Historical benchmark model | Standard: $0.05/$0.40 per 1M tokens | Commercial use permitted | Retain for measured comparison; the existing Stage 3 scorecard is based on it. |
+| **OpenAI `gpt-5.6-luna`** | Current live workflow model | Standard: $0.20/$1.20 per 1M short-context tokens | Same | Selected for the live demo after nano showed classification instability. |
 
 **Nothing here is a paid SaaS subscription.** Total recurring cost of the demo environment is the VPS plus a domain plus pennies of tokens.
 

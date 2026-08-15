@@ -115,8 +115,11 @@ subject beginning `[MT-SYSTEM]`.
 the conversation and does not create a ticket. Use `/new`, then send the next message as a
 second unrelated issue.
 
-**Expect:** The bot records the request, asks only the details required for classification,
-and keeps replies on the same active ticket.
+**Expect:** A generic opening is kept as preliminary conversation and receives a focused
+prompt for the actual symptom; it creates no request or manager alert. Once the tenant
+names a concrete issue, the bot creates one request using the accumulated conversation,
+asks only the details required for classification, and keeps replies on the same active
+ticket.
 
 **Verify:** Check Airtable `Requests` and `Conversations`. The current tenant bot is a
 dedicated bot for the configured demo tenant, so it automatically supplies that tenant's

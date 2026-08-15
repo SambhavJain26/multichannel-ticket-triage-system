@@ -143,7 +143,7 @@
       "parameters": {
         "resource": "database",
         "operation": "executeQuery",
-        "query": "WITH input_values AS (SELECT $1::text AS chat_id), cfg AS (\n  SELECT value AS tenant_profile FROM triage.config WHERE key = 'tenant_telegram'\n)\nSELECT i.chat_id, c.active_ticket_id, to_jsonb(t) AS ticket, cfg.tenant_profile\n       , coalesce((\n           SELECT jsonb_agg(to_jsonb(open_ticket) ORDER BY open_ticket.received_at DESC)\n           FROM (\n             SELECT candidate.id, candidate.ref, candidate.issue_summary, candidate.priority,\n                    candidate.vendor_status, candidate.status, candidate.received_at\n             FROM triage.tickets candidate\n             WHERE candidate.tenant_chat_id = i.chat_id\n               AND candidate.closed_at IS NULL\n               AND candidate.is_maintenance_request IS TRUE\n               AND candidate.request_type = 'NEW_ISSUE'\n             ORDER BY candidate.received_at DESC\n             LIMIT 10\n           ) open_ticket\n         ), '[]'::jsonb) AS open_tickets\nFROM input_values i CROSS JOIN cfg\nLEFT JOIN triage.tenant_chats c ON c.telegram_chat_id = i.chat_id\nLEFT JOIN triage.tickets t ON t.id = c.active_ticket_id;",
+        "query": "WITH input_values AS (SELECT $1::text AS chat_id), cfg AS (\n  SELECT value AS tenant_profile FROM triage.config WHERE key = 'tenant_telegram'\n)\nSELECT i.chat_id, c.active_ticket_id, c.pending_intake_body, c.pending_intake_started_at, to_jsonb(t) AS ticket, cfg.tenant_profile\n       , coalesce((\n           SELECT jsonb_agg(to_jsonb(open_ticket) ORDER BY open_ticket.received_at DESC)\n           FROM (\n             SELECT candidate.id, candidate.ref, candidate.issue_summary, candidate.priority,\n                    candidate.vendor_status, candidate.status, candidate.received_at\n             FROM triage.tickets candidate\n             WHERE candidate.tenant_chat_id = i.chat_id\n               AND candidate.closed_at IS NULL\n               AND candidate.is_maintenance_request IS TRUE\n               AND candidate.request_type = 'NEW_ISSUE'\n             ORDER BY candidate.received_at DESC\n             LIMIT 10\n           ) open_ticket\n         ), '[]'::jsonb) AS open_tickets\nFROM input_values i CROSS JOIN cfg\nLEFT JOIN triage.tenant_chats c ON c.telegram_chat_id = i.chat_id\nLEFT JOIN triage.tickets t ON t.id = c.active_ticket_id;",
         "options": {
           "queryReplacement": "={{ [$json.chat_id] }}"
         }
@@ -183,7 +183,7 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "function parse(v) { try { return typeof v === \"string\" ? JSON.parse(v) : v; } catch (_) { return null; } }\nfunction isStatusQuestion(value) {\n  const text = String(value || \"\").toLowerCase().replace(/\\s+/g, \" \").trim();\n  if (/\\b(status|update|progress|eta)\\b/.test(text)) return true;\n  if (/\\b(when|what time|how soon)\\b.{0,100}\\b(arrive|coming|help|someone|fixed|fix|resolved|resolve|completed|complete|done|repair|repairs|issue|issues|request|requests)\\b/.test(text)) return true;\n  if (/\\b(arrive|coming|fixed|resolved|completed|done)\\b.{0,60}\\b(when|what time|how soon)\\b/.test(text)) return true;\n  return /\\bwhat(?:'s| is) happening with\\b.{0,60}\\b(issue|issues|request|requests|repair|repairs)\\b/.test(text);\n}\nreturn $input.all().map((item) => { const j = item.json; const ticket = parse(j.ticket); const openTickets = parse(j.open_tickets) || []; const status = isStatusQuestion(j.text); let route = \"new\"; if (j.is_bare_start) route = \"welcome\"; else if (j.is_new_command) route = \"new_command\"; else if (status) route = \"status\"; else if (ticket && Array.isArray(ticket.missing_info) && ticket.missing_info.length) route = \"clarification\"; return {json: {...j, ticket, open_tickets: openTickets, route}}; });"
+        "jsCode": "function parse(v) { try { return typeof v === \"string\" ? JSON.parse(v) : v; } catch (_) { return null; } }\nfunction isStatusQuestion(value) {\n  const text = String(value || \"\").toLowerCase().replace(/\\s+/g, \" \").trim();\n  if (/\\b(status|update|progress|eta)\\b/.test(text)) return true;\n  if (/\\b(when|what time|how soon)\\b.{0,100}\\b(arrive|coming|help|someone|fixed|fix|resolved|resolve|completed|complete|done|repair|repairs|issue|issues|request|requests)\\b/.test(text)) return true;\n  if (/\\b(arrive|coming|fixed|resolved|completed|done)\\b.{0,60}\\b(when|what time|how soon)\\b/.test(text)) return true;\n  return /\\bwhat(?:'s| is) happening with\\b.{0,60}\\b(issue|issues|request|requests|repair|repairs)\\b/.test(text);\n}\nfunction hasConcreteMaintenanceDetail(value) {\n  const text = String(value || \"\").toLowerCase();\n  return /\\b(leak|leaking|drip|dripping|water|wet|flood|gas|smoke|fire|burning|spark|wire|breaker|heat|cooling|air conditioning|fan|faucet|tap|sink|drain|shower|bath(?:tub)?|pipe|window|door|lock|hinge|toilet|pest|mold|crack|cracked|broken|stopped|not working|won'?t work|clog|overflow|sewage|noise|noisy|squeak|squeaky)\\b/.test(text);\n}\nreturn $input.all().map((item) => {\n  const j = item.json;\n  const ticket = parse(j.ticket);\n  const openTickets = parse(j.open_tickets) || [];\n  const bufferedText = String(j.pending_intake_body || \"\").trim();\n  const combinedTenantText = [bufferedText, j.text].filter(Boolean).join(\"\\n\");\n  const status = isStatusQuestion(j.text);\n  let route = \"new\";\n  if (j.is_bare_start) route = \"welcome\";\n  else if (j.is_new_command) route = \"new_command\";\n  else if (status) route = \"status\";\n  else if (ticket && Array.isArray(ticket.missing_info) && ticket.missing_info.length) route = \"clarification\";\n  else if (!hasConcreteMaintenanceDetail(combinedTenantText)) route = \"pretriage\";\n  return {json: {...j, ticket, open_tickets: openTickets, combined_tenant_text: combinedTenantText, route}};\n});"
       },
       "id": "route-tenant-message",
       "name": "Route Tenant Message",
@@ -273,6 +273,21 @@
                 ],
                 "combinator": "and"
               }
+            },
+            {
+              "conditions": {
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.route }}",
+                    "rightValue": "pretriage",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
             }
           ]
         },
@@ -334,7 +349,7 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "function profile(v){try{return typeof v==='string'?JSON.parse(v):(v||{});}catch(_){return {};}} return $input.all().map(item=>{const p=profile(item.json.tenant_profile); const name=p.tenant_name||'Demo Tenant'; const email=p.tenant_email||('telegram:'+item.json.chat_id); const property=p.property||''; const unit=p.unit||''; const context=[`Tenant: ${name}`,property&&`Property: ${property}`,unit&&`Unit: ${unit}`,email&&!email.startsWith('telegram:')&&`Contact: ${email}`,'',item.json.text].filter(Boolean).join('\\n'); return {json:{source:'telegram',from_address:email,subject:'Telegram maintenance request',body_raw:context,received_at:new Date().toISOString(),attachment_paths:[],msg_id:'<telegram-'+item.json.chat_id+'-'+item.json.message_id+'@maintenance-triage.local>',in_reply_to:null,refs:null,tenant_chat_id:item.json.chat_id,tenant_email:email}};});"
+        "jsCode": "function profile(v){try{return typeof v==='string'?JSON.parse(v):(v||{});}catch(_){return {};}} return $input.all().map(item=>{const p=profile(item.json.tenant_profile); const name=p.tenant_name||'Demo Tenant'; const email=p.tenant_email||('telegram:'+item.json.chat_id); const property=p.property||''; const unit=p.unit||''; const tenantText=String(item.json.combined_tenant_text||item.json.text||'').trim(); const context=[`Tenant: ${name}`,property&&`Property: ${property}`,unit&&`Unit: ${unit}`,email&&!email.startsWith('telegram:')&&`Contact: ${email}`,'',tenantText].filter(Boolean).join('\\n'); return {json:{source:'telegram',from_address:email,subject:'Telegram maintenance request',body_raw:context,received_at:new Date().toISOString(),attachment_paths:[],msg_id:'<telegram-'+item.json.chat_id+'-'+item.json.message_id+'@maintenance-triage.local>',in_reply_to:null,refs:null,tenant_chat_id:item.json.chat_id,tenant_email:email}};});"
       },
       "id": "prepare-new-ticket-payload",
       "name": "Prepare New Ticket Payload",
@@ -383,7 +398,7 @@
       "parameters": {
         "resource": "database",
         "operation": "executeQuery",
-        "query": "WITH input_values AS (SELECT $1::text AS chat_id, $2::text AS msg_id, NULLIF($3::text, '') AS tenant_email), ticket AS (\n  SELECT * FROM triage.tickets WHERE msg_id = (SELECT msg_id FROM input_values) ORDER BY id DESC LIMIT 1\n), upsert_chat AS (\n  INSERT INTO triage.tenant_chats (telegram_chat_id, tenant_email, active_ticket_id) SELECT chat_id, tenant_email, id FROM input_values CROSS JOIN ticket\n  ON CONFLICT (telegram_chat_id) DO UPDATE SET tenant_email = coalesce(EXCLUDED.tenant_email, triage.tenant_chats.tenant_email), active_ticket_id = EXCLUDED.active_ticket_id, updated_at = now() RETURNING *\n), linked AS (UPDATE triage.tickets SET tenant_chat_id = (SELECT telegram_chat_id FROM upsert_chat) WHERE id = (SELECT id FROM ticket) RETURNING *)\nINSERT INTO triage.ticket_messages (ticket_id, channel, direction, intent, body, external_message_id, delivery_state)\nSELECT id, 'telegram', 'inbound', 'request', body_clean, msg_id, 'RECORDED' FROM linked\nON CONFLICT (channel, direction, external_message_id) DO NOTHING\nRETURNING ticket_id, (SELECT ref FROM linked) AS ref, (SELECT priority FROM linked) AS priority, (SELECT issue_summary FROM linked) AS issue_summary, (SELECT missing_info FROM linked) AS missing_info, (SELECT human_only FROM linked) AS human_only, (SELECT vendor_status FROM linked) AS vendor_status, (SELECT tenant_chat_id FROM linked) AS chat_id;",
+        "query": "WITH input_values AS (SELECT $1::text AS chat_id, $2::text AS msg_id, NULLIF($3::text, '') AS tenant_email), ticket AS (\n  SELECT * FROM triage.tickets WHERE msg_id = (SELECT msg_id FROM input_values) ORDER BY id DESC LIMIT 1\n), upsert_chat AS (\n  INSERT INTO triage.tenant_chats (telegram_chat_id, tenant_email, active_ticket_id) SELECT chat_id, tenant_email, id FROM input_values CROSS JOIN ticket\n  ON CONFLICT (telegram_chat_id) DO UPDATE SET tenant_email = coalesce(EXCLUDED.tenant_email, triage.tenant_chats.tenant_email), active_ticket_id = EXCLUDED.active_ticket_id, pending_intake_body = NULL, pending_intake_started_at = NULL, updated_at = now() RETURNING *\n), linked AS (UPDATE triage.tickets SET tenant_chat_id = (SELECT telegram_chat_id FROM upsert_chat) WHERE id = (SELECT id FROM ticket) RETURNING *)\nINSERT INTO triage.ticket_messages (ticket_id, channel, direction, intent, body, external_message_id, delivery_state)\nSELECT id, 'telegram', 'inbound', 'request', body_clean, msg_id, 'RECORDED' FROM linked\nON CONFLICT (channel, direction, external_message_id) DO NOTHING\nRETURNING ticket_id, (SELECT ref FROM linked) AS ref, (SELECT priority FROM linked) AS priority, (SELECT issue_summary FROM linked) AS issue_summary, (SELECT missing_info FROM linked) AS missing_info, (SELECT human_only FROM linked) AS human_only, (SELECT vendor_status FROM linked) AS vendor_status, (SELECT tenant_chat_id FROM linked) AS chat_id;",
         "options": {
           "queryReplacement": "={{ [$json.chat_id, $json.msg_id, $json.tenant_email] }}"
         }
@@ -528,6 +543,31 @@
     },
     {
       "parameters": {
+        "resource": "database",
+        "operation": "executeQuery",
+        "query": "INSERT INTO triage.tenant_chats (telegram_chat_id, pending_intake_body, pending_intake_started_at)\nVALUES ($1::text, NULL, NULL)\nON CONFLICT (telegram_chat_id) DO UPDATE SET pending_intake_body = NULL, pending_intake_started_at = NULL, updated_at = now()\nRETURNING telegram_chat_id AS chat_id;",
+        "options": {
+          "queryReplacement": "={{ [$json.chat_id] }}"
+        }
+      },
+      "id": "postgres-clear-pre-triage-buffer",
+      "name": "Postgres Clear Pre-Triage Buffer",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        300,
+        160
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "stage1PgLocal",
+          "name": "maintenance-triage-postgres-local"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
         "resource": "message",
         "operation": "sendMessage",
         "chatId": "={{ $json.chat_id }}",
@@ -543,8 +583,90 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        300,
+        520,
         160
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "stage9TenantTelegram",
+          "name": "maintenance-triage-tenant-telegram-bot"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "function profile(v){try{return typeof v==='string'?JSON.parse(v):(v||{});}catch(_){return {};}} return $input.all().map(item=>{const p=profile(item.json.tenant_profile); return {json:{chat_id:item.json.chat_id,tenant_email:p.tenant_email||'',body:item.json.text||''}};});"
+      },
+      "id": "prepare-pre-triage-buffer",
+      "name": "Prepare Pre-Triage Buffer",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        80,
+        580
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "database",
+        "operation": "executeQuery",
+        "query": "WITH input_values AS (SELECT $1::text AS chat_id, NULLIF($2::text, '') AS tenant_email, $3::text AS body),\nupsert_chat AS (\n  INSERT INTO triage.tenant_chats (telegram_chat_id, tenant_email, pending_intake_body, pending_intake_started_at)\n  SELECT chat_id, tenant_email, body, now() FROM input_values\n  ON CONFLICT (telegram_chat_id) DO UPDATE SET\n    tenant_email = coalesce(EXCLUDED.tenant_email, triage.tenant_chats.tenant_email),\n    pending_intake_body = left(concat_ws(E'\\n', NULLIF(triage.tenant_chats.pending_intake_body, ''), EXCLUDED.pending_intake_body), 4000),\n    pending_intake_started_at = coalesce(triage.tenant_chats.pending_intake_started_at, now()),\n    updated_at = now()\n  RETURNING telegram_chat_id, pending_intake_body\n)\nSELECT telegram_chat_id AS chat_id, pending_intake_body FROM upsert_chat;",
+        "options": {
+          "queryReplacement": "={{ [$json.chat_id,$json.tenant_email,$json.body] }}"
+        }
+      },
+      "id": "postgres-buffer-preliminary-tenant-message",
+      "name": "Postgres Buffer Preliminary Tenant Message",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        300,
+        580
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "stage1PgLocal",
+          "name": "maintenance-triage-postgres-local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "return $input.all().map(item=>({json:{chat_id:item.json.chat_id,message_text:'Please describe the actual problem, for example what has stopped working, what is leaking, or what you can see. Is it getting worse?'}}));"
+      },
+      "id": "prepare-pre-triage-clarification",
+      "name": "Prepare Pre-Triage Clarification",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        520,
+        580
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $json.chat_id }}",
+        "text": "={{ $json.message_text }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "disable_web_page_preview": true,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "telegram-send-pre-triage-clarification",
+      "name": "Telegram Send Pre-Triage Clarification",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        740,
+        580
       ],
       "credentials": {
         "telegramApi": {
@@ -935,6 +1057,13 @@
             "type": "main",
             "index": 0
           }
+        ],
+        [
+          {
+            "node": "Prepare Pre-Triage Buffer",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
@@ -1036,7 +1165,51 @@
       "main": [
         [
           {
+            "node": "Postgres Clear Pre-Triage Buffer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Clear Pre-Triage Buffer": {
+      "main": [
+        [
+          {
             "node": "Telegram Send New Conversation Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Pre-Triage Buffer": {
+      "main": [
+        [
+          {
+            "node": "Postgres Buffer Preliminary Tenant Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Buffer Preliminary Tenant Message": {
+      "main": [
+        [
+          {
+            "node": "Prepare Pre-Triage Clarification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Pre-Triage Clarification": {
+      "main": [
+        [
+          {
+            "node": "Telegram Send Pre-Triage Clarification",
             "type": "main",
             "index": 0
           }

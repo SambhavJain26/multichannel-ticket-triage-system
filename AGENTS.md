@@ -12,7 +12,7 @@ Read these files before changing scope or implementation details:
 4. `02-maintenance-triage.md` - validated problem and product framing.
 5. `foundation-2-maintenance-operations.md` - domain background only.
 
-If documents conflict, prefer the newest explicit decision in `progress-notes.md`, then update stale docs instead of guessing. Current controlling decisions: local-first demo build, VPS/Caddy production-only, `gpt-5-nano` default model, `gpt-5.6-luna` fallback, built-in n8n OpenAI node preferred, HTTP Request only as fallback.
+If documents conflict, prefer the newest explicit decision in `progress-notes.md`, then update stale docs instead of guessing. Current controlling decisions: local-first demo build, VPS/Caddy production-only, `gpt-5.6-luna` live workflow model, built-in n8n OpenAI node preferred, HTTP Request only as fallback.
 
 ## Project Structure
 
@@ -83,6 +83,7 @@ Known n8n gotchas to account for:
 - Email, form, and Telegram intake already retain a tenant reply channel. Treat it as the contact method: do not ask a tenant for a phone number merely because the classifier did not extract one. For generic future Telegram intake, ask one combined property-and-unit question only when location is missing because vendor matching is property-specific.
 - The current demo tenant bot represents one configured known tenant, analogous to a dedicated SMS number. Direct Telegram intake must inject that profile's tenant name, email, property, and unit before classification; it must not ask the tenant to restate those values. Supporting several tenants later requires separate configured bots/numbers or a verified identity-binding design.
 - A newly created tenant ticket with mapped `missing_info` must not invoke the manager desk. Keep it in the tenant clarification flow and invoke the manager only once it is complete, human-only, or otherwise explicitly reviewable. Preserve trusted labelled tenant context from the intake body when model extraction misses it; use deterministic safety-to-trade fallback only when the model returns `UNKNOWN` so vendor matching remains meaningful without replacing the model's normal classification.
+- A generic direct-Telegram opening such as "There is a problem in my bathroom" is preliminary conversation, not a ticket. Buffer it on `tenant_chats`, ask for a concrete maintenance symptom, and create no Airtable record, manager alert, vendor draft, or ticket until the accumulated text names an actual issue.
 - Keep narrow, explicit post-model boundaries for stable maintenance semantics. A standalone ceiling/exhaust fan failure with no HVAC or electrical-hazard context is `ROUTINE`/`APPLIANCE`, not `ELECTRICAL`; sparking, smoke, burning smell, exposed wiring, or breaker trouble remain electrical danger signals.
 - A leak, drip, pooling water, or wet area at a pipe, sink, faucet/tap, toilet, shower, bathtub, drain, or water heater is `PLUMBING`. Apply this narrow post-model trade boundary when the model incorrectly returns `GENERAL`; do not apply it to a gas leak.
 - In a shared demo mailbox, every system-generated email category must use a subject beginning `[MT-SYSTEM]`, including vendor dispatch. Filtering only onboarding mail allows outbound vendor messages to re-enter IMAP as new tenant requests and replay manager approvals.
@@ -131,7 +132,7 @@ Minimum maintenance fixture scenarios:
 - auto-responder loop bait.
 - voicemail-transcript-shaped text.
 
-`gpt-5-nano` is the default model. Run `gpt-5.6-luna` as fallback if nano misses safety cases, under-escalates too often, has unstable schema output, or produces weak drafts.
+`gpt-5.6-luna` is the live workflow model. Keep the historical `gpt-5-nano` harness available for comparison, and reassess the live-model decision only with recorded safety, schema, latency, and draft-quality results.
 
 ## Security And Configuration
 

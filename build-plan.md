@@ -32,7 +32,7 @@ Implementation defaults unless you override them:
 - Keep direct OpenAI API calls in the standalone harness, where precise request bodies, repeatability, usage capture, and regression testing are easier.
 - Use HTTP Request for OpenAI only as a fallback if the installed n8n OpenAI node cannot express the required schema/reasoning/model settings or fails to return the raw fields we need.
 - Do not use n8n AI Agent/LangChain agent loops for the triage classifier. This is deterministic classification plus drafting, not an autonomous agent.
-- Default model is `gpt-5-nano`. Fallback model is `gpt-5.6-luna` if `gpt-5-nano` does not produce good enough harness results. The pass/fail gate is zero safety-signal misses and acceptable under-escalation behavior on the fixture harness.
+- The current live workflow model is `gpt-5.6-luna`, following live demo classification instability with `gpt-5-nano`. The historical harness retains its original nano benchmark; the pass/fail gate remains zero safety-signal misses and acceptable under-escalation behavior on the fixture harness.
 - Use a dedicated IMAP mailbox for intake and a domain-authenticated sender identity for outbound demo replies if available. A plain Gmail sender is acceptable only for internal testing, not a prospect screen share.
 - During early testing, approved outbound tenant replies go only to controlled test inboxes. Prospect-supplied addresses can be enabled intentionally during demo rehearsal once the approval gate and double-approve guard are verified.
 

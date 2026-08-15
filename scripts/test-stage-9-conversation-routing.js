@@ -48,6 +48,44 @@ const newIssueRoute = run(routeCode, [{
 }]);
 assert(newIssueRoute[0].json.route === "new", "A distinct maintenance issue did not create a new request.");
 
+const vagueOpeningRoute = run(routeCode, [{
+  chat_id: "demo-chat",
+  message_id: "40",
+  text: "There is a problem in my bathroom.",
+  ticket: null,
+  open_tickets: [],
+  pending_intake_body: null,
+}]);
+assert(vagueOpeningRoute[0].json.route === "pretriage", "A generic opening message created a ticket instead of requesting a concrete symptom.");
+
+const vagueFollowUpRoute = run(routeCode, [{
+  chat_id: "demo-chat",
+  message_id: "41",
+  text: "I noticed it yesterday and it keeps getting worse.",
+  ticket: null,
+  open_tickets: [],
+  pending_intake_body: "There is a problem in my bathroom.",
+}]);
+assert(vagueFollowUpRoute[0].json.route === "pretriage", "A vague follow-up bypassed the preliminary clarification route.");
+
+const clearIssueRoute = run(routeCode, [{
+  chat_id: "demo-chat",
+  message_id: "42",
+  text: "The bathroom sink faucet is dripping constantly, even when it is turned all the way off.",
+  ticket: null,
+  open_tickets: [],
+  pending_intake_body: "There is a problem in my bathroom.\nI noticed it yesterday and it keeps getting worse.",
+}]);
+assert(clearIssueRoute[0].json.route === "new", "A concrete maintenance symptom did not leave preliminary clarification.");
+assert(clearIssueRoute[0].json.combined_tenant_text.includes("keeps getting worse") && clearIssueRoute[0].json.combined_tenant_text.includes("faucet is dripping"), "Buffered preliminary messages were not retained for triage.");
+
+const newTicketPayloadCode = nodeCode(tenant, "Prepare New Ticket Payload");
+const newTicketPayload = run(newTicketPayloadCode, [{
+  ...clearIssueRoute[0].json,
+  tenant_profile: {tenant_name: "Demo Tenant", tenant_email: "sambhavn8n@gmail.com", property: "Maple Court", unit: "2B"},
+}]);
+assert(newTicketPayload[0].json.body_raw.includes("There is a problem in my bathroom.") && newTicketPayload[0].json.body_raw.includes("faucet is dripping"), "The new ticket did not include the preliminary conversation.");
+
 const statusCode = nodeCode(tenant, "Prepare Tenant Status Reply");
 const statusReply = run(statusCode, [statusRoute[0].json]);
 assert(statusReply.length === 1, "A status question produced more than one tenant reply.");
