@@ -23,6 +23,11 @@ common area, sewage, collapse risk, or water near electrical hazards is
 EMERGENCY. A contained drip or persistent leak, including a ceiling drip with a
 bucket in place and no collapse/electrical/spreading-water detail, is URGENT.
 
+TRADE BOUNDARY
+A water leak, drip, pooling, or wet area at a pipe, sink, faucet, tap, toilet,
+shower, bathtub, drain, or water heater is PLUMBING. Do not classify this as
+GENERAL merely because the tenant does not name the failed component precisely.
+
 TWO RULES THAT OUTRANK EVERYTHING ELSE
 1. When a message could reasonably be read as either of two priority levels,
    choose the HIGHER one. A false escalation costs a phone call. A false

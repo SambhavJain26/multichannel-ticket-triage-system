@@ -533,6 +533,12 @@ def build_core():
       const electricalHazard = /\b(spark|sparking|burning smell|smoke|exposed wire|breaker)\b/.test(text);
       return fanFailure && !hvacContext && !electricalHazard;
     }
+    function plumbingLeak(message) {
+      const text = String(message || "").toLowerCase();
+      const waterProblem = /\b(leak|leaking|drip|dripping|water (?:is )?(?:coming|running|pooling)|wet under)\b/.test(text);
+      const plumbingLocation = /\b(pipe|sink|faucet|tap|toilet|shower|bath(?:tub)?|drain|water heater|under (?:the )?(?:kitchen|bathroom) sink)\b/.test(text);
+      return waterProblem && plumbingLocation;
+    }
 
     return $input.all().map((item) => {
       const j = item.json;
@@ -610,6 +616,11 @@ def build_core():
           priority = "ROUTINE";
           modelJson = {...modelJson, trade: "APPLIANCE"};
           priorityReason = "Standalone fan failure without HVAC context or electrical hazard detail.";
+        }
+        if (!ruleSignals.includes("GAS") && modelJson.is_maintenance_request === true && plumbingLeak(j.body_clean || j.body_raw || "")) {
+          modelJson = {...modelJson, trade: "PLUMBING"};
+          overrideApplied = true;
+          overrideReason = [overrideReason, "water leak at a plumbing fixture or pipe"].filter(Boolean).join("; ");
         }
         draftAllowed = priority !== "NEEDS_REVIEW"
           && !humanOnly

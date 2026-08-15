@@ -55,7 +55,7 @@ try {
     $coreWorkflow = Get-Content -Raw workflows\maintenance-triage-core.json | ConvertFrom-Json
     $coreRules = $coreWorkflow.nodes | Where-Object { $_.name -eq 'Apply Safety Rules' } | Select-Object -First 1
     if($coreRules.parameters.jsCode -notmatch 'value !== "CONTACT"') { throw "The triage engine does not remove CONTACT when a reply channel is already available." }
-    if($coreRules.parameters.jsCode -notmatch 'labeledValue' -or $coreRules.parameters.jsCode -notmatch 'safetyTrade' -or $coreRules.parameters.jsCode -notmatch 'routineFanFailure') { throw "The triage engine does not preserve trusted profile data or known maintenance trade routing." }
+    if($coreRules.parameters.jsCode -notmatch 'labeledValue' -or $coreRules.parameters.jsCode -notmatch 'safetyTrade' -or $coreRules.parameters.jsCode -notmatch 'routineFanFailure' -or $coreRules.parameters.jsCode -notmatch 'plumbingLeak') { throw "The triage engine does not preserve trusted profile data or known maintenance trade routing." }
     $newTicketPayload = $tenantWorkflow.nodes | Where-Object { $_.name -eq 'Prepare New Ticket Payload' } | Select-Object -First 1
     if($newTicketPayload.parameters.jsCode -notmatch 'tenant_profile' -or $newTicketPayload.parameters.jsCode -notmatch 'Property:') { throw "Dedicated tenant Telegram does not inject its known tenant profile." }
     if($newTicketPayload.parameters.jsCode -notmatch 'tenant_email') { throw "Dedicated tenant Telegram does not preserve its roster identity." }

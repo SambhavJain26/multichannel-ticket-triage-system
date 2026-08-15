@@ -159,6 +159,7 @@ AI provides language understanding but does not carry the entire safety burden. 
 - A contained ceiling drip with a bucket and no electrical, structural, or spreading risk is urgent rather than automatically emergency.
 - A squeaky/noisy door hinge is routine unless it affects locking, closing, access, or creates injury/security concern.
 - A standalone ceiling or exhaust fan failure with no HVAC/electrical-danger context is ROUTINE and APPLIANCE, not electrical work.
+- A water leak, drip, pooling, or wet area at a pipe, sink, faucet/tap, toilet, shower, bathtub, drain, or water heater is PLUMBING, even if the model returns GENERAL. A gas leak remains a safety case and is never routed through this plumbing boundary.
 - Accommodation and legal-sensitive matters are human-only. The system suppresses an unsafe automatic draft and routes the manager to review.
 - NEEDS_REVIEW is a system state; the model does not own it.
 
@@ -327,4 +328,3 @@ Before production, implement verified tenant identity, PMS/work-order integratio
 | User-facing documentation | docs/operating-guide.md; docs/how-the-system-works.md |
 
 When changing behavior, update the generator rather than hand-editing a generated n8n export, regenerate/import workflows, run Stage 9 validation and the relevant rehearsal, and record the decision/result in progress-notes.md.
-
