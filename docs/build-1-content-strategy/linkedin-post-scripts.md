@@ -2,7 +2,7 @@
 
 Finished copy for the 15 posts briefed in `docs/linkedin-content-plan.md`.
 
-**Revised 2026-08-02.** Seven posts were rebuilt after an audit against the question "would a property manager learn something and keep this." Posts 1, 4 and 9 were replaced outright, because they taught the reader nothing they did not already know. Posts 8, 12, 13 and 14 kept their evidence and changed their subject, from what my build does to what the reader can check in their own business. The plan's pillar and format allocation was rewritten at the same time, and the reasoning is recorded at the top of `linkedin-content-plan.md`. Posts 2, 3, 5, 6, 7, 10, 11 and 15 are unchanged.
+**Revised 2026-08-17.** Seven posts were rebuilt after an audit against the question "would a property manager learn something and keep this." Posts 1, 4 and 9 were replaced outright, because they taught the reader nothing they did not already know. Posts 8, 12, 13 and 14 kept their evidence and changed their subject, from what my build does to what the reader can check in their own business. Post 2 was later replaced to show the actual Stage 9 maintenance-triage demo, rather than the retired vendor-certificate workflow. The plan's pillar and format allocation was rewritten at the same time, and the reasoning is recorded at the top of `linkedin-content-plan.md`.
 
 The batch headings below record the order things were written, not the publishing order. Publish in numerical order.
 
@@ -12,7 +12,7 @@ Every post below has been checked for: zero banned words (compliant, verified, c
 
 **Standing note on COI and lapse.** `docs/customer-language.md` says use COI unexpanded and lapse for expiry. Both apply from post 6 onward. Posts 1 to 5 are the gateway posts, which the plan requires a non-industry reader to follow without jargon, so those spell the document out and use plain expiry language. Posts 6, 7, 8 and 10 were corrected to COI and lapse after the first pass missed it.
 
-**One standing note on "approve."** The word appears in two posts as the verb for a person authorizing an email to be sent. It never appears as a claim about a vendor or a certificate. Post 2 makes the distinction out loud, which is the honest use of the word and worth keeping. If you would rather it never appear at all, the substitutions are marked in each post's notes.
+**One standing note on "approve."** The word appears in two posts as the verb for a person authorizing an email to be sent. It never appears as a claim about a vendor or a certificate. Post 2 makes the distinction out loud: the manager approves one drafted email, not the vendor or a dispatch decision. If you would rather it never appear at all, the substitutions are marked in each post's notes.
 
 ---
 
@@ -117,92 +117,92 @@ Slides 5 and 6 are the pair the whole carousel turns on, and slide 6 is the shor
 
 ---
 
-## Post 2. The demo
+## Post 2. The demo: three ways in, one manager decision
 
-**Format:** native video, 2 minutes 35 seconds. **Pillar:** build in public. **CTA:** soft.
+**Format:** native video, 2 minutes 35 seconds. **Pillar:** proof. **CTA:** soft.
 
-Scene structure follows `docs/demo-script.md`, cut down from the six-minute walkthrough. Screen recording throughout. No face, no intro card, no music.
+Scene structure follows `docs/operating-guide.md`, cut down from the live Stage 9 walkthrough. Screen recording throughout. No face, no intro card, no music.
 
 ### The post copy
 
-> A vendor's certificate arrives as a PDF. Someone opens it, finds the dates, checks the name, types it into a spreadsheet, and files the original somewhere. Then again next year, for every vendor, on a different date each time.
+> Three maintenance requests enter this demo in three different ways: an email, a form, and a Telegram conversation. Each reaches the same manager decision point, not three places to sort.
 >
-> Here is two and a half minutes of that job running without the typing. A certificate goes in. The register updates itself. When a reminder needs to go out, it stops and waits for a person to say yes.
+> The Telegram part is the useful test. "There is a problem in my bathroom" is not enough to send someone out. The bot asks for the symptom. It does not create a request, alert the manager, or pretend it knows what the problem is. When the resident says the faucet is dripping, it creates one request using the conversation so far.
 >
-> The last twenty seconds are the part I would want to hear if I were the one watching. It does not tell you a vendor is insured. Nothing that reads a certificate can. A certificate describes the day it was issued and nothing after it.
+> Then the workflow classifies the request, keeps the manager workspace up to date, finds vendors who cover that property and trade, and drafts the email. A manager chooses whether to send it. One tap releases one email.
 >
-> This is not a product launch. There is nothing to log into, no seats, no subscription. It is an example of how I build, running inside a mailbox and a database a company already owns.
+> It stops before the work order. It does not select a vendor by itself, promise an arrival time, or close a request. That is the point.
 >
-> Happy to walk anyone through it properly.
+> Here is the live walkthrough, using synthetic data.
 
-*Word count: 178. Em dashes: 0. First 210 characters end inside the second sentence of the opening, with the tedium fully established.*
+*Word count: 162. Em dashes: 0. First 210 characters establish the three intake routes and the manager outcome without relying on the video.*
 
 ### Shot list and voiceover
 
-Timings are cumulative. Read at an unhurried pace, roughly 130 words per minute. Total 337 words across 2:35, which sits inside the 150 to 200 words per 75 seconds range.
+Timings are cumulative. Read at an unhurried pace, roughly 130 words per minute. Total 314 words across 2:35, which sits inside the 150 to 200 words per 75 seconds range.
 
-**Shot 1. The register. 0:00 to 0:14**
+**Shot 1. Start clean. 0:00 to 0:12**
 
-*Screen: dashboard, scrolled to the top. No cursor movement for the first three seconds. Let the rows sit there.*
+*Screen: Airtable `Requests` view, empty after the demo reset. Hold for two seconds, then switch to the shared Gmail mailbox.*
 
-> "This is the list of vendors a property management company hires. Plumbers, electricians, landscapers, cleaners. Next to each one, the insurance paperwork they are supposed to have on file, and the date it runs out."
+> "Three requests are about to arrive through three different channels. Email, a web form, and Telegram. This is the manager's workspace. It starts empty, with no old requests left over from an earlier test."
 
-**Shot 2. A certificate arrives. 0:14 to 0:34**
+**Shot 2. Email intake. 0:12 to 0:34**
 
-*Screen: switch to the upload form. Drag `f02-expiring-20-days.pdf` from File Explorer onto the form. Submit. Hold on the confirmation.*
+*Screen: Send a synthetic email describing water leaking from the pipe under a kitchen sink. Cut to Airtable only after the request row appears. Briefly show the `[MT-SYSTEM]` onboarding email arriving in the controlled mailbox.*
 
-> "One just came in. In a real office this is an email attachment from the vendor or their agent. I am uploading it here because it is the same path and it is easier to watch. Nothing gets typed after this point."
+> "First, an email. It describes water leaking from a pipe under the kitchen sink. The workflow reads the request, assigns a reference, classifies the trade and priority, and writes the result here. It also sends one Telegram pairing link. That system email is marked so the shared mailbox cannot read its own message as a new request."
 
-**Shot 3. The row changes. 0:34 to 0:54**
+**Shot 3. Form intake. 0:34 to 0:54**
 
-*Screen: cut back to the dashboard. It refreshes every five seconds. Wait for the row to change on camera rather than cutting to it.*
+*Screen: Submit the synthetic web form for a failed ceiling fan. Cut to Airtable showing the second request and source field. Do not wait long enough to show an unrelated email notification.*
 
-> "Carrier, policy number, general liability limit, expiration date. That row went from a blank line to a tracked date without anyone opening the file. The system read the document. It did not judge it."
+> "Second, the same process through a form. A stopped ceiling fan becomes another request, with the intake source shown alongside it. The manager does not need to remember which inbox it came from. It records the channel, not a separate process."
 
-**Shot 4. Four states. 0:54 to 1:32**
+**Shot 4. Telegram clarification. 0:54 to 1:29**
 
-*Screen: move down the board deliberately, resting on one row per state. Do not read any day count out loud.*
+*Screen: Tenant Telegram chat. Send "There is a problem in my bathroom." Show the focused symptom prompt. Send "It started yesterday and is getting worse." Show that it asks again. Send "The bathroom sink faucet is dripping constantly." Then cut to the single new Airtable request.*
 
-> "The whole board is really four situations. Current, with a date attached. Expiring, which is the one that used to depend on somebody remembering. Expired, meaning the paperwork on file has run out. And needs review, where the document was unclear and it stopped rather than guessing. Read the wording in that column. Every status is a fact printed on a document. None of them is a claim about insurance."
+> "The third route is the one I wanted to test properly. The resident starts vaguely: there is a problem in my bathroom. Then says it started yesterday and is getting worse. Neither message creates a ticket, because neither names a maintenance symptom. When they say the sink faucet is dripping, it creates one request from the conversation so far. No duplicate requests. No premature manager alert."
 
-**Shot 5. The document is one click away. 1:32 to 1:52**
+**Shot 5. Manager decision. 1:29 to 2:03**
 
-*Screen: click a source link. Let the PDF open in a new tab. Pause on it for a full three seconds before speaking again.*
+*Screen: Manager Telegram alert for the plumbing request. Show request reference, summary, matched vendor button, Hold, and the drafted email preview. Keep the Airtable request visible in a second window only if legible.*
 
-> "Every row links back to the certificate it came from. If anyone wants to check a date against the original, that is one click, not a search through an inbox. Nobody has to take the software's word for anything."
+> "Once the request is complete, the manager gets the decision point. The alert shows the issue, the matching vendor, and the exact email it would send. The manager can choose that vendor or hold it. The workflow does not dispatch anyone. It does not decide that the vendor is right."
 
-**Shot 6. The human checkpoint. 1:52 to 2:18**
+**Shot 6. One approved email. 2:03 to 2:21**
 
-*Screen: Gmail, approval email already waiting. Show the vendor, reason, recipient, and drafted message. Click Approve. Cut to the sent message.*
+*Screen: Tap the actual vendor button once. Cut to the controlled Gmail sent message, then the tenant Telegram update and Airtable send state.*
 
-> "When paperwork is missing or about to run out, it writes the reminder email. Then it stops. The manager gets this: the vendor, the reason, who it would go to, and the exact message. That click approves an email. It does not approve a vendor. Ignore two requests and it stops chasing and hands the vendor back to a person."
+> "One tap releases one email. After the SMTP send succeeds, the resident gets a factual update: a maintenance provider has been contacted. The database prevents the second tap from sending that email twice."
 
-**Shot 7. What it will not do. 2:18 to 2:35**
+**Shot 7. The boundary. 2:21 to 2:35**
 
-*Screen: back to the dashboard, static, no cursor.*
+*Screen: Tenant Telegram chat. Send "When will all this be resolved?" Show the single consolidated status reply. Keep the reply and open Airtable records on screen.*
 
-> "Last thing, and it matters more than the rest. It does not tell you a vendor is insured. Nothing that reads a certificate can. It cannot see a cancellation, it cannot read an endorsement, and it will not decide who works on a property. That belongs with the agent and the manager."
+> "Last check. A status question gets a status answer, not another request or an invented arrival time. This is where the automation stops: it sorts, asks, drafts, and records. The manager still decides."
 
 ### Burned-in caption notes
 
-- **Captions on every second of it.** LinkedIn autoplays muted, and shots 4 and 7 are the two that carry the argument.
+- **Captions on every second of it.** LinkedIn autoplays muted, and shots 4 and 7 carry the argument.
 - Burn them in rather than relying on the platform's auto-captions. Bottom third, high contrast, two lines maximum, no animation.
-- Four terms need to be right in the captions and are commonly mangled by auto-transcription: **COI**, **ACORD**, **general liability**, **endorsement**.
-- **Add one persistent corner label** for the first ten seconds only: "Synthetic vendor data." Every name and policy number on screen is a fixture. Saying so once removes an objection that would otherwise sit in a comment.
-- **No day counts in the narration.** The fixture dates are fixed, so the countdown on screen shifts by one every day since the fixtures were generated (`progress-notes.md`, 2026-07-31). Let the screen show the number. The voiceover above already avoids it.
-- Blur the demo mailbox address in shot 6 if it is visible in the Gmail header.
+- Terms that need to be right in the captions: **Airtable**, **Telegram**, **SMTP**, **work order**.
+- **Add one persistent corner label** for the first ten seconds only: "Synthetic maintenance data." Every name, request, and vendor email on screen is controlled demo data.
+- Show the `Requests` and `Conversations` tables only at a readable scale. Do not show raw Postgres or n8n execution data in the finished cut.
+- Blur the controlled mailbox address and Telegram chat IDs when visible.
 
 ### Alternative opening lines for the post copy
 
-- "Nobody's job title is 'types dates off a PDF into a spreadsheet.' Somebody still does it, roughly once a year, per vendor."
-- "The certificate is the easy part. Remembering it eleven months later is the part that fails."
-- "Here is the version of vendor paperwork where the typing is gone and the judgment isn't."
+- "The same maintenance request can arrive in an inbox, a form, or a chat. The manager should not have to triage it three times."
+- "A vague resident message is not a work order. It is the start of a conversation."
+- "I tested the part most maintenance automation skips: what happens before a request is clear enough to send on."
 
 ### Notes
 
-- If you would rather the word "approve" never appear: shot 6 becomes "That click releases one email. It says nothing about the vendor." The line as written is stronger, because it negates the claiming sense out loud.
-- Shot 6 requires the approval email to already be waiting. Execute **Daily Watch and Chase** off camera a minute before recording, per the demo script.
-- Facts traced: four states and status wording from `docs/how-the-system-works.md`; two-strike stop-chasing from the same; five-second refresh from the same; the "reports what a document says, never what is true" boundary from `docs/demo-script.md` Language Rules.
+- If you would rather the word "approve" never appear: shot 6 becomes "One tap releases one email." The line as written is stronger because it makes the limited decision explicit.
+- Reset local demo state immediately before recording: `./scripts/reset-demo.ps1 -Apply`. Use only the controlled mailbox and synthetic Airtable roster.
+- Facts traced: three intake routes, Telegram clarification, Airtable manager workspace, vendor selection, one-send-only, and status boundaries from `docs/operating-guide.md` and `docs/build-description.md`. The six-fixture rehearsal is not shown and no broad accuracy claim is made.
 
 ---
 
