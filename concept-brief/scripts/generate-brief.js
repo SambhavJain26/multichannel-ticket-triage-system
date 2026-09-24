@@ -64,9 +64,12 @@ function main() {
     rendered = rendered.replace(placeholderMustache, val);
   }
 
-  // Adjust relative link to template.css if output is in a subdirectory
-  const relativeCssPath = path.relative(path.dirname(outPath), path.join(ROOT_DIR, 'template.css')).replace(/\\/g, '/');
-  rendered = rendered.replace(/href=["']template\.css["']/i, `href="${relativeCssPath}"`);
+  // Keep the stylesheet paired with the selected template (template.css,
+  // template-v2.css, and future named variants) when output is nested.
+  const templateBase = path.basename(templatePath, path.extname(templatePath));
+  const stylesheetName = `${templateBase}.css`;
+  const relativeCssPath = path.relative(path.dirname(outPath), path.join(ROOT_DIR, stylesheetName)).replace(/\\/g, '/');
+  rendered = rendered.replace(new RegExp(`href=["']${stylesheetName.replace('.', '\\.') }["']`, 'i'), `href="${relativeCssPath}"`);
 
   // Ensure output directory exists
   const outDir = path.dirname(outPath);

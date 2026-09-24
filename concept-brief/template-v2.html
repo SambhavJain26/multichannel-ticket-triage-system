@@ -3,624 +3,113 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Automation Concept Brief — {{company_name}}</title>
-  
-  <!-- Google Fonts: Geist for display, Manrope for body, JetBrains Mono for tech tags -->
+  <title>Maintenance Triage Concept Brief - {{company_name}}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800;900&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-  
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@500;600;700;800;900&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="template-v2.css">
 </head>
 <body>
+<div class="brief">
 
-<div class="brief-container">
-
-  <!-- =========================================================================
-       PAGE 1: Executive Overview & The Operational Shift (Before vs. After)
-       ========================================================================= -->
-  <div class="page" id="page-1">
-    
-    <!-- Header -->
-    <header class="page-header">
-      <div class="brand-monogram-lockup">
-        <div class="brand-monogram">SB</div>
-        <div class="brand-wordmark">Sambhav Builds</div>
-        <div class="brand-tag">Automation Brief</div>
-      </div>
-      <div class="header-meta">
-        <div class="header-meta-item">Target System: <strong data-field="known_pm_software">{{known_pm_software}}</strong></div>
-        <div class="header-meta-item">Prepared for: <strong data-field="company_name">{{company_name}}</strong></div>
-        <div class="header-meta-item">Ref: <strong data-field="document_ref">{{document_ref}}</strong></div>
-      </div>
+  <article class="page page-one">
+    <header class="masthead">
+      <div class="brand"><div class="brand-name">Sambhav Jain</div><div class="brand-role">Automation specialist</div></div>
+      <div class="document-meta"><span>Concept brief</span><span data-field="document_ref">{{document_ref}}</span></div>
     </header>
-
-    <!-- Main Content Area -->
-    <main style="display: flex; flex-direction: column; justify-content: space-between; flex: 1;">
-      
-      <!-- Hero Headline & Core Framing -->
-      <section>
-        <div class="eyebrow"><span class="eyebrow-dot"></span> <span data-field="automation_category">{{automation_category}}</span></div>
-        <h1 class="hero-title" data-field="automation_name">{{automation_name}}</h1>
-        <p class="hero-subtitle" data-field="automation_subtitle">
-          {{automation_subtitle}}
-        </p>
-
-        <!-- 3 Target Outcomes -->
-        <div class="outcomes-grid">
-          <div class="outcome-card card-white-green">
-            <div>
-              <div class="outcome-stat green">&lt; 3 Min</div>
-              <div class="outcome-label">Emergency Detection</div>
-            </div>
-            <div class="outcome-desc">Active water leaks, sparking breakers, and gas smells are trapped instantly and routed to on-call managers 24/7.</div>
-          </div>
-          <div class="outcome-card card-white-accent">
-            <div>
-              <div class="outcome-stat accent">0 Min</div>
-              <div class="outcome-label">Manual Data Entry</div>
-            </div>
-            <div class="outcome-desc">Unstructured tenant emails and portal texts are auto-formatted into structured PM work orders with matched trade tags.</div>
-          </div>
-          <div class="outcome-card card-white">
-            <div>
-              <div class="outcome-stat">100%</div>
-              <div class="outcome-label">Human Decision Control</div>
-            </div>
-            <div class="outcome-desc">Advisory-only architecture. No vendor dispatch or tenant commitment is ever finalized without 1-tap coordinator approval.</div>
-          </div>
+    <main class="page-content">
+      <section class="hero">
+        <div class="eyebrow"><i></i> AI automation for property management</div>
+        <h1>Maintenance work that arrives <em>ready for a decision.</em></h1>
+        <p class="hero-copy">A practical automation layer for <strong data-field="company_name">{{company_name}}</strong> that reads incoming requests, checks for safety risks, gathers missing details, and prepares the next action - while your team keeps final control.</p>
+        <div class="hero-context">
+          <div><span class="meta-label">Prepared for</span><strong data-field="prospect_name">{{prospect_name}}</strong></div>
+          <div><span class="meta-label">Designed around</span><strong data-field="known_pm_software">{{known_pm_software}}</strong></div>
         </div>
       </section>
-
-      <!-- The Core Contrast: Visual Before vs. After Flow -->
-      <section class="contrast-container card-white">
-        <div class="contrast-header">
-          <div class="contrast-title-group">
-            <div class="contrast-title">Operational Transformation: From Inbox Chaos to 1-Tap Dispatch</div>
-            <div class="contrast-subtitle">Assumed Baseline: Multi-Unit Portfolio using <span data-field="known_pm_software">{{known_pm_software}}</span> with Dedicated Property Coordinators</div>
-          </div>
-          <span class="contrast-pill pill-green">Capacity Unlocked: +40% Doors / Coordinator</span>
-        </div>
-
-        <!-- Track A: Traditional Manual Flow (Red / Friction) -->
-        <div class="flow-track">
-          <div class="track-label-col legacy">
-            <div class="track-name legacy">Legacy Flow</div>
-            <div class="track-time">24–48 Hours Total</div>
-          </div>
-          <div class="track-steps-row">
-            <div class="step-card red-tint">
-              <div class="step-num-badge">STEP 01</div>
-              <div class="step-card-title">Tenant Submits</div>
-              <div class="step-card-desc">Vague email or portal note ("heater making noise, water dripping").</div>
-              <span class="step-tag-pill tag-red">Unstructured</span>
-            </div>
-            <div class="step-arrow-svg">
-              <svg width="8" height="12" viewBox="0 0 8 12" fill="none"><path d="M1.5 1.5L6 6L1.5 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </div>
-            <div class="step-card red-tint">
-              <div class="step-num-badge">STEP 02</div>
-              <div class="step-card-title">Inbox Sitting</div>
-              <div class="step-card-desc">Message waits unread overnight or during peak leasing hours.</div>
-              <span class="step-tag-pill tag-red">8-12hr Delay</span>
-            </div>
-            <div class="step-arrow-svg">
-              <svg width="8" height="12" viewBox="0 0 8 12" fill="none"><path d="M1.5 1.5L6 6L1.5 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </div>
-            <div class="step-card red-tint">
-              <div class="step-num-badge">STEP 03</div>
-              <div class="step-card-title">Email Ping-Pong</div>
-              <div class="step-card-desc">Coordinator chases tenant for missing photos, unit access, and pet notes.</div>
-              <span class="step-tag-pill tag-red">3-4 Emails</span>
-            </div>
-            <div class="step-arrow-svg">
-              <svg width="8" height="12" viewBox="0 0 8 12" fill="none"><path d="M1.5 1.5L6 6L1.5 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </div>
-            <div class="step-card red-tint">
-              <div class="step-num-badge">STEP 04</div>
-              <div class="step-card-title">Manual Re-Keying</div>
-              <div class="step-card-desc">Coordinator re-types details into PM system and searches vendor rates.</div>
-              <span class="step-tag-pill tag-red">15 Min / Ticket</span>
-            </div>
-            <div class="step-arrow-svg">
-              <svg width="8" height="12" viewBox="0 0 8 12" fill="none"><path d="M1.5 1.5L6 6L1.5 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </div>
-            <div class="step-card red-tint">
-              <div class="step-num-badge">STEP 05</div>
-              <div class="step-card-title">Vendor Chase</div>
-              <div class="step-card-desc">Phone calls or separate emails to schedule technician dispatch.</div>
-              <span class="step-tag-pill tag-red">High Friction</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Track B: Automated Flow (Green / Terracotta Fast Track) -->
-        <div class="flow-track">
-          <div class="track-label-col automated">
-            <div class="track-name automated">Automated Flow</div>
-            <div class="track-time">Under 3 Minutes Total</div>
-          </div>
-          <div class="track-steps-row">
-            <div class="step-card green-tint">
-              <div class="step-num-badge">01. INTAKE</div>
-              <div class="step-card-title">Instant Webhook</div>
-              <div class="step-card-desc">Real-time ingestion from PM API, email, or SMS listener.</div>
-              <span class="step-tag-pill tag-green">&lt; 2 Seconds</span>
-            </div>
-            <div class="step-arrow-svg" style="color: var(--green);">
-              <svg width="8" height="12" viewBox="0 0 8 12" fill="none"><path d="M1.5 1.5L6 6L1.5 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </div>
-            <div class="step-card green-tint">
-              <div class="step-num-badge">02. TRIAGE &amp; AI</div>
-              <div class="step-card-title">Safety &amp; Trade Extraction</div>
-              <div class="step-card-desc">Deterministic rules check emergency hazards; AI structures trade scope.</div>
-              <span class="step-tag-pill tag-green">Zero Delay</span>
-            </div>
-            <div class="step-arrow-svg" style="color: var(--green);">
-              <svg width="8" height="12" viewBox="0 0 8 12" fill="none"><path d="M1.5 1.5L6 6L1.5 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </div>
-            <div class="step-card green-tint">
-              <div class="step-num-badge">03. AUTO-CLARIFY</div>
-              <div class="step-card-title">Missing Details Prompt</div>
-              <div class="step-card-desc">System auto-texts tenant for specific symptoms/photos if required.</div>
-              <span class="step-tag-pill tag-green">Hands-Free</span>
-            </div>
-            <div class="step-arrow-svg" style="color: var(--terracotta);">
-              <svg width="8" height="12" viewBox="0 0 8 12" fill="none"><path d="M1.5 1.5L6 6L1.5 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </div>
-            <div class="step-card accent-tint">
-              <div class="step-num-badge">04. MANAGER DESK</div>
-              <div class="step-card-title">1-Tap Mobile Decision</div>
-              <div class="step-card-desc">Coordinator reviews pre-matched vendor &amp; scope on phone; taps Approve.</div>
-              <span class="step-tag-pill tag-blue">1 Tap to Dispatch</span>
-            </div>
-          </div>
+      <section class="shift-panel">
+        <div class="shift-intro"><span class="section-kicker">The operational shift</span><h2>Your team keeps the judgment.<br>The system handles the legwork.</h2></div>
+        <div class="shift-list">
+          <div class="shift-row"><span class="shift-number">01</span><div><strong>Sort the signal from the noise</strong><p>Every request is normalized into the same readable structure, whether it began as an email, form, text, or transcript.</p></div></div>
+          <div class="shift-row"><span class="shift-number">02</span><div><strong>Surface risk before it waits in an inbox</strong><p>Explicit safety rules raise water, gas, electrical, heat-loss, and life-safety signals for immediate human attention.</p></div></div>
+          <div class="shift-row"><span class="shift-number">03</span><div><strong>Bring managers a complete decision</strong><p>Routine requests collect missing context and eligible vendor options before the manager is asked to approve anything.</p></div></div>
         </div>
       </section>
-
-      <!-- Bottom Human Guardrails Strip -->
-      <section>
-        <div class="guardrails-title">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-          Three Uncompromising Production Guardrails
-        </div>
-        <div class="guardrails-grid">
-          <div class="guardrail-card card-white">
-            <div class="guardrail-header">
-              <div class="guardrail-icon-svg" style="background: var(--terracotta-bg); color: var(--terracotta);">
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-              </div>
-              <div class="guardrail-card-title">Zero Silent Dispatch</div>
-            </div>
-            <div class="guardrail-card-desc">The AI never sends emails to vendors or promises times to tenants independently. Every real action requires human 1-tap confirmation.</div>
-          </div>
-          <div class="guardrail-card card-white">
-            <div class="guardrail-header">
-              <div class="guardrail-icon-svg" style="background: var(--green-bg); color: var(--green);">
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-              </div>
-              <div class="guardrail-card-title">Zero Model Training</div>
-            </div>
-            <div class="guardrail-card-desc">Tenant names, phone numbers, and lease notes are handled via strict enterprise APIs with zero data retention. Your operational data stays proprietary.</div>
-          </div>
-          <div class="guardrail-card card-white">
-            <div class="guardrail-header">
-              <div class="guardrail-icon-svg" style="background: var(--red-bg); color: var(--red);">
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-              </div>
-              <div class="guardrail-card-title">Hardcoded Safety Traps</div>
-            </div>
-            <div class="guardrail-card-desc">Gas odors, sparking breakers, and active water leaks bypass language model interpretation entirely and trigger instant high-priority alerts.</div>
-          </div>
-        </div>
-      </section>
-
+      <section class="control-line"><span>Nothing sends without approval</span><span>Existing tools stay in place</span><span>Every decision leaves an audit trail</span></section>
     </main>
+    <footer class="footer"><span>Prepared for <strong data-field="company_name">{{company_name}}</strong></span><span>01 / 03</span></footer>
+  </article>
 
-    <!-- Footer -->
-    <footer class="page-footer">
-      <div class="footer-left">
-        <span>Confidential Client Brief &bull; <span data-field="company_name">{{company_name}}</span></span>
-        <span>&bull;</span>
-        <span>Target: <span data-field="known_pm_software">{{known_pm_software}}</span></span>
-      </div>
-      <div class="footer-right">
-        <span><span data-field="author_name">{{author_name}}</span> &bull; Systems Architect</span>
-        <span class="page-number-pill">Page 01 of 03</span>
-      </div>
-    </footer>
-
-  </div>
-
-
-  <!-- =========================================================================
-       PAGE 2: System Architecture & The 5-Stage Live Workflow
-       ========================================================================= -->
-  <div class="page" id="page-2">
-    
-    <!-- Header -->
-    <header class="page-header">
-      <div class="brand-monogram-lockup">
-        <div class="brand-monogram">SB</div>
-        <div class="brand-wordmark">Sambhav Builds</div>
-        <div class="brand-tag">Systems Architecture</div>
-      </div>
-      <div class="header-meta">
-        <div class="header-meta-item">Workflow: <strong>End-to-End Orchestration</strong></div>
-        <div class="header-meta-item">Engine: <strong>n8n + PostgreSQL + OpenAI</strong></div>
-        <div class="header-meta-item">Ref: <strong data-field="document_ref">{{document_ref}}</strong></div>
-      </div>
+  <article class="page page-two">
+    <header class="masthead">
+      <div class="brand"><div class="brand-name">Sambhav Jain</div><div class="brand-role">Automation specialist</div></div>
+      <div class="document-meta"><span>System walkthrough</span><span>Maintenance triage</span></div>
     </header>
-
-    <!-- Main Content Area -->
-    <main style="display: flex; flex-direction: column; justify-content: space-between; flex: 1;">
-      
-      <!-- Section Intro -->
-      <section>
-        <div class="eyebrow"><span class="eyebrow-dot"></span> End-to-End Execution Pipeline</div>
-        <h2 class="section-title-sm">How It Works: From Tenant Message to Dispatched Vendor</h2>
-        <p class="section-desc-sm">
-          A deterministic 5-stage pipeline running on your dedicated infrastructure—leaving your core <span data-field="known_pm_software">{{known_pm_software}}</span> system of record 100% clean and perfectly audited.
-        </p>
-
-        <!-- 5-Stage Pipeline Cards -->
-        <div class="pipeline-container">
-          
-          <!-- Stage 01 -->
-          <div class="pipeline-stage-card">
-            <div class="stage-col-meta">
-              <span class="stage-number">STAGE 01</span>
-              <span class="stage-title">Intake &amp; Deduplication</span>
-            </div>
-            <div class="stage-col-tech">
-              <span class="stage-tech-pill">PM Webhook / Email Listener</span>
-              <span class="stage-tech-sub">n8n Event Listener &bull; 24/7 Polling</span>
-            </div>
-            <div class="stage-col-action">
-              Captures incoming emails, SMS, and portal tickets. Checks <strong>PostgreSQL database</strong> for active threads within 24 hours to prevent duplicate work orders.
-            </div>
-            <div class="stage-col-output">
-              <span class="stage-output-badge pill-green">&check; Normalized Event</span>
-              <span class="stage-output-detail">Assigned ref: <code>MR-0184</code></span>
-            </div>
-          </div>
-
-          <!-- Connector -->
-          <div class="pipeline-connector-row">
-            <svg class="pipeline-arrow-svg" viewBox="0 0 10 12" fill="none"><path d="M5 1V9M5 9L2 6M5 9L8 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </div>
-
-          <!-- Stage 02 -->
-          <div class="pipeline-stage-card highlight">
-            <div class="stage-col-meta">
-              <span class="stage-number">STAGE 02</span>
-              <span class="stage-title">Classification &amp; Safety Trap</span>
-            </div>
-            <div class="stage-col-tech">
-              <span class="stage-tech-pill">gpt-5.6-luna (Structured JSON)</span>
-              <span class="stage-tech-sub">Hardcoded Safety Regex Engine</span>
-            </div>
-            <div class="stage-col-action">
-              Extracts trade (Plumbing, HVAC, Electrical, Appliance), urgency tier (<code>EMERGENCY</code> vs <code>ROUTINE</code>), and distilled scope. Safety regex catches gas/water hazards immediately.
-            </div>
-            <div class="stage-col-output">
-              <span class="stage-output-badge pill-green">&check; Schema Validated</span>
-              <span class="stage-output-detail">Trade: <code>PLUMBING</code> | Sub: Leak</span>
-            </div>
-          </div>
-
-          <!-- Connector -->
-          <div class="pipeline-connector-row">
-            <svg class="pipeline-arrow-svg" viewBox="0 0 10 12" fill="none"><path d="M5 1V9M5 9L2 6M5 9L8 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </div>
-
-          <!-- Stage 03 -->
-          <div class="pipeline-stage-card">
-            <div class="stage-col-meta">
-              <span class="stage-number">STAGE 03</span>
-              <span class="stage-title">Autonomous Clarification</span>
-            </div>
-            <div class="stage-col-tech">
-              <span class="stage-tech-pill">Automated SMS / Email Loop</span>
-              <span class="stage-tech-sub">Stateful Conversation Tracker</span>
-            </div>
-            <div class="stage-col-action">
-              If critical details are missing (e.g. <em>"which bathroom?"</em>, <em>"is main shutoff closed?"</em>, <em>"pet on premises?"</em>), asks targeted follow-ups before routing to the manager.
-            </div>
-            <div class="stage-col-output">
-              <span class="stage-output-badge pill-green">&check; Ready For Review</span>
-              <span class="stage-output-detail">Context complete &amp; verified</span>
-            </div>
-          </div>
-
-          <!-- Connector -->
-          <div class="pipeline-connector-row">
-            <svg class="pipeline-arrow-svg" viewBox="0 0 10 12" fill="none"><path d="M5 1V9M5 9L2 6M5 9L8 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </div>
-
-          <!-- Stage 04 -->
-          <div class="pipeline-stage-card highlight">
-            <div class="stage-col-meta">
-              <span class="stage-number">STAGE 04</span>
-              <span class="stage-title">1-Tap Manager Decision</span>
-            </div>
-            <div class="stage-col-tech">
-              <span class="stage-tech-pill">Telegram Bot / Slack / Mobile Push</span>
-              <span class="stage-tech-sub">Interactive Inline Action Cards</span>
-            </div>
-            <div class="stage-col-action">
-              Manager receives a clean executive alert on their phone: tenant summary, matched preferred vendor with rate, and actionable buttons: <strong>[Approve Dispatch]</strong> or <strong>[Hold for Review]</strong>.
-            </div>
-            <div class="stage-col-output">
-              <span class="stage-output-badge" style="background: var(--terracotta-bg); color: var(--terracotta); border: 1px solid var(--terracotta-border);">&check; Human Signed Off</span>
-              <span class="stage-output-detail">1-Tap Approval Logged</span>
-            </div>
-          </div>
-
-          <!-- Connector -->
-          <div class="pipeline-connector-row">
-            <svg class="pipeline-arrow-svg" viewBox="0 0 10 12" fill="none"><path d="M5 1V9M5 9L2 6M5 9L8 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </div>
-
-          <!-- Stage 05 -->
-          <div class="pipeline-stage-card">
-            <div class="stage-col-meta">
-              <span class="stage-number">STAGE 05</span>
-              <span class="stage-title">Execution Lock &amp; PMS Sync</span>
-            </div>
-            <div class="stage-col-tech">
-              <span class="stage-tech-pill">PostgreSQL CTE Single-Send Lock</span>
-              <span class="stage-tech-sub">PMS REST API + Outbound SMTP</span>
-            </div>
-            <div class="stage-col-action">
-              Database concurrency lock guarantees zero double-dispatch. Dispatches work order to preferred vendor with NTE budget, updates PM record, and sends tenant confirmation.
-            </div>
-            <div class="stage-col-output">
-              <span class="stage-output-badge pill-green">&check; Closed &amp; Synced</span>
-              <span class="stage-output-detail">Vendor emailed &bull; Record Synced</span>
-            </div>
-          </div>
-
-        </div>
+    <main class="page-content">
+      <section class="page-heading">
+        <div class="eyebrow"><i></i> From request to approved action</div>
+        <h1>One calm workflow, from first message to final handoff.</h1>
+        <p>The automation prepares and explains the next step. It does not replace the manager who authorizes it.</p>
       </section>
-
-      <!-- Edge Case & Exception Handling Strip -->
-      <section>
-        <div class="guardrails-title">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          Automated Handling for Critical Edge Cases
+      <section class="workflow-shell">
+        <div class="workflow-list">
+          <div class="workflow-step"><div class="step-marker"><span>01</span></div><div class="step-copy"><span class="step-label">Intake</span><h3>Capture and match the request</h3><p>Normalize the message, identify the resident and unit, and connect replies to the same open issue.</p></div><div class="step-result">Clean request</div></div>
+          <div class="workflow-step"><div class="step-marker"><span>02</span></div><div class="step-copy"><span class="step-label">Triage</span><h3>Interpret the issue and check safety</h3><p>Extract trade, symptoms, urgency, and missing information. Deterministic rules can only raise priority, never suppress it.</p></div><div class="step-result">Risk checked</div></div>
+          <div class="workflow-step"><div class="step-marker"><span>03</span></div><div class="step-copy"><span class="step-label">Clarify</span><h3>Ask only for what is missing</h3><p>Collect access notes, photos, pet details, or a clearer symptom without making staff chase the resident.</p></div><div class="step-result">Context ready</div></div>
+          <div class="workflow-step featured"><div class="step-marker"><span>04</span></div><div class="step-copy"><span class="step-label">Human checkpoint</span><h3>Present one clear manager decision</h3><p>Show the summary, urgency, proposed vendor, and reason. The manager approves, holds, or changes the action.</p></div><div class="step-result">Manager control</div></div>
+          <div class="workflow-step"><div class="step-marker"><span>05</span></div><div class="step-copy"><span class="step-label">Handoff</span><h3>Send once, then update the record</h3><p>A single-send lock prevents duplicate dispatch. Resident status changes only after the approved vendor message succeeds.</p></div><div class="step-result">Audited send</div></div>
         </div>
-        <div class="exceptions-grid">
-          <div class="exception-card card-white-red">
-            <span class="exception-badge pill-red">Emergency Fast-Track</span>
-            <div class="exception-title">Active Pipe Burst / Gas Odor</div>
-            <div class="exception-desc">Immediately triggers emergency SMS + automated phone ring to on-call supervisor. Provides tenant with 1-tap utility shutoff guidance instantly.</div>
-          </div>
-          <div class="exception-card card-white-accent">
-            <span class="exception-badge" style="background: var(--terracotta-bg); color: var(--terracotta); border: 1px solid var(--terracotta-border);">Noise Reduction</span>
-            <div class="exception-title">Rambling / Ambiguous Emails</div>
-            <div class="exception-desc">Extracts the 2 core technical symptoms from 4 paragraphs of tenant prose. Prevents coordinator fatigue by surfacing clean technician summaries.</div>
-          </div>
-          <div class="exception-card card-white">
-            <span class="exception-badge" style="background: #f1ede6; color: var(--text-ink); border: 1px solid var(--border-warm);">Compliance Lock</span>
-            <div class="exception-title">Fair Housing / Legal Keywords</div>
-            <div class="exception-desc">Rent withholding threats, mold disputes, or accommodation requests automatically pause triage and route to executive review with no automated drafting.</div>
-          </div>
-        </div>
+        <aside class="exception-strip">
+          <div class="exception-heading"><span>Built for messages that do not fit the happy path</span></div>
+          <div class="exception-item"><strong>Emergency language</strong><p>Fast-track the alert and keep the manager in the loop.</p></div>
+          <div class="exception-item"><strong>Unclear request</strong><p>Ask a focused follow-up before creating noise.</p></div>
+          <div class="exception-item"><strong>Sensitive or legal context</strong><p>Pause automation and route to human review.</p></div>
+        </aside>
       </section>
-
     </main>
+    <footer class="footer"><span>Human-in-control architecture</span><span>02 / 03</span></footer>
+  </article>
 
-    <!-- Footer -->
-    <footer class="page-footer">
-      <div class="footer-left">
-        <span>Confidential Client Brief &bull; <span data-field="company_name">{{company_name}}</span></span>
-        <span>&bull;</span>
-        <span>Architecture: Event-Driven Orchestration</span>
-      </div>
-      <div class="footer-right">
-        <span><span data-field="author_name">{{author_name}}</span> &bull; Systems Architect</span>
-        <span class="page-number-pill">Page 02 of 03</span>
-      </div>
-    </footer>
-
-  </div>
-
-
-  <!-- =========================================================================
-       PAGE 3: Operational Fit, Architecture Stack & 3-Week Implementation
-       ========================================================================= -->
-  <div class="page" id="page-3">
-    
-    <!-- Header -->
-    <header class="page-header">
-      <div class="brand-monogram-lockup">
-        <div class="brand-monogram">SB</div>
-        <div class="brand-wordmark">Sambhav Builds</div>
-        <div class="brand-tag">Deployment Blueprint</div>
-      </div>
-      <div class="header-meta">
-        <div class="header-meta-item">Rollout Target: <strong>3 Weeks</strong></div>
-        <div class="header-meta-item">Infrastructure: <strong>Private Isolated Stack</strong></div>
-        <div class="header-meta-item">Ref: <strong data-field="document_ref">{{document_ref}}</strong></div>
-      </div>
+  <article class="page page-three">
+    <header class="masthead">
+      <div class="brand"><div class="brand-name">Sambhav Jain</div><div class="brand-role">Automation specialist</div></div>
+      <div class="document-meta"><span>Implementation fit</span><span>Designed to overlay</span></div>
     </header>
-
-    <!-- Main Content Area -->
-    <main style="display: flex; flex-direction: column; justify-content: space-between; flex: 1;">
-      
-      <!-- Section Intro -->
-      <section>
-        <div class="eyebrow"><span class="eyebrow-dot"></span> Operational Fit &amp; Systems Architecture</div>
-        <h2 class="section-title-sm">Implementation Reality: What Changes vs. What Stays Untouched</h2>
-        <p class="section-desc-sm">
-          Zero disruption to your daily operations. Your team keeps using <span data-field="known_pm_software">{{known_pm_software}}</span>; the automation runs entirely as a background acceleration layer.
-        </p>
-
-        <!-- Architecture Stack Grid -->
-        <div class="arch-grid">
-          
-          <!-- Box 1: What Stays Untouched -->
-          <div class="arch-card card-white">
-            <div class="arch-header">
-              <span class="arch-header-title">What Stays Untouched (Your Core)</span>
-              <span class="arch-header-pill pill-green">Zero Disruption</span>
-            </div>
-            <div class="arch-item-list">
-              <div class="arch-item">
-                <div class="arch-item-icon-svg" style="background: var(--green-bg); color: var(--green);">
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-                </div>
-                <div class="arch-item-text">
-                  <strong><span data-field="known_pm_software">{{known_pm_software}}</span>:</strong> <span>Remains your primary system of record for leases, tenant records, work orders, and accounting.</span>
-                </div>
-              </div>
-              <div class="arch-item">
-                <div class="arch-item-icon-svg" style="background: var(--green-bg); color: var(--green);">
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-                </div>
-                <div class="arch-item-text">
-                  <strong>Approved Vendor Relationships:</strong> <span>Your preferred plumbers, HVAC technicians, and electricians keep their existing rates and communication habits.</span>
-                </div>
-              </div>
-              <div class="arch-item">
-                <div class="arch-item-icon-svg" style="background: var(--green-bg); color: var(--green);">
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-                </div>
-                <div class="arch-item-text">
-                  <strong>Manager Final Sign-Off:</strong> <span>Coordinators retain 100% control over whether a work order is dispatched or modified.</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Box 2: What We Add -->
-          <div class="arch-card card-white-accent">
-            <div class="arch-header">
-              <span class="arch-header-title">What We Add (The Middleware Layer)</span>
-              <span class="arch-header-pill" style="background: var(--terracotta-bg); color: var(--terracotta); border: 1px solid var(--terracotta-border);">Automated Layer</span>
-            </div>
-            <div class="arch-item-list">
-              <div class="arch-item">
-                <div class="arch-item-icon-svg" style="background: var(--terracotta-bg); color: var(--terracotta);">
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                </div>
-                <div class="arch-item-text">
-                  <strong>n8n Orchestration Core:</strong> <span>Runs 24/7 on an isolated, secure instance to process incoming webhooks and schedule tasks.</span>
-                </div>
-              </div>
-              <div class="arch-item">
-                <div class="arch-item-icon-svg" style="background: var(--terracotta-bg); color: var(--terracotta);">
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                </div>
-                <div class="arch-item-text">
-                  <strong>PostgreSQL 16 Audit Database:</strong> <span>Stores idempotent message hashes, ticket states (<code>DRAFTED</code>, <code>ACKED</code>, <code>DISPATCHED</code>), and safety logs.</span>
-                </div>
-              </div>
-              <div class="arch-item">
-                <div class="arch-item-icon-svg" style="background: var(--terracotta-bg); color: var(--terracotta);">
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                </div>
-                <div class="arch-item-text">
-                  <strong>Manager Mobile Dispatch Channel:</strong> <span>A secure Telegram or Slack bot delivering actionable approval cards straight to coordinators' phones.</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-        </div>
-
-        <!-- Data Exchange & Privacy Matrix -->
-        <div class="matrix-container card-white">
-          <div class="matrix-header-row">
-            <div>Data Flow</div>
-            <div>Source / Channel</div>
-            <div>Operational Purpose</div>
-            <div>Privacy &amp; Security</div>
-          </div>
-          <div class="matrix-data-row">
-            <div class="matrix-feed">Tenant Intake Notes</div>
-            <div class="matrix-channel">PM / Email Webhook</div>
-            <div class="matrix-purpose">Symptom extraction, trade classification, and urgency scoring</div>
-            <div class="matrix-security">&check; Zero Data Retention</div>
-          </div>
-          <div class="matrix-data-row">
-            <div class="matrix-feed">Vendor Directory</div>
-            <div class="matrix-channel">PMS Sync / Secure DB</div>
-            <div class="matrix-purpose">Matches closest trade specialist by property location &amp; NTE budget</div>
-            <div class="matrix-security">&check; Encrypted at Rest</div>
-          </div>
-          <div class="matrix-data-row">
-            <div class="matrix-feed">Dispatch Authorization</div>
-            <div class="matrix-channel">Manager Mobile Tap</div>
-            <div class="matrix-purpose">Single-send CTE lock triggers PM sync and vendor notification</div>
-            <div class="matrix-security">&check; Full Audit Log</div>
-          </div>
-        </div>
-
-        <!-- 3-Week Integration Roadmap -->
-        <div class="roadmap-container card-white">
-          <div class="roadmap-header">
-            <span class="roadmap-title">Rapid 3-Week Staged Implementation Roadmap</span>
-            <span class="contrast-pill pill-green">Live Within 21 Days</span>
-          </div>
-          <div class="roadmap-stepper">
-            <div class="roadmap-step">
-              <span class="roadmap-step-phase">WEEK 01</span>
-              <span class="roadmap-step-name">Schema &amp; Vendor Mapping</span>
-              <span class="roadmap-step-desc">Connect PM webhook/API, configure preferred vendor lists, trade categories, and NTE price thresholds.</span>
-            </div>
-            <div class="roadmap-step">
-              <span class="roadmap-step-phase">WEEK 02</span>
-              <span class="roadmap-step-name">Shadow Mode Calibration</span>
-              <span class="roadmap-step-desc">System processes live incoming messages in silent "shadow mode". Coordinators verify classification accuracy without dispatching.</span>
-            </div>
-            <div class="roadmap-step">
-              <span class="roadmap-step-phase">WEEK 03</span>
-              <span class="roadmap-step-name">1-Tap Live Activation</span>
-              <span class="roadmap-step-desc">Enable interactive mobile approvals for coordinators. Deliver full runbook, exception documentation, and team onboarding.</span>
-            </div>
-          </div>
-        </div>
-
+    <main class="page-content">
+      <section class="page-heading compact">
+        <div class="eyebrow"><i></i> What changes - and what does not</div>
+        <h1>A new coordination layer, <em>not another system to replace.</em></h1>
+        <p>Your team keeps its property management platform, vendor relationships, and approval authority. The automation sits between incoming work and the next human decision.</p>
       </section>
-
-      <!-- Warm Terracotta Call-to-Action Box -->
-      <section class="cta-box">
-        <div class="cta-text-col">
-          <div class="cta-eyebrow">Practical Next Step</div>
-          <h3 class="cta-heading" data-field="next_step_heading">{{next_step_heading}}</h3>
-          <p class="cta-body" data-field="next_step_desc">
-            {{next_step_desc}}
-          </p>
-        </div>
-        <div class="cta-action-col">
-          <a href="https://cal.com/sambhavbuilds/15min" target="_blank" class="cta-button">
-            <span>Book 15-Min Feasibility Call</span>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-          </a>
-          <span class="cta-contact-info"><span data-field="author_contact">{{author_contact}}</span> &bull; sambhavbuilds.com</span>
+      <section class="fit-panel">
+        <div class="fit-column stays"><span class="section-kicker">What stays yours</span><ul>
+          <li><strong>Your property management system</strong><span>Lease, unit, work-order, and accounting records remain in the existing system of record.</span></li>
+          <li><strong>Your vendors and commercial rules</strong><span>Approved trades, service areas, rates, and not-to-exceed limits remain business decisions.</span></li>
+          <li><strong>Your final sign-off</strong><span>Managers decide whether a work order is dispatched, held, or changed.</span></li>
+        </ul></div>
+        <div class="fit-divider"><span>+</span></div>
+        <div class="fit-column adds"><span class="section-kicker">What gets added</span><ul>
+          <li><strong>Orchestration</strong><span>A 24/7 workflow that receives, routes, and records incoming requests.</span></li>
+          <li><strong>Structured interpretation</strong><span>AI extracts the issue; explicit rules protect known safety boundaries.</span></li>
+          <li><strong>Durable state and approvals</strong><span>A database keeps conversation, approval, send, and audit state consistent.</span></li>
+        </ul></div>
+      </section>
+      <section class="rollout">
+        <div class="rollout-heading"><span class="section-kicker">A staged path to live use</span><h2>Three weeks, with a proof point each week.</h2></div>
+        <div class="rollout-line">
+          <div><span>Week 01</span><strong>Map</strong><p>Confirm channels, vendor rules, safety boundaries, and approval ownership.</p></div>
+          <div><span>Week 02</span><strong>Shadow</strong><p>Run on real examples without sending, then compare results with coordinator decisions.</p></div>
+          <div><span>Week 03</span><strong>Adopt</strong><p>Enable manager approvals, document exceptions, and hand over the operating runbook.</p></div>
         </div>
       </section>
-
+      <section class="cta">
+        <div><span class="section-kicker">The practical next step</span><h2 data-field="next_step_heading">{{next_step_heading}}</h2><p data-field="next_step_desc">{{next_step_desc}}</p></div>
+        <div class="cta-action"><a href="https://cal.com/sambhav-builds/pm-automation-audit">Book the call <span>-></span></a><small>sambhav@sambhavbuilds.com</small></div>
+      </section>
     </main>
-
-    <!-- Footer -->
-    <footer class="page-footer">
-      <div class="footer-left">
-        <span>Confidential Client Brief &bull; <span data-field="company_name">{{company_name}}</span></span>
-        <span>&bull;</span>
-        <span>Implementation: 3-Week Staged Rollout</span>
-      </div>
-      <div class="footer-right">
-        <span><span data-field="author_name">{{author_name}}</span> &bull; Systems Architect</span>
-        <span class="page-number-pill">Page 03 of 03</span>
-      </div>
-    </footer>
-
-  </div>
+    <footer class="footer"><span>Prepared for <strong data-field="company_name">{{company_name}}</strong></span><span>03 / 03</span></footer>
+  </article>
 
 </div>
-
 </body>
 </html>
