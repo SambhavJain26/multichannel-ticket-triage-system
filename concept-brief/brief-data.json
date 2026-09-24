@@ -1,0 +1,17 @@
+{
+  "company_name": "Highland Property Group",
+  "prospect_name": "Marcus Vance, VP of Operations",
+  "document_ref": "CB-2026-HPG",
+  "doc_classification": "Confidential Client Brief",
+  "automation_name": "Autonomous Maintenance Request Triage & Vendor Coordination",
+  "automation_category": "Systems Architecture & Workflow Concept",
+  "automation_subtitle": "A non-disruptive operational overlay that turns unstructured tenant messages into organized, manager-approved vendor actions.",
+  "known_pm_software": "AppFolio / Existing PM System",
+  "known_company_context": "Based on your portfolio of scattered-site residential units, managing 24/7 tenant maintenance requests across email, portal, and text typically consumes dozens of coordinator hours each week—creating a constant tension between after-hours burnout and the risk of delayed habitability emergencies.",
+  "problem_summary": "Maintenance requests arrive undifferentiated around the clock. Coordinators spend hours deciphering rambling emails, re-keying details into work orders, chasing tenants for missing access/pet details, and assessing urgency manually—while true emergencies risk sitting unnoticed until morning.",
+  "desired_outcome_headline": "Zero emergency maintenance reports sitting unread outside office hours, with 70%+ of routine triage, clarification, and dispatch preparation handled before human review.",
+  "next_step_heading": "15-Minute Technical Feasibility Alignment",
+  "next_step_desc": "If this concept addresses a tangible bottleneck in your operation, we spend 15 minutes reviewing your current intake channels and PM software setup to confirm practical feasibility. Zero sales pitch, no commitment.",
+  "author_name": "Sambhav Jain",
+  "author_contact": "sambhav.builds@gmail.com • Direct Message on LinkedIn"
+}
