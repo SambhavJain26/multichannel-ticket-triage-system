@@ -107,3 +107,40 @@ header{height:46px;flex:none;display:flex;justify-content:space-between;align-it
 .existing-systems .map-node>svg{stroke:var(--muted)}
 .existing-systems .map-node.primary{border-left-color:#aaa39a}
 .control-strip small{color:var(--faint)}
+
+/* Semantic palette: brand terracotta is decorative; operational colors carry one meaning each. */
+:root{--blue:#2f6fb2;--blue-soft:#eff6fd;--blue-pale:#f8fbff;--blue-line:#a9c9ea;--amber:#a66a18;--amber-soft:#fff6e5;--amber-line:#e7c589}
+
+/* Page 1: neutral existing flow, red removed work, blue added automation. */
+.page-one .current-lane .lane-title small{color:var(--faint)}
+.page-one .current-lane .lane-arrow b{color:var(--faint)}
+.page-one .future-lane .lane-title small{color:var(--blue)}
+.page-one .lane-step.improvement{background:var(--blue-pale);border-color:var(--blue-line);border-left-color:var(--blue)}
+.page-one .lane-step.improvement .icon{color:var(--blue);background:var(--blue-soft)}
+.page-one .lane-step.improvement>div small{color:var(--blue)}
+.page-one .future-lane .lane-arrow b{color:var(--blue)}
+.page-one .lane-shift{color:var(--blue)}
+.page-one .lane-shift:before,.page-one .lane-shift:after{background:rgba(47,111,178,.25)}
+.page-one .orange-dot{background:var(--blue)}
+
+/* Page 2: blue workflow, amber human decision, green confirmed state, red failure. */
+.page-two .running-example span,.page-two .workflow-copy small,.page-two .outcomes span{color:var(--blue)}
+.page-two .manager-workflow{background:var(--amber-soft);border-color:var(--amber-line)}
+.page-two .manager-workflow .workflow-copy small{color:var(--amber)}
+.page-two .state-pill.control{color:var(--amber);background:#fffaf0;border-color:var(--amber-line)}
+.page-two .workflow-copy em{color:var(--muted)}
+.page-two .outcomes p b{color:var(--green)}
+.page-two .exception-card>div:nth-of-type(1) strong,.page-two .exception-card>div:nth-of-type(4) strong{color:var(--red)}
+.page-two .exception-card>div:nth-of-type(2) strong,.page-two .exception-card>div:nth-of-type(3) strong{color:var(--amber)}
+
+/* Page 3: blue added layer and normal data movement; existing systems stay neutral. */
+.page-three .automation-layer{border-top-color:var(--blue)}
+.page-three .automation-layer .column-title small{color:var(--blue)}
+.page-three .automation-layer .icon.orange{color:var(--blue);background:var(--blue-soft)}
+.page-three .service-grid>div{background:var(--blue-pale)}
+.page-three .service-grid svg{stroke:var(--blue)}
+.page-three .connector{color:var(--blue)}
+.page-three .client-controls{border-top-color:rgba(47,111,178,.28)}
+.page-three .client-controls b{color:var(--blue)}
+.page-three .assumptions{background:var(--amber-soft);border-left-color:var(--amber)}
+.page-three .assumptions p:before{background:var(--amber)}
