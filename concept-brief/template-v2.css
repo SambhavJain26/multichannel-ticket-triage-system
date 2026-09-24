@@ -1,0 +1,1081 @@
+/* ==========================================================================
+   AUTOMATION CONCEPT BRIEF V2 — DESIGN SYSTEM & PRINT STYLESHEET
+   Brand: Sambhav Builds (sambhavbuilds.com)
+   Target: Client-Facing Concept Brief (Letter Portrait: 8.5in x 11in)
+   Design System: Travertine Limestone (#f4f1ea), White Cards, Ink Typography,
+                  Burnt Terracotta Accents (#c2542d), Strict 80/20 Visual/Copy
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Design Tokens & CSS Variables
+   -------------------------------------------------------------------------- */
+:root {
+  /* Surface Colors */
+  --bg-travertine: #f4f1ea;
+  --bg-card: #ffffff;
+  --bg-card-subtle: #faf8f5;
+  --bg-pill: #ece7de;
+
+  /* Typography Colors */
+  --text-ink: #141210;
+  --text-headline: #16130f;
+  --text-muted: #5a544b;
+  --text-subtle: #797166;
+  --text-inverse: #ffffff;
+
+  /* Hairline Borders */
+  --border-warm: rgba(45, 35, 28, 0.12);
+  --border-warm-subtle: rgba(45, 35, 28, 0.07);
+  --border-warm-strong: rgba(45, 35, 28, 0.24);
+
+  /* Primary Brand Accent (Burnt Terracotta) */
+  --terracotta: #c2542d;
+  --terracotta-hover: #a63e1d;
+  --terracotta-bg: #fdf4f0;
+  --terracotta-border: rgba(194, 84, 45, 0.28);
+  --terracotta-badge-bg: rgba(194, 84, 45, 0.08);
+
+  /* Semantic State: Success / Fast Track */
+  --green: #166534;
+  --green-bg: #ecfdf5;
+  --green-border: rgba(22, 101, 52, 0.28);
+
+  /* Semantic State: Warning / Friction / Manual Legacy */
+  --red: #be123c;
+  --red-bg: #fff1f2;
+  --red-border: rgba(190, 18, 60, 0.28);
+
+  /* Semantic State: Tech / Systems / AppFolio */
+  --blue: #1e40af;
+  --blue-bg: #eff6ff;
+  --blue-border: rgba(30, 64, 175, 0.24);
+
+  /* Shadows */
+  --shadow-card: 0 4px 16px rgba(45, 35, 28, 0.05), 0 1px 3px rgba(45, 35, 28, 0.06);
+  --shadow-card-elevated: 0 8px 24px rgba(45, 35, 28, 0.08), 0 2px 6px rgba(45, 35, 28, 0.06);
+
+  /* Fonts */
+  --font-heading: 'Geist', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-body: 'Manrope', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Dimensions */
+  --page-width: 8.5in;
+  --page-height: 11in;
+  --page-padding-top: 0.44in;
+  --page-padding-bottom: 0.40in;
+  --page-padding-x: 0.48in;
+}
+
+/* --------------------------------------------------------------------------
+   2. Reset & Document Setup
+   -------------------------------------------------------------------------- */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 13.5px;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+body {
+  font-family: var(--font-body);
+  color: var(--text-ink);
+  background-color: #26211d; /* Deep screen contrast for previewing pages */
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* --------------------------------------------------------------------------
+   3. Page Frame (Letter Portrait: 8.5in x 11in)
+   -------------------------------------------------------------------------- */
+.brief-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 0 60px 0;
+}
+
+.page {
+  width: var(--page-width);
+  height: var(--page-height);
+  max-height: var(--page-height);
+  background-color: var(--bg-travertine);
+  padding: var(--page-padding-top) var(--page-padding-x) var(--page-padding-bottom) var(--page-padding-x);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.28), 0 2px 8px rgba(0, 0, 0, 0.12);
+  margin-bottom: 24px;
+  border-radius: 2px;
+}
+
+@page {
+  size: letter portrait;
+  margin: 0;
+}
+
+@media print {
+  body {
+    background-color: transparent !important;
+  }
+  .brief-container {
+    padding: 0 !important;
+  }
+  .page {
+    margin: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    page-break-after: always !important;
+    break-inside: avoid !important;
+    max-height: 11in !important;
+    height: 11in !important;
+    overflow: hidden !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   4. Universal Header & Footer
+   -------------------------------------------------------------------------- */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 11px;
+  border-bottom: 1px solid var(--border-warm);
+  margin-bottom: 14px;
+  flex-shrink: 0;
+}
+
+.brand-monogram-lockup {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.brand-monogram {
+  width: 25px;
+  height: 25px;
+  background-color: var(--text-ink);
+  color: #f4f1ea;
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-size: 12.5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 5px;
+  letter-spacing: -0.02em;
+}
+
+.brand-wordmark {
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-size: 13px;
+  letter-spacing: 0.03em;
+  color: var(--text-ink);
+  text-transform: uppercase;
+}
+
+.brand-tag {
+  font-family: var(--font-body);
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--terracotta);
+  background: var(--terracotta-badge-bg);
+  border: 1px solid var(--terracotta-border);
+  padding: 2px 8px;
+  border-radius: 12px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.header-meta {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 10px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.header-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.header-meta-item strong {
+  color: var(--text-ink);
+  font-weight: 600;
+}
+
+.page-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-warm);
+  font-size: 9px;
+  color: var(--text-subtle);
+  margin-top: auto;
+  flex-shrink: 0;
+}
+
+.footer-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.footer-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+}
+
+.page-number-pill {
+  background: var(--bg-pill);
+  padding: 2px 7px;
+  border-radius: 8px;
+  color: var(--text-ink);
+  font-weight: 700;
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+}
+
+/* --------------------------------------------------------------------------
+   5. Typography & Eyebrows
+   -------------------------------------------------------------------------- */
+.eyebrow {
+  font-family: var(--font-body);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--terracotta);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.eyebrow-dot {
+  width: 5px;
+  height: 5px;
+  background-color: var(--terracotta);
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.hero-title {
+  font-family: var(--font-heading);
+  font-weight: 900;
+  font-size: 23px;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+  color: var(--text-headline);
+  margin-bottom: 5px;
+}
+
+.hero-subtitle {
+  font-family: var(--font-body);
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--text-muted);
+  max-width: 98%;
+  margin-bottom: 12px;
+}
+
+.section-title-sm {
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-size: 15px;
+  letter-spacing: -0.02em;
+  color: var(--text-headline);
+  margin-bottom: 3px;
+}
+
+.section-desc-sm {
+  font-family: var(--font-body);
+  font-size: 10.5px;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+/* --------------------------------------------------------------------------
+   6. Universal Card Styles (Portfolio Rule: White card + colored border + ink body)
+   -------------------------------------------------------------------------- */
+.card-white {
+  background: var(--bg-card);
+  border: 1px solid var(--border-warm);
+  border-radius: 10px;
+  box-shadow: var(--shadow-card);
+}
+
+.card-white-accent {
+  background: var(--bg-card);
+  border: 1px solid var(--terracotta-border);
+  border-radius: 10px;
+  box-shadow: var(--shadow-card);
+}
+
+.card-white-green {
+  background: var(--bg-card);
+  border: 1px solid var(--green-border);
+  border-radius: 10px;
+  box-shadow: var(--shadow-card);
+}
+
+.card-white-red {
+  background: var(--bg-card);
+  border: 1px solid var(--red-border);
+  border-radius: 10px;
+  box-shadow: var(--shadow-card);
+}
+
+/* --------------------------------------------------------------------------
+   7. PAGE 1: Target Outcomes, Before vs. After Flow, Human Guardrails
+   -------------------------------------------------------------------------- */
+
+.outcomes-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.outcome-card {
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.outcome-stat {
+  font-family: var(--font-heading);
+  font-weight: 900;
+  font-size: 20px;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  color: var(--text-headline);
+  margin-bottom: 2px;
+}
+
+.outcome-stat.accent {
+  color: var(--terracotta);
+}
+
+.outcome-stat.green {
+  color: var(--green);
+}
+
+.outcome-label {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 11px;
+  color: var(--text-ink);
+  margin-bottom: 3px;
+}
+
+.outcome-desc {
+  font-size: 9px;
+  color: var(--text-muted);
+  line-height: 1.35;
+}
+
+/* Contrast Container */
+.contrast-container {
+  padding: 13px 14px;
+  margin-bottom: 14px;
+}
+
+.contrast-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 11px;
+}
+
+.contrast-title-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.contrast-title {
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-size: 12.5px;
+  letter-spacing: -0.01em;
+  color: var(--text-headline);
+}
+
+.contrast-subtitle {
+  font-size: 8.5px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.contrast-pill {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 2.5px 8px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+.pill-red {
+  color: var(--red);
+  background: var(--red-bg);
+  border: 1px solid var(--red-border);
+}
+
+.pill-green {
+  color: var(--green);
+  background: var(--green-bg);
+  border: 1px solid var(--green-border);
+}
+
+/* Track Flow Layout */
+.flow-track {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+  position: relative;
+  margin-bottom: 10px;
+}
+
+.flow-track:last-child {
+  margin-bottom: 0;
+}
+
+.track-label-col {
+  width: 108px;
+  flex-shrink: 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.track-label-col.legacy {
+  background: #f1ede6;
+  border: 1px solid var(--border-warm);
+}
+
+.track-label-col.automated {
+  background: var(--terracotta-bg);
+  border: 1px solid var(--terracotta-border);
+}
+
+.track-name {
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+}
+
+.track-name.legacy {
+  color: var(--red);
+}
+
+.track-name.automated {
+  color: var(--terracotta);
+}
+
+.track-time {
+  font-size: 8.5px;
+  color: var(--text-muted);
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.track-steps-row {
+  display: flex;
+  align-items: stretch;
+  flex: 1;
+  gap: 5px;
+}
+
+.step-card {
+  flex: 1;
+  background: var(--bg-card);
+  border: 1px solid var(--border-warm);
+  border-radius: 8px;
+  padding: 7px 8px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  position: relative;
+}
+
+.step-card.red-tint {
+  border-color: rgba(190, 18, 60, 0.22);
+}
+
+.step-card.green-tint {
+  border-color: rgba(22, 101, 52, 0.28);
+  box-shadow: 0 2px 6px rgba(22, 101, 52, 0.04);
+}
+
+.step-card.accent-tint {
+  border-color: var(--terracotta-border);
+  box-shadow: 0 2px 6px rgba(194, 84, 45, 0.05);
+}
+
+.step-num-badge {
+  font-family: var(--font-mono);
+  font-size: 7.5px;
+  font-weight: 700;
+  color: var(--text-subtle);
+  margin-bottom: 2px;
+}
+
+.step-card-title {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 9px;
+  color: var(--text-ink);
+  line-height: 1.2;
+  margin-bottom: 2px;
+}
+
+.step-card-desc {
+  font-size: 8px;
+  color: var(--text-muted);
+  line-height: 1.25;
+}
+
+.step-arrow-svg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 8px;
+  color: var(--text-subtle);
+}
+
+.step-tag-pill {
+  display: inline-block;
+  font-size: 7.5px;
+  font-weight: 700;
+  padding: 1px 4.5px;
+  border-radius: 4px;
+  margin-top: 4px;
+  width: fit-content;
+}
+
+.tag-red {
+  color: var(--red);
+  background: var(--red-bg);
+  border: 1px solid var(--red-border);
+}
+
+.tag-green {
+  color: var(--green);
+  background: var(--green-bg);
+  border: 1px solid var(--green-border);
+}
+
+.tag-blue {
+  color: var(--blue);
+  background: var(--blue-bg);
+  border: 1px solid var(--blue-border);
+}
+
+/* Guardrails 3-card bottom strip */
+.guardrails-title {
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-headline);
+  margin-bottom: 7px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.guardrails-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.guardrail-card {
+  padding: 9px 11px;
+  display: flex;
+  flex-direction: column;
+}
+
+.guardrail-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 3px;
+}
+
+.guardrail-icon-svg {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.guardrail-card-title {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 10px;
+  color: var(--text-ink);
+}
+
+.guardrail-card-desc {
+  font-size: 8.5px;
+  color: var(--text-muted);
+  line-height: 1.35;
+}
+
+/* --------------------------------------------------------------------------
+   8. PAGE 2: 5-Stage Live Pipeline & Edge Exception Handling
+   -------------------------------------------------------------------------- */
+
+.pipeline-container {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-bottom: 14px;
+}
+
+.pipeline-stage-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-warm);
+  border-radius: 9px;
+  padding: 9px 12px;
+  display: grid;
+  grid-template-columns: 125px 190px 1fr 140px;
+  align-items: center;
+  gap: 12px;
+  box-shadow: var(--shadow-card);
+  position: relative;
+}
+
+.pipeline-stage-card.highlight {
+  border-color: var(--terracotta-border);
+  box-shadow: 0 4px 14px rgba(194, 84, 45, 0.07);
+}
+
+.stage-col-meta {
+  display: flex;
+  flex-direction: column;
+}
+
+.stage-number {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-weight: 700;
+  color: var(--terracotta);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.stage-title {
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-size: 11px;
+  color: var(--text-headline);
+  line-height: 1.2;
+}
+
+.stage-col-tech {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.stage-tech-pill {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-weight: 600;
+  color: var(--text-ink);
+  background: var(--bg-pill);
+  border: 1px solid var(--border-warm);
+  padding: 2px 6px;
+  border-radius: 4px;
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.stage-tech-sub {
+  font-size: 8px;
+  color: var(--text-subtle);
+}
+
+.stage-col-action {
+  font-size: 9px;
+  color: var(--text-ink);
+  line-height: 1.35;
+}
+
+.stage-col-action strong {
+  font-weight: 700;
+}
+
+.stage-col-output {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  border-left: 1px solid var(--border-warm-subtle);
+  padding-left: 10px;
+}
+
+.stage-output-badge {
+  font-size: 8px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  line-height: 1.2;
+}
+
+.stage-output-detail {
+  font-size: 7.5px;
+  color: var(--text-subtle);
+  line-height: 1.2;
+}
+
+.pipeline-connector-row {
+  display: flex;
+  justify-content: flex-start;
+  padding-left: 55px;
+  margin: -3px 0;
+}
+
+.pipeline-arrow-svg {
+  color: var(--terracotta);
+  width: 10px;
+  height: 10px;
+}
+
+/* Edge Exception Handling 3-card grid */
+.exceptions-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.exception-card {
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+}
+
+.exception-badge {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 4px;
+  width: fit-content;
+  margin-bottom: 5px;
+}
+
+.exception-title {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 10.5px;
+  color: var(--text-ink);
+  margin-bottom: 3px;
+}
+
+.exception-desc {
+  font-size: 8.5px;
+  color: var(--text-muted);
+  line-height: 1.35;
+}
+
+/* --------------------------------------------------------------------------
+   9. PAGE 3: Architectural Fit, Data Matrix, Timeline & Callout
+   -------------------------------------------------------------------------- */
+
+.arch-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.arch-card {
+  padding: 13px 14px;
+  display: flex;
+  flex-direction: column;
+}
+
+.arch-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 9px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border-warm-subtle);
+}
+
+.arch-header-title {
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-size: 11.5px;
+  color: var(--text-headline);
+}
+
+.arch-header-pill {
+  font-size: 8px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.arch-item-list {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.arch-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  font-size: 9px;
+  line-height: 1.35;
+  color: var(--text-ink);
+}
+
+.arch-item-icon-svg {
+  width: 15px;
+  height: 15px;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.arch-item-text strong {
+  font-weight: 700;
+  color: var(--text-ink);
+}
+
+.arch-item-text span {
+  color: var(--text-muted);
+}
+
+/* Data Exchange & Privacy Matrix Table */
+.matrix-container {
+  padding: 11px 13px;
+  margin-bottom: 14px;
+}
+
+.matrix-header-row {
+  display: grid;
+  grid-template-columns: 135px 160px 1fr 125px;
+  gap: 10px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid var(--border-warm);
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-size: 8px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-subtle);
+}
+
+.matrix-data-row {
+  display: grid;
+  grid-template-columns: 135px 160px 1fr 125px;
+  gap: 10px;
+  padding: 6.5px 0;
+  border-bottom: 1px solid var(--border-warm-subtle);
+  align-items: center;
+  font-size: 8.5px;
+}
+
+.matrix-data-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.matrix-feed {
+  font-weight: 700;
+  color: var(--text-ink);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.matrix-channel {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  color: var(--text-muted);
+}
+
+.matrix-purpose {
+  color: var(--text-ink);
+  line-height: 1.3;
+}
+
+.matrix-security {
+  font-size: 8px;
+  font-weight: 600;
+  color: var(--green);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* 3-Week Integration Roadmap Strip */
+.roadmap-container {
+  padding: 10px 13px;
+  margin-bottom: 14px;
+}
+
+.roadmap-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.roadmap-title {
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-size: 11.5px;
+  color: var(--text-headline);
+}
+
+.roadmap-stepper {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 9px;
+}
+
+.roadmap-step {
+  background: var(--bg-card-subtle);
+  border: 1px solid var(--border-warm);
+  border-radius: 8px;
+  padding: 7px 9px;
+  display: flex;
+  flex-direction: column;
+}
+
+.roadmap-step-phase {
+  font-family: var(--font-mono);
+  font-size: 7.5px;
+  font-weight: 700;
+  color: var(--terracotta);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 1px;
+}
+
+.roadmap-step-name {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 9.5px;
+  color: var(--text-ink);
+  margin-bottom: 2px;
+}
+
+.roadmap-step-desc {
+  font-size: 8px;
+  color: var(--text-muted);
+  line-height: 1.3;
+}
+
+/* Terracotta CTA Block */
+.cta-box {
+  background: var(--bg-card);
+  border: 1.5px solid var(--terracotta-border);
+  border-radius: 12px;
+  padding: 13px 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 20px rgba(194, 84, 45, 0.09);
+}
+
+.cta-text-col {
+  max-width: 66%;
+}
+
+.cta-eyebrow {
+  font-family: var(--font-body);
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--terracotta);
+  margin-bottom: 2px;
+}
+
+.cta-heading {
+  font-family: var(--font-heading);
+  font-weight: 900;
+  font-size: 14.5px;
+  color: var(--text-headline);
+  letter-spacing: -0.02em;
+  margin-bottom: 3px;
+}
+
+.cta-body {
+  font-size: 9px;
+  color: var(--text-muted);
+  line-height: 1.35;
+}
+
+.cta-action-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 5px;
+}
+
+.cta-button {
+  background-color: var(--terracotta);
+  color: #ffffff;
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 10px;
+  padding: 7.5px 15px;
+  border-radius: 20px;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  letter-spacing: 0.02em;
+}
+
+.cta-contact-info {
+  font-size: 8.5px;
+  color: var(--text-subtle);
+  font-weight: 600;
+}
