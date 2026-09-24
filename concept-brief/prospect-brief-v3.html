@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Maintenance Request Triage and Coordination - Prospect Brief</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@500;600;700;800;900&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="prospect-brief-v3.css">
+</head>
+<body>
+<svg class="svg-sprite" aria-hidden="true">
+  <symbol id="i-channels" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="13" rx="3"/><path d="m5 8 7 5 7-5"/><path d="M8 21h8"/></symbol>
+  <symbol id="i-person" viewBox="0 0 24 24"><circle cx="12" cy="7" r="3"/><path d="M5 21v-3a7 7 0 0 1 14 0v3"/></symbol>
+  <symbol id="i-sort" viewBox="0 0 24 24"><path d="M5 6h10M5 12h7M5 18h4"/><path d="m16 15 3 3 3-3M19 18V8"/></symbol>
+  <symbol id="i-question" viewBox="0 0 24 24"><path d="M20 15a4 4 0 0 1-4 4H9l-5 3v-7a4 4 0 0 1-1-2.6V7a4 4 0 0 1 4-4h9a4 4 0 0 1 4 4z"/><path d="M9.5 8.5a2.5 2.5 0 1 1 3.1 2.4c-.6.2-.9.6-.9 1.1"/><path d="M11.7 15h.01"/></symbol>
+  <symbol id="i-system" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M9 9h6v6H9zM12 1v3M12 20v3M1 12h3M20 12h3M4.2 4.2 2.1 2.1M19.8 19.8l2.1 2.1M19.8 4.2l2.1-2.1M4.2 19.8l-2.1 2.1"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Z"/><path d="m7.5 12 3 3 6-7"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-11V5l-8-3-8 3v6c0 7 8 11 8 11Z"/><path d="m8 12 2.5 2.5L16 9"/></symbol>
+  <symbol id="i-database" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v7c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12v7c0 1.7 3.6 3 8 3s8-1.3 8-3v-7"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></symbol>
+  <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M7 19h11a4 4 0 0 0 .7-7.9A7 7 0 0 0 5.2 9 5 5 0 0 0 7 19Z"/></symbol>
+  <symbol id="i-report" viewBox="0 0 24 24"><path d="M5 21V10M12 21V3M19 21v-7"/></symbol>
+</svg>
+<div class="document">
+
+  <article class="page page-one">
+    <header><div><strong>Sambhav Jain</strong><span>AI automation for property management</span></div><div><span>Prepared for</span><strong>[Client Company] / [Decision Maker]</strong></div></header>
+    <main>
+      <section class="page-title"><div class="eyebrow"><i></i> Maintenance request triage and coordination</div><h1>What changes in the <em>current process.</em></h1><p>The tools and decision owners stay in place. Manual reading, follow-up, and context building move into one controlled workflow.</p></section>
+
+      <section class="research-note"><div class="research-index"><span>Research reviewed</span><strong>[Company website]</strong><strong>[Portfolio / markets]</strong><strong>[Current tools or hiring signals]</strong></div><div class="research-copy"><span>Personal note for [Client Company]</span><h2>[A specific observation about their maintenance operation]</h2><p>From the public information I reviewed, your team appears to manage <b>[verified operating detail]</b> through <b>[known channels or PMS]</b>. The clearest fit is <b>[observed coordination problem]</b>. This system would connect the current intake path to <b>[Client PMS]</b>, so <b>[specific role]</b> receives a complete decision instead of rebuilding the context by hand.</p><small>Use only verified facts. Keep the final note to 55-80 words.</small></div></section>
+
+      <section class="lane-comparison">
+        <div class="process-lane current-lane">
+          <div class="lane-title"><div><small>Today</small><h2>Coordinator-led process</h2></div><span>Manual work</span></div>
+          <div class="lane-step"><span class="icon green"><svg><use href="#i-channels"/></svg></span><div><small>Existing</small><strong>Resident channels receive the request</strong><p>Portal, email, SMS, or phone.</p></div></div>
+          <div class="lane-arrow"><span>Message arrives</span><b>&darr;</b></div>
+          <div class="lane-step friction"><span class="icon red"><svg><use href="#i-sort"/></svg></span><div><small>Manual</small><strong>Staff reads, sorts, and links it</strong><p>Identity, unit, thread, and duplicates are checked.</p></div></div>
+          <div class="lane-arrow"><span>Details missing</span><b>&darr;</b></div>
+          <div class="lane-step friction"><span class="icon red"><svg><use href="#i-question"/></svg></span><div><small>Manual</small><strong>Staff follows up with the resident</strong><p>Access, photos, pet notes, or a clearer symptom.</p></div></div>
+          <div class="lane-arrow"><span>Context incomplete</span><b>&darr;</b></div>
+          <div class="lane-step friction"><span class="icon red"><svg><use href="#i-database"/></svg></span><div><small>Manual</small><strong>Staff searches policy, history, and vendors</strong><p>The decision is assembled by hand.</p></div></div>
+          <div class="lane-arrow"><span>Summary ready</span><b>&darr;</b></div>
+          <div class="lane-step"><span class="icon green"><svg><use href="#i-person"/></svg></span><div><small>Existing</small><strong>Manager decides and the team executes</strong><p>Approval, PMS, and vendor process stay in place.</p></div></div>
+        </div>
+        <div class="lane-shift"><span>Preparation automated</span><b>&rarr;</b></div>
+        <div class="process-lane future-lane">
+          <div class="lane-title"><div><small>After integration</small><h2>System-prepared process</h2></div><span>People decide</span></div>
+          <div class="lane-step"><span class="icon green"><svg><use href="#i-channels"/></svg></span><div><small>Stays</small><strong>The same resident channels remain</strong><p>No new resident app is required.</p></div></div>
+          <div class="lane-arrow"><span>API, webhook, or mailbox</span><b>&darr;</b></div>
+          <div class="lane-step improvement"><span class="icon orange"><svg><use href="#i-system"/></svg></span><div><small>Added</small><strong>Intake connector builds one request</strong><p>Message, sender, unit, thread, and open work are linked.</p></div></div>
+          <div class="lane-arrow"><span>If information is missing</span><b>&darr;</b></div>
+          <div class="lane-step improvement"><span class="icon orange"><svg><use href="#i-question"/></svg></span><div><small>Added</small><strong>System asks focused follow-up questions</strong><p>One at a time. Replies return to the same request.</p></div></div>
+          <div class="lane-arrow"><span>Reply saved and urgency rechecked</span><b>&darr;</b></div>
+          <div class="lane-step improvement"><span class="icon orange"><svg><use href="#i-shield"/></svg></span><div><small>Added</small><strong>AI, fixed rules, and data prepare choices</strong><p>Safety rules stay separate and may only raise urgency.</p></div></div>
+          <div class="lane-arrow"><span>Prepared decision</span><b>&darr;</b></div>
+          <div class="lane-step"><span class="icon green"><svg><use href="#i-check"/></svg></span><div><small>Stays</small><strong>Manager approves; confirmed work is sent</strong><p>Human control, PMS, and vendor process remain.</p></div></div>
+        </div>
+      </section>
+
+      <section class="legend"><div><i class="green-dot"></i><b>Stays</b><span>Existing channels, PMS, and human approval</span></div><div><i class="red-dot"></i><b>Removed</b><span>Manual reading, chasing, copying, and lookup</span></div><div><i class="orange-dot"></i><b>Added</b><span>Connectors, clarification, workflow, rules, and state</span></div></section>
+    </main>
+    <footer><span>Prepared for <strong>[Client Company]</strong></span><strong>01 / 03</strong></footer>
+  </article>
+
+  <article class="page page-two">
+    <header><div><strong>Sambhav Jain</strong><span>AI automation for property management</span></div><div class="tag">System walkthrough</div></header>
+    <main>
+      <section class="page-title compact"><div class="eyebrow"><i></i> One request, from message to confirmed action</div><h1>One calm workflow, <em>including clarification.</em></h1><p>The system prepares each step and explains what needs attention. The manager still authorizes the action.</p></section>
+
+      <section class="resident-report"><span class="icon orange"><svg><use href="#i-person"/></svg></span><div><small>Resident report</small><p>"Water is spreading under the kitchen sink. The tap is off, but water is still coming out. My dog is inside. You may enter."</p></div></section>
+
+      <section class="process-flow">
+        <div class="flow-node"><b class="flow-number">01</b><span class="icon green"><svg><use href="#i-channels"/></svg></span><div><small>Intake - existing channel</small><strong>Receive and connect the request</strong><p>Preserve the exact message. Match the resident, unit, conversation, and open work.</p></div><aside class="flow-output green-output"><b>Connected</b><span>Message + sender ID</span></aside></div>
+        <div class="flow-connector"><span>Webhook, API, or secure mailbox</span><b>&darr;</b></div>
+        <div class="flow-node"><b class="flow-number">02</b><span class="icon orange"><svg><use href="#i-shield"/></svg></span><div><small>Triage - added workflow</small><strong>Interpret the issue and apply fixed policy</strong><p>AI structures the symptom. Separate rules raise known safety risks.</p></div><aside class="flow-output orange-output"><b>Risk checked</b><span>Issue + missing fields</span></aside></div>
+
+        <div class="decision-gate"><span class="decision-diamond">?</span><div><small>Decision point</small><strong>Is there enough operational detail?</strong><p>The workflow checks what is already known before asking anything.</p></div><div class="decision-routes"><span class="no-route">No - clarify</span><span class="yes-route">Yes - continue</span></div></div>
+        <div class="branch-flow"><div class="clarification-branch"><div class="branch-head"><b>03</b><span class="icon orange"><svg><use href="#i-question"/></svg></span><div><small>Conditional clarification</small><strong>Ask only for what is missing</strong></div></div><p>One approved question at a time: photo, shutoff access, safe entry time, or a clearer symptom.</p><div class="question-examples"><span>Photo needed?</span><span>Shutoff reachable?</span><span>Safe entry time?</span></div><div class="return-loop"><b>&#8634;</b><span>Resident reply returns to the same request and urgency is checked again.</span></div></div><div class="continue-route"><span class="icon green"><svg><use href="#i-check"/></svg></span><b>Context ready</b><p>Known details are not asked again.</p><i>&darr;</i></div></div>
+
+        <div class="flow-node human-node"><b class="flow-number">04</b><span class="icon green"><svg><use href="#i-person"/></svg></span><div><small>Human checkpoint</small><strong>Present one clear manager decision</strong><p>Show the original message, urgency reason, property context, approval need, and eligible actions.</p></div><aside class="flow-output green-output"><b>Manager control</b><span>Approve, edit, hold, or assign</span></aside></div>
+        <div class="flow-connector"><span>Single-use approved action</span><b>&darr;</b></div>
+        <div class="flow-node"><b class="flow-number">05</b><span class="icon green"><svg><use href="#i-send"/></svg></span><div><small>Confirmed handoff</small><strong>Send once, record the result, then update</strong><p>The resident sees only confirmed vendor delivery and status.</p></div><aside class="flow-output green-output"><b>Audited send</b><span>PMS + vendor + resident</span></aside></div>
+      </section>
+
+      <section class="outcomes"><div><span>What changes</span><h2>For the operations team</h2></div><p><b>01</b> Urgent issues reach the right manager sooner.</p><p><b>02</b> Staff stop chasing routine missing details.</p><p><b>03</b> One request leads to one tracked vendor action.</p><p><b>04</b> Residents receive only confirmed updates.</p></section>
+      <aside class="failure"><b>If a step fails</b><span>The request stays open, the failed step is recorded, and the case is routed to a person when needed.</span></aside>
+    </main>
+    <footer><span>Human approval before vendor contact</span><strong>02 / 03</strong></footer>
+  </article>
+
+  <article class="page page-three">
+    <header><div><strong>Sambhav Jain</strong><span>AI automation for property management</span></div><div class="tag">Connection map</div></header>
+    <main>
+      <section class="page-title compact"><div class="eyebrow"><i></i> A practical connection map</div><h1>A coordination layer, <em>not another system to replace.</em></h1><p>The service runs between the tools already in use. It reads allowed data and writes back only through approved connections.</p></section>
+
+      <section class="integration-map">
+        <div class="map-column existing-systems"><div class="column-title"><span class="icon green"><svg><use href="#i-channels"/></svg></span><div><small>Existing</small><h2>Request sources</h2></div></div><div class="map-node"><svg><use href="#i-channels"/></svg><div><b>[Resident Portal]</b><span>Form, files, login</span></div></div><div class="map-node"><svg><use href="#i-channels"/></svg><div><b>[Maintenance Email]</b><span>Message and attachments</span></div></div><div class="map-node"><svg><use href="#i-channels"/></svg><div><b>[SMS / Phone System]</b><span>Text or voicemail event</span></div></div></div>
+        <div class="connector inbound"><span>Webhook / API</span><b>&rarr;</b><span>Secure mailbox</span><b>&rarr;</b><span>Provider event</span><b>&rarr;</b></div>
+        <div class="automation-layer"><div class="column-title"><span class="icon orange"><svg><use href="#i-system"/></svg></span><div><small>Added</small><h2>Maintenance automation service</h2><p>Runs in [Client Cloud] or an approved managed cloud</p></div></div><div class="service-grid"><div><svg><use href="#i-channels"/></svg><b>Connectors</b><span>Receive and send events</span></div><div><svg><use href="#i-system"/></svg><b>Workflow engine</b><span>Moves each request</span></div><div><svg><use href="#i-question"/></svg><b>Conversation state</b><span>Keeps follow-up replies together</span></div><div><svg><use href="#i-shield"/></svg><b>AI + fixed rules</b><span>Interpret issue and apply policy</span></div><div><svg><use href="#i-database"/></svg><b>Operations database</b><span>Stores state and duplicate keys</span></div><div><svg><use href="#i-check"/></svg><b>Queue and retries</b><span>Expose and retry failed actions</span></div></div><div class="client-controls"><b>Client controls</b><span>Credentials, allowed data, policy, approval limits, retention, and who may act.</span></div></div>
+        <div class="connector outbound"><span>Approved read / write</span><b>&rarr;</b><span>Decision alert</span><b>&rarr;</b><span>Approved send</span><b>&rarr;</b><span>Event feed</span><b>&rarr;</b></div>
+        <div class="map-column existing-systems"><div class="column-title"><span class="icon green"><svg><use href="#i-database"/></svg></span><div><small>Existing</small><h2>Business systems</h2></div></div><div class="map-node primary"><svg><use href="#i-database"/></svg><div><b>[Client PMS]</b><span>Residents, units, work orders, final status</span></div></div><div class="map-node"><svg><use href="#i-person"/></svg><div><b>[Manager Channel]</b><span>Review and approval</span></div></div><div class="map-node"><svg><use href="#i-send"/></svg><div><b>[Vendor Channel]</b><span>Approved job and delivery result</span></div></div><div class="map-node"><svg><use href="#i-report"/></svg><div><b>[Reporting Tool]</b><span>Volume, status, exceptions</span></div></div></div>
+      </section>
+
+      <section class="control-strip"><div><span class="icon green"><svg><use href="#i-cloud"/></svg></span><small>Where it runs</small><b>[Client Cloud] or approved managed cloud</b><p>Separate from the PMS and connected through controlled credentials.</p></div><div><span class="icon green"><svg><use href="#i-database"/></svg></span><small>System of record</small><b>[Client PMS]</b><p>Residents, work orders, assignments, and final status remain here.</p></div><div><span class="icon green"><svg><use href="#i-person"/></svg></span><small>Human control</small><b>Managers and approved staff</b><p>Vendor choice, spend, legal cases, appointments, and closure stay with people.</p></div></section>
+
+      <section class="assumptions"><h2>Assumptions to confirm</h2><div><p>[Client PMS] can share data through an API, export, webhook, or notification email.</p><p>[Manager Channel] can receive a secure link or approval action.</p><p>[Vendor Channel] can accept a PMS task, API call, portal action, or email.</p><p>The client approves hosting, data fields, retention, and user access.</p></div></section>
+      <section class="cta"><div><span>Next step</span><h2>Map this system to your actual tools.</h2><p>A short working call can confirm the available connections and the first useful version.</p></div><a href="https://cal.com/sambhav-builds/pm-automation-audit">Book the 15-minute call <b>&rarr;</b></a><aside><strong>Sambhav Jain</strong><small>sambhav@sambhavbuilds.com</small><small>sambhavbuilds.com</small></aside></section>
+    </main>
+    <footer><span>Maintenance request triage and coordination</span><strong>03 / 03</strong></footer>
+  </article>
+</div>
+</body>
+</html>
