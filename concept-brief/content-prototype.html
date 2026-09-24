@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Maintenance Request Triage and Coordination System - Content Prototype</title>
+  <link rel="stylesheet" href="content-prototype.css">
+</head>
+<body>
+<div class="document">
+
+  <article class="page" id="page-1">
+    <header class="page-header">
+      <div>
+        <strong>Maintenance Request Triage and Coordination System</strong>
+        <span>Production operating model for [Client Company]</span>
+      </div>
+      <div class="prototype-label">Content prototype</div>
+    </header>
+
+    <main>
+      <section class="intro compact-intro">
+        <div class="section-number">01</div>
+        <div>
+          <h1>System overview and business outcomes</h1>
+          <p>The system converts maintenance messages from existing resident channels into prepared, visible work. It identifies what requires attention, obtains missing operational details, and presents the next decision while authorized employees retain control over dispatch, spending, sensitive cases, appointments, and closure.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>How the operating process changes</h2>
+        <div class="swimlane" aria-label="Current process compared with system-assisted process">
+          <div class="lane-label current">Current process</div>
+          <div class="lane-steps">
+            <div class="flow-node"><b>1</b><span>Requests arrive across separate channels</span></div>
+            <div class="flow-arrow">&rarr;</div>
+            <div class="flow-node"><b>2</b><span>Staff read and interpret every message</span></div>
+            <div class="flow-arrow">&rarr;</div>
+            <div class="flow-node"><b>3</b><span>Staff chase missing details</span></div>
+            <div class="flow-arrow">&rarr;</div>
+            <div class="flow-node"><b>4</b><span>Staff search records, policies, and vendors</span></div>
+            <div class="flow-arrow">&rarr;</div>
+            <div class="flow-node"><b>5</b><span>Staff assemble the decision manually</span></div>
+          </div>
+
+          <div class="lane-label assisted">System-assisted process</div>
+          <div class="lane-steps assisted-row">
+            <div class="flow-node"><b>1</b><span>Existing channels feed one controlled intake</span></div>
+            <div class="flow-arrow">&rarr;</div>
+            <div class="flow-node"><b>2</b><span>Each message is linked, structured, and checked</span></div>
+            <div class="flow-arrow">&rarr;</div>
+            <div class="flow-node"><b>3</b><span>The resident receives specific approved questions</span></div>
+            <div class="flow-arrow">&rarr;</div>
+            <div class="flow-node"><b>4</b><span>Context and eligible options are prepared</span></div>
+            <div class="flow-arrow">&rarr;</div>
+            <div class="flow-node"><b>5</b><span>The manager receives one decision package</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Operational outcomes to measure</h2>
+        <table class="data-table outcomes-table">
+          <thead><tr><th>Outcome</th><th>How it is measured</th><th>Why it matters operationally</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Faster informed decisions</strong></td><td>Report-to-manager-ready time</td><td>Measures preparation time without confusing it with repair time.</td></tr>
+            <tr><td><strong>Better emergency visibility</strong></td><td>Acknowledgment time; missed and unnecessary escalations reviewed separately</td><td>Shows whether dangerous conditions reach the right person without making every message an alert.</td></tr>
+            <tr><td><strong>Less coordination rework</strong></td><td>Repeat-contact rate; clarification rate and usefulness</td><td>Shows whether residents and staff need fewer repeated conversations to establish the basic facts.</td></tr>
+            <tr><td><strong>Fewer duplicate actions</strong></td><td>Duplicate work orders and vendor contacts</td><td>Tests whether replies, repeated messages, and repeated approvals remain attached to one request.</td></tr>
+            <tr><td><strong>Clearer ownership</strong></td><td>Age of unowned requests and exceptions</td><td>Shows whether waiting work always has a visible owner and next action.</td></tr>
+            <tr><td><strong>Lower intake workload</strong></td><td>Staff minutes spent reading, copying, looking up, and preparing</td><td>Measures capacity returned to coordination, vendor performance, and resident service.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <aside class="boundary-note"><strong>Operating boundary</strong><span>The system prepares work and records each handoff. Authorized people decide vendor dispatch, vendor selection, spending approval, sensitive or legal matters, appointment commitments, reimbursement, and final closure.</span></aside>
+    </main>
+
+    <footer class="page-footer"><span>Vendor-neutral content prototype</span><span>Page 1 of 4</span></footer>
+  </article>
+
+  <article class="page" id="page-2">
+    <header class="page-header">
+      <div><strong>Maintenance Request Triage and Coordination System</strong><span>Production operating model for [Client Company]</span></div>
+      <div class="prototype-label">Content prototype</div>
+    </header>
+
+    <main>
+      <section class="intro">
+        <div class="section-number">02</div>
+        <div><h1>How one request moves through the system</h1><p>The same request remains one auditable record from the resident's first message through the final human-verified closure.</p></div>
+      </section>
+
+      <aside class="scenario">
+        <span class="scenario-label">Running example</span>
+        <blockquote>"There is water under the kitchen sink again and it is spreading toward the dishwasher. I turned the tap off but it is still coming out. My dog is in the unit and I can let someone in."</blockquote>
+      </aside>
+
+      <section class="process-map" aria-label="Five-step maintenance request process">
+        <div class="process-step">
+          <div class="step-index">1</div>
+          <div class="step-main"><h3>Receive and connect the request</h3><p>Preserve the resident's exact words. Verify or resolve the resident, property, unit, conversation, and related open work. Detect repeated messages and follow-ups before creating anything new.</p></div>
+          <div class="step-output"><span>Visible result</span><strong>One intake record linked to the correct context</strong></div>
+        </div>
+
+        <div class="process-step split-step">
+          <div class="step-index">2</div>
+          <div class="step-main"><h3>Interpret the issue and apply policy</h3><div class="parallel-boxes"><div><b>AI interpretation</b><p>Structures the symptom, likely trade, urgency recommendation, missing details, access permission, pet information, and sensitive-case indicators.</p></div><div><b>Fixed policy rules</b><p>Apply safety, legal, notification, authority, and business rules separately. Rules may raise urgency but cannot lower it.</p></div></div></div>
+          <div class="step-output"><span>Example result</span><strong>Spreading water triggers the company's water-escalation policy</strong></div>
+        </div>
+
+        <div class="process-step">
+          <div class="step-index">3</div>
+          <div class="step-main"><h3>Clarify and prepare</h3><p>Ask only for missing operational details. Prepare the [Client PMS] record, internal summary, vendor work description, and eligible vendor options. Do not interrupt the manager while safe clarification remains possible.</p></div>
+          <div class="step-output"><span>Example result</span><strong>Access and pet details are already complete; plumbing options are prepared</strong></div>
+        </div>
+
+        <div class="process-step decision-step">
+          <div class="step-index">4</div>
+          <div class="step-main"><h3>Present the human decision</h3><p>Show the original message, prepared summary, escalation reason, property context, authority requirements, and permitted actions. The authorized employee may hold, edit, reclassify, assign manually, request owner approval, or select a vendor.</p></div>
+          <div class="step-output"><span>Human checkpoint</span><strong>The manager selects the approved after-hours plumber</strong></div>
+        </div>
+
+        <div class="process-step">
+          <div class="step-index">5</div>
+          <div class="step-main"><h3>Execute and track the confirmed action</h3><p>Claim the action once, write the confirmed result to [Client PMS], and contact the selected vendor through [Vendor Channel]. Update the resident only after delivery succeeds. Track response, appointment state, progress, verification, and human closure.</p></div>
+          <div class="step-output"><span>Example result</span><strong>The vendor receives one request; the resident receives a factual update with no invented ETA</strong></div>
+        </div>
+      </section>
+
+      <section class="exception-branches">
+        <h2>Only three exception branches are needed at this level</h2>
+        <div class="branch-grid">
+          <div><strong>Missing information</strong><span>Resident clarification</span><span class="return-arrow">&crarr; Reassess the same request</span></div>
+          <div><strong>Sensitive, unreadable, or uncertain</strong><span>Assigned human review</span><span class="return-arrow">No automated substantive action</span></div>
+          <div><strong>No eligible vendor or failed contact</strong><span>Visible coordinator exception</span><span class="return-arrow">Request remains open</span></div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="page-footer"><span>Operational process map</span><span>Page 2 of 4</span></footer>
+  </article>
+
+  <article class="page" id="page-3">
+    <header class="page-header">
+      <div><strong>Maintenance Request Triage and Coordination System</strong><span>Production operating model for [Client Company]</span></div>
+      <div class="prototype-label">Content prototype</div>
+    </header>
+
+    <main>
+      <section class="intro compact-intro">
+        <div class="section-number">03</div>
+        <div><h1>Integration into the client's existing business</h1><p>The system operates behind the channels and systems already used by residents, staff, owners, and vendors. The final design depends on the capabilities and permissions of the prospect's actual software.</p></div>
+      </section>
+
+      <section>
+        <h2>Four-layer operating model</h2>
+        <div class="layer-diagram" aria-label="Four-layer business integration diagram">
+          <div class="layer">
+            <div class="layer-heading"><b>1</b><strong>Existing resident channels</strong><span>How requests already enter the business</span></div>
+            <div class="layer-items"><span>[Resident Portal]</span><span>[Maintenance Email]</span><span>[SMS Provider]</span><span>[Phone / Voicemail System]</span></div>
+          </div>
+          <div class="layer-connector">Authorized events and replies move in both directions</div>
+          <div class="layer coordination-layer">
+            <div class="layer-heading"><b>2</b><strong>Maintenance coordination layer</strong><span>Prepares work and controls handoffs</span></div>
+            <div class="layer-items"><span>Capture and context</span><span>AI interpretation + fixed policy</span><span>Conversation and request state</span><span>Retry, audit, and exceptions</span><span>Human approval routing</span></div>
+          </div>
+          <div class="layer-connector">Confirmed facts and prepared actions are synchronized</div>
+          <div class="layer">
+            <div class="layer-heading"><b>3</b><strong>Existing business systems</strong><span>Where authoritative work and decisions remain</span></div>
+            <div class="layer-items"><span>[Client PMS]</span><span>[Manager Channel]</span><span>[Vendor Channel]</span><span>[Owner Approval Process]</span><span>[Reporting Tool]</span></div>
+          </div>
+          <div class="layer-connector">People continue using familiar systems</div>
+          <div class="layer people-layer">
+            <div class="layer-heading"><b>4</b><strong>Existing users</strong><span>No new process is assumed until the client's tools are reviewed</span></div>
+            <div class="layer-items"><span>Residents</span><span>Coordinators</span><span>Managers</span><span>Owners</span><span>Vendors</span><span>Operations leadership</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>What each group experiences</h2>
+        <table class="data-table role-table">
+          <thead><tr><th>Group</th><th>What remains familiar</th><th>What the system adds</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Residents</strong></td><td>Current portal, email address, text number, or phone line</td><td>Receipt, focused clarification, and factual status from confirmed records</td></tr>
+            <tr><td><strong>Coordinators</strong></td><td>[Client PMS] work list and communication history</td><td>Prepared fields, summaries, priorities, missing details, ownership, and visible exceptions</td></tr>
+            <tr><td><strong>Managers</strong></td><td>[Manager Channel] and linked business record</td><td>One decision package with permitted actions and the reason each action is available</td></tr>
+            <tr><td><strong>Vendors</strong></td><td>[Vendor Channel], portal, PMS assignment, or email</td><td>Complete approved work descriptions and tracked delivery state</td></tr>
+            <tr><td><strong>Owners</strong></td><td>[Owner Approval Process]</td><td>Prepared scope and authority context without changing the management agreement</td></tr>
+            <tr><td><strong>Executives</strong></td><td>[Reporting Tool]</td><td>Normalized volume, response, aging, exception, correction, and vendor-outcome events</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>Connection pattern depends on the current stack</h2>
+        <table class="data-table pattern-table">
+          <thead><tr><th>Starting point</th><th>Production connection</th><th>Employee experience</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Mature PMS APIs and webhooks</strong></td><td>Controlled two-way work-order, note, task, assignment, and status synchronization</td><td>Prepared work appears and updates inside [Client PMS]</td></tr>
+            <tr><td><strong>Limited PMS write access</strong></td><td>Roster synchronization plus prepared tasks, controlled imports, or staff-approved creation</td><td>Staff keep the PMS as the business record; some creation remains manual</td></tr>
+            <tr><td><strong>Mailbox or portal notifications</strong></td><td>Secure message ingestion with outcomes returned through the PMS, task process, or shared inbox</td><td>Residents and staff keep their existing communication process</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <aside class="boundary-note"><strong>Integration rule</strong><span>[Client PMS] remains authoritative for residents, properties, leases, work orders, assignments, and final status. The coordination layer keeps processing history, retries, duplicate protection, model output, and audit events, then reconciles confirmed business changes back to the authoritative system.</span></aside>
+    </main>
+
+    <footer class="page-footer"><span>Modular integration placeholders</span><span>Page 3 of 4</span></footer>
+  </article>
+
+  <article class="page" id="page-4">
+    <header class="page-header">
+      <div><strong>Maintenance Request Triage and Coordination System</strong><span>Production operating model for [Client Company]</span></div>
+      <div class="prototype-label">Content prototype</div>
+    </header>
+
+    <main>
+      <section class="intro compact-intro">
+        <div class="section-number">04</div>
+        <div><h1>Operating controls and client configuration</h1><p>Production readiness depends on explicit authority, visible failure behavior, and configuration based on the client's actual policies and systems.</p></div>
+      </section>
+
+      <section>
+        <h2>Automatic preparation versus human authority</h2>
+        <div class="authority-table">
+          <div class="authority-column automatic">
+            <h3>The system may prepare automatically</h3>
+            <ul><li>Receive and preserve authorized maintenance reports</li><li>Link residents, units, conversations, and open work</li><li>Detect duplicates and attach follow-ups</li><li>Recommend urgency, trade, and missing information</li><li>Apply fixed escalation and business rules</li><li>Ask approved clarification questions</li><li>Prepare work-order notes and communication drafts</li><li>Propose eligible vendors without contacting them</li><li>Retry temporary technical failures within policy</li></ul>
+          </div>
+          <div class="authority-column human">
+            <h3>Authorized people retain control</h3>
+            <ul><li>Whether a vendor is contacted</li><li>Which vendor is selected</li><li>Spend above the applicable authority limit</li><li>Accommodation, discrimination, legal, insurance, or liability matters</li><li>Changing an emergency classification downward</li><li>Appointments, completion times, reimbursements, or rent credits</li><li>Safety rules, vendor eligibility, and communication policy</li><li>Verification and final work-order closure</li></ul>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Failure behavior remains visible to the business</h2>
+        <table class="data-table failure-table">
+          <thead><tr><th>Situation</th><th>System response</th><th>What remains visible</th></tr></thead>
+          <tbody>
+            <tr><td><strong>AI unavailable or unusable</strong></td><td>Preserve the request, run fixed rules, and assign human review</td><td>Original message, failed step, rules result, and owner</td></tr>
+            <tr><td><strong>PMS or communication channel unavailable</strong></td><td>Queue the action, retry within policy, and expose the unsynchronized state</td><td>Pending action, attempts, failure reason, and next owner</td></tr>
+            <tr><td><strong>Vendor contact fails</strong></td><td>Keep the request open, notify the manager, and make no resident claim</td><td>Selected vendor, delivery attempts, error, and next action</td></tr>
+            <tr><td><strong>Duplicate or stale approval</strong></td><td>Accept only the first valid claim and reject the repeated action</td><td>Successful actor plus every rejected attempt</td></tr>
+            <tr><td><strong>Resident identity is uncertain</strong></td><td>Reveal no property or work-order information and route to verification</td><td>Unverified conversation and assigned task</td></tr>
+            <tr><td><strong>Data differs between systems</strong></td><td>Create a reconciliation task instead of overwriting silently</td><td>Both values, source systems, timestamps, and responsible owner</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>Client-specific configuration inputs</h2>
+        <div class="config-grid">
+          <div><b>1</b><strong>Intake and identity</strong><span>Current resident channels, verified identities, property and unit lookup, and conversation history.</span></div>
+          <div><b>2</b><strong>PMS and records</strong><span>Connection capabilities, permitted reads and writes, work-order stages, and authoritative fields.</span></div>
+          <div><b>3</b><strong>Priority and safety</strong><span>Emergency definitions, habitability policy, response targets, sensitive-case handling, and escalation contacts.</span></div>
+          <div><b>4</b><strong>Notification policy</strong><span>On-call roles, quiet hours, immediate alerts, silent tasks, reminders, and daily reporting.</span></div>
+          <div><b>5</b><strong>Vendors</strong><span>Trade, property coverage, hours, priority, compliance, contact routes, and manual-assignment rules.</span></div>
+          <div><b>6</b><strong>Authority</strong><span>Manager limits, owner approval conditions, emergency exceptions, and permitted actions by role.</span></div>
+          <div><b>7</b><strong>Communication</strong><span>Approved resident, manager, owner, and vendor channels, templates, delivery tracking, and opt-out rules.</span></div>
+          <div><b>8</b><strong>Data and service</strong><span>Hosting, access, retention, deletion, security, audit, monitoring, recovery, support, and reporting requirements.</span></div>
+        </div>
+      </section>
+
+      <aside class="closing-note">The final design is produced from the client's actual operating rules and software capabilities. No integration, automatic action, or authority boundary is assumed merely because it appears in this reference model.</aside>
+    </main>
+
+    <footer class="page-footer"><span>Production control reference</span><span>Page 4 of 4</span></footer>
+  </article>
+
+</div>
+</body>
+</html>
