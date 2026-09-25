@@ -144,3 +144,45 @@ header{height:46px;flex:none;display:flex;justify-content:space-between;align-it
 .page-three .client-controls b{color:var(--blue)}
 .page-three .assumptions{background:var(--amber-soft);border-left-color:var(--amber)}
 .page-three .assumptions p:before{background:var(--amber)}
+
+/* Editorial palette refresh: warm neutrals, terracotta for attention, forest for added automation. */
+:root{--forest:#356c55;--forest-deep:#24513f;--forest-soft:#edf5ef;--forest-pale:#f7fbf7;--terracotta:#cf5b32;--terracotta-soft:#fff0ea;--terracotta-line:#efbca9;--paper:#f5f2eb;--surface:#fffdfa;--ink:#171512;--muted:#635d56;--faint:#8d857c;--line:#ddd6cc;--green:var(--forest);--green-soft:var(--forest-soft);--orange:var(--terracotta);--orange-soft:var(--terracotta-soft)}
+.icon.red,.icon.orange{color:var(--terracotta);background:var(--terracotta-soft)}
+
+/* Page 1 — the outer note is a quiet frame; the black card is deliberately inset. */
+.research-note{min-height:164px;padding:8px;display:block;overflow:visible;background:rgba(255,255,255,.58);border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow)}
+.research-shell{height:146px;display:grid;grid-template-columns:180px 1fr;overflow:hidden;background:var(--surface);border-radius:15px}
+.research-index{padding:15px 16px;border-radius:15px;color:#fff;background:var(--ink)}
+.research-copy{padding:13px 17px 11px}
+.page-one .lane-comparison{min-height:438px;margin-top:10px;padding:12px;background:rgba(255,255,255,.48);border:1px solid var(--line);border-radius:22px}
+.page-one .lane-title{min-height:39px;padding:0 4px;border-bottom:0}.page-one .lane-title small{color:var(--faint)}.page-one .future-lane .lane-title small{color:var(--forest)}
+.page-one .lane-step{min-height:53px;margin-bottom:6px;padding:7px 9px;background:var(--surface);border:1px solid var(--line);border-radius:13px;box-shadow:0 3px 9px rgba(47,37,29,.035)}
+.page-one .lane-step.friction{margin:0 0 6px;padding:7px 9px;background:var(--terracotta-soft);border-color:var(--terracotta-line);border-left:3px solid var(--terracotta)}
+.page-one .lane-step.friction .icon{color:var(--terracotta);background:#fff8f5}.page-one .lane-step.friction strong{text-decoration-color:var(--terracotta)}
+.page-one .lane-step.improvement{margin:0 0 6px;padding:7px 9px;background:var(--forest-pale);border-color:#b7d4c0;border-left:3px solid var(--forest)}
+.page-one .lane-step.improvement .icon{color:var(--forest);background:var(--forest-soft)}.page-one .lane-step.improvement>div small{color:var(--forest)}
+.page-one .lane-arrow{height:13px}.page-one .lane-arrow b{color:var(--faint)}.page-one .future-lane .lane-arrow b{color:var(--forest)}
+.page-one .lane-shift{color:var(--forest);border-color:transparent}.page-one .lane-shift:before,.page-one .lane-shift:after{background:rgba(53,108,85,.24)}
+.page-one .green-dot{background:#aaa39a}.page-one .red-dot{background:var(--terracotta)}.page-one .orange-dot{background:var(--forest)}
+
+/* Page 2 — a clear human process, with the non-standard cases visually separated. */
+.page-two .running-example span,.page-two .workflow-copy small,.page-two .outcomes span{color:var(--forest)}
+.page-two .workflow-copy small{color:var(--forest)}.page-two .manager-workflow{background:var(--terracotta-soft);border-color:var(--terracotta-line)}
+.page-two .manager-workflow .workflow-copy small,.page-two .state-pill.control{color:var(--terracotta)}.page-two .state-pill.control{background:#fffaf7;border-color:var(--terracotta-line)}
+.page-two .exception-card{color:#fff;background:var(--ink);border-color:var(--ink);box-shadow:var(--shadow)}
+.page-two .exception-card h2{border-bottom-color:rgba(255,255,255,.2)}.page-two .exception-card>div{border-bottom-color:rgba(255,255,255,.16)}
+.page-two .exception-card p{color:#d4cdc4}.page-two .exception-card>div strong,.page-two .exception-card>div:nth-of-type(1) strong,.page-two .exception-card>div:nth-of-type(2) strong,.page-two .exception-card>div:nth-of-type(3) strong,.page-two .exception-card>div:nth-of-type(4) strong{color:#fff}.page-two .exception-card>div strong:before{content:"";display:inline-block;width:5px;height:5px;margin-right:6px;background:var(--terracotta);border-radius:50%;vertical-align:1px}
+.page-two .outcomes{min-height:72px;display:grid;grid-template-columns:1.1fr repeat(4,1fr);gap:8px;background:transparent;border:0}.page-two .outcomes>*{padding:0;border:0}.page-two .outcomes>div{grid-row:auto;justify-content:center}.page-two .outcomes p{padding:5px 0 5px 9px;border-left:1px solid var(--line);font-size:8.3px}.page-two .outcomes p b{color:var(--forest)}
+.page-two .failure{background:rgba(255,255,255,.55);border-left-color:var(--terracotta)}
+
+/* Page 3 — the service is the added layer, but only its header carries the dark anchor. */
+.page-three .map-column{padding:10px;background:rgba(255,255,255,.48);border:1px solid rgba(221,214,204,.8);border-radius:20px}
+.page-three .automation-layer{padding:10px;overflow:hidden;background:var(--surface);border-top:0;border-radius:22px;box-shadow:var(--shadow)}
+.page-three .automation-layer .column-title{min-height:66px;margin:-10px -10px 10px;padding:10px;border:0;border-radius:20px 20px 0 0;color:#fff;background:var(--ink)}
+.page-three .automation-layer .column-title h2{color:#fff}.page-three .automation-layer .column-title p{color:#d4cdc4}.page-three .automation-layer .column-title small{color:#e89a79}.page-three .automation-layer .icon.orange{color:#fff;background:var(--forest-deep)}
+.page-three .service-grid>div{background:var(--forest-pale);border:1px solid rgba(53,108,85,.1);border-radius:11px}.page-three .service-grid svg{stroke:var(--forest)}
+.page-three .connector{color:var(--forest)}.page-three .connector span{color:var(--muted)}.page-three .client-controls{border-top-color:rgba(53,108,85,.28)}.page-three .client-controls b{color:var(--forest)}
+.page-three .assumptions{background:#fffaf4;border-left-color:var(--terracotta)}.page-three .assumptions p:before{background:var(--terracotta)}
+
+/* Keep the dense walkthrough header pinned to the Letter-page frame in print. */
+.page-two{position:relative}.page-two>header{position:absolute;top:.6in;left:.5in;right:.5in;z-index:2}.page-two>main{padding-top:59px}
