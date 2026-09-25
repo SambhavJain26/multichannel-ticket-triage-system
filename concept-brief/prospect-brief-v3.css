@@ -184,12 +184,11 @@ header{height:46px;flex:none;display:flex;justify-content:space-between;align-it
 .page-three .connector{color:var(--forest)}.page-three .connector span{color:var(--muted)}.page-three .client-controls{border-top-color:rgba(53,108,85,.28)}.page-three .client-controls b{color:var(--forest)}
 .page-three .assumptions{background:#fffaf4;border-left-color:var(--terracotta)}.page-three .assumptions p:before{background:var(--terracotta)}
 
-/* Keep the dense walkthrough header pinned to the Letter-page frame in print. */
-.page-two{position:relative}.page-two>header{position:absolute;top:.6in;left:.5in;right:.5in;z-index:2}.page-two>main{padding-top:59px}
+/* Match the walkthrough header and rule to the other two pages. */
+.page-two>header{position:static;border-bottom:1px solid var(--line)}.page-two>main{padding-top:13px}
 
 /* Geometry pass: every line either belongs to a connection or deliberately stops before it. */
-.research-note{overflow:hidden;padding:8px}.research-shell{height:146px;min-height:146px;gap:8px;background:transparent}.research-index{border-radius:14px}.research-copy{background:var(--surface);border-radius:14px}
-.page-two>header{border-bottom:0}
+.research-note{overflow:hidden;padding:8px}.research-shell{height:146px;min-height:0;grid-template-rows:146px;gap:8px;overflow:visible;background:transparent}.research-index{height:146px;border-radius:14px}.research-copy{min-height:0;background:var(--surface);border-radius:14px}
 .workflow-timeline:before{left:18px;top:40px;bottom:40px}
 .workflow-step{border-bottom:0}
 .workflow-step:not(:last-child):after{content:"";position:absolute;left:46px;right:6px;bottom:0;height:1px;background:var(--line)}
