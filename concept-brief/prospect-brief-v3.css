@@ -200,3 +200,8 @@ header{height:46px;flex:none;display:flex;justify-content:space-between;align-it
 .connector.inbound>div{grid-template-columns:minmax(0,1fr) auto;text-align:right}
 .connector.outbound>div{grid-template-columns:auto minmax(0,1fr);text-align:left}
 .connector span{font-size:7px;line-height:1.18}.connector b{font-size:15px;line-height:1;color:var(--forest)}
+
+/* Use the available first-page height for the two process routes. */
+.page-one .lane-comparison{min-height:580px}
+.page-one .lane-step,.page-one .lane-step.friction,.page-one .lane-step.improvement{min-height:57px;flex:0 0 auto;margin:0}
+.page-one .lane-arrow{height:auto;min-height:20px;flex:1}
