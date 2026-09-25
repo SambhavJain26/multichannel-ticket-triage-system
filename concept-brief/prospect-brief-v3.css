@@ -186,3 +186,18 @@ header{height:46px;flex:none;display:flex;justify-content:space-between;align-it
 
 /* Keep the dense walkthrough header pinned to the Letter-page frame in print. */
 .page-two{position:relative}.page-two>header{position:absolute;top:.6in;left:.5in;right:.5in;z-index:2}.page-two>main{padding-top:59px}
+
+/* Geometry pass: every line either belongs to a connection or deliberately stops before it. */
+.research-note{overflow:hidden;padding:8px}.research-shell{height:146px;min-height:146px;gap:8px;background:transparent}.research-index{border-radius:14px}.research-copy{background:var(--surface);border-radius:14px}
+.page-two>header{border-bottom:0}
+.workflow-timeline:before{left:18px;top:40px;bottom:40px}
+.workflow-step{border-bottom:0}
+.workflow-step:not(:last-child):after{content:"";position:absolute;left:46px;right:6px;bottom:0;height:1px;background:var(--line)}
+.workflow-number{position:relative}
+.connector{padding-top:0;display:grid;align-items:stretch;gap:8px;text-align:inherit}
+.connector.inbound{grid-template-rows:repeat(3,1fr);padding:80px 0 30px}
+.connector.outbound{grid-template-rows:repeat(4,1fr);padding:80px 0 30px}
+.connector>div{display:grid;align-items:center;gap:6px;min-width:0}
+.connector.inbound>div{grid-template-columns:minmax(0,1fr) auto;text-align:right}
+.connector.outbound>div{grid-template-columns:auto minmax(0,1fr);text-align:left}
+.connector span{font-size:7px;line-height:1.18}.connector b{font-size:15px;line-height:1;color:var(--forest)}
