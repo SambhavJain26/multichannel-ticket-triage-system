@@ -3,6 +3,9 @@ Coordinates are points measured from the top; labels and routes remain editable.
 """
 from pathlib import Path
 import math
+import json
+import re
+from functools import lru_cache
 from reportlab.pdfgen import canvas
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
@@ -11,6 +14,9 @@ from reportlab.platypus import Paragraph
 from reportlab.lib.styles import ParagraphStyle
 from fontTools.ttLib import TTFont as SourceFont
 from fontTools.varLib.instancer import instantiateVariableFont
+from reportlab.graphics import renderPDF
+from reportlab.graphics.shapes import Drawing, Group, Rect, Circle, Ellipse
+from reportlab.graphics.svgpath import SvgPath
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / 'output/pdf/maintenance-triage-square-brief.pdf'
@@ -62,12 +68,41 @@ def arrow(x, y, x2, y2, color=GREEN):
 def label(s,x,y,w,color=MUTED): text(s.upper(),x,y,w,8,color,True,10)
 def heading(s,x,y,w,size=13,color=INK): return text(s,x,y,w,size,color,leading=size*1.12,font='Display')
 def dot(n,x,y,fill=WHITE,color=INK):
-    box(x,y,23,23,fill,LINE,11.5); text(str(n),x+6,y+5,16,10,color,True)
+    box(x,y,23,23,fill,LINE,11.5)
+    c.setFillColor(HexColor(color)); c.setFont('Bold',10)
+    c.drawCentredString(x+11.5,H-y-15,str(n))
+
+@lru_cache(maxsize=None)
+def icon_data(name):
+    # Licensed paths copied from the portfolio's existing Lucide dependency.
+    source = (ROOT / f'concept-brief/assets/icons/{name}.js').read_text(encoding='utf-8')
+    raw = re.search(r'const __iconNode = (\[.*?\]);',source,re.S).group(1)
+    return json.loads(re.sub(r'([,{]\s*)([A-Za-z]\w*):',r'\1"\2":',raw))
+
+def icon(name,x,y,size=18,color=MUTED):
+    group = Group()
+    for kind, attrs in icon_data(name):
+        a = {k:float(v) for k,v in attrs.items() if k not in ('key','d')}
+        style = dict(fillColor=None,strokeColor=HexColor(color),strokeWidth=1.5,strokeLineCap=1,strokeLineJoin=1)
+        if kind=='path': shape=SvgPath(attrs['d'],**style)
+        elif kind=='rect': shape=Rect(a['x'],a['y'],a['width'],a['height'],rx=a.get('rx',0),ry=a.get('rx',0),**style)
+        elif kind=='circle': shape=Circle(a['cx'],a['cy'],a['r'],**style)
+        elif kind=='ellipse': shape=Ellipse(a['cx'],a['cy'],a['rx'],a['ry'],**style)
+        else: raise ValueError(kind)
+        group.add(shape)
+    group.transform=(size/24,0,0,-size/24,0,size)
+    drawing=Drawing(size,size); drawing.add(group)
+    renderPDF.draw(drawing,c,x,H-y-size)
+
+def icon_tile(name,x,y,color=MUTED,fill=PAPER):
+    box(x,y,26,26,fill,r=13)
+    icon(name,x+5,y+5,16,color)
 
 def page(n,section,title,sub):
     box(0,0,W,H,PAPER,r=0)
     text('Sambhav Jain',30,17,230,10,bold=True)
-    text('[Client Company]',433,17,185,10,bold=True)
+    c.setFont('Bold',10); c.setFillColor(HexColor(INK))
+    c.drawRightString(618,H-27,'[Client Company]')
     line(30,40,618,40)
     eyebrow = 'MAINTENANCE TRIAGE / '+section
     pill_width = pdfmetrics.stringWidth(eyebrow,'Bold',8)+20
@@ -82,31 +117,31 @@ def page(n,section,title,sub):
 
 # PAGE 1: Comparison and relevance. Existing systems remain neutral.
 page(1,'BUSINESS CHANGE','What changes in your <font color="'+ORANGE+'">maintenance process</font>','The same resident channels and PMS. Less manual preparation before your team decides.')
-shell(30,128,588,87)
-box(38,136,153,71,INK,r=11)
-label('Research reviewed',50,147,129,'#D6CFC5')
-text('[Website / source]<br/>[Portfolio / markets]<br/>[Verified operating detail]',50,164,130,10,WHITE)
+shell(30,126,588,91)
+box(38,134,153,75,INK,r=11)
+label('Research reviewed',50,145,129,'#D6CFC5')
+text('[Website / source]<br/>[Portfolio / markets]<br/>[Verified operating detail]',50,162,130,10,WHITE,leading=12)
 label('A note for [Decision Maker]',205,141,397,ORANGE)
-text('Your [verified company detail] makes [operating goal] relevant. Connecting [intake] to [Client PMS] would help [team] spend less time gathering details and more time making informed decisions.',205,158,396,11,maxh=55)
+text('Your [verified company detail] makes [operating goal] relevant. Connecting [intake] to [Client PMS] would help [team] spend less time gathering details and more time making informed decisions.',205,159,396,11,maxh=55)
 heading('Assumed current process',40,228,269,13)
 heading('With the system',344,228,264,13,GREEN)
 rows = [
- ('Resident channels','Portal, email, SMS, or phone reports.','Same channels, connected','Approved intake brings reports together.'),
- ('Staff read and identify','Find the resident, unit, and open work.','Identity and request linked','Match unit, replies, duplicates, and incidents.'),
- ('Staff chase missing details','Ask questions and piece replies together.','Focused follow-up questions','Ask what is missing; keep replies together.'),
- ('Staff search and prepare','Look up policies, vendors, and job details.','Context and options prepared','Check policy and vendors; draft instructions.'),
+ ('Resident channels','Portal, email, SMS, or phone reports.','Same channels, connected','Reports enter one controlled intake.'),
+ ('Staff read and identify','Find the resident, unit, and open work.','Identity and request linked','Match units, duplicates, and related work.'),
+ ('Staff chase missing details','Ask questions and piece replies together.','Focused follow-up questions','Ask for missing details; keep replies linked.'),
+ ('Staff search and prepare','Look up policies, vendors, and job details.','Context and options prepared','Check policy and vendors; draft job notes.'),
  ('Staff decide and coordinate','Approve work, send it, and chase updates.','Staff approve; actions tracked','Record confirmed sends and follow-ups.'),
 ]
 for i,(lh,lb,rh,rb) in enumerate(rows):
     y=251+i*53
     box(30,y,284,43,WHITE,LINE,9)
     box(334,y,284,43,SOFT if i in (1,2,3) else WHITE,LINE,9)
-    if i in (1,2,3): line(336,y+10,336,y+33,GREEN,2)
-    text(f'{i+1:02d}',40,y+8,22,9,MUTED,True)
-    text(lh,65,y+6,239,11,bold=True)
-    text(lb,65,y+23,239,10,MUTED,maxh=13)
-    text(rh,346,y+6,262,11,GREEN if i in (1,2,3) else INK,True)
-    text(rb,346,y+23,262,10,MUTED,maxh=13)
+    icon_tile(['mail','list-filter','message-circle-question-mark','database','user-round'][i],39,y+8)
+    icon_tile(['mail','cpu','message-circle-question-mark','shield-check','circle-check'][i],343,y+8,GREEN if i in (1,2,3) else MUTED, '#E0ECE2' if i in (1,2,3) else PAPER)
+    text(lh,73,y+6,230,11,bold=True)
+    text(lb,73,y+23,230,10,MUTED,maxh=13)
+    text(rh,377,y+6,230,11,GREEN if i in (1,2,3) else INK,True)
+    text(rb,377,y+23,230,10,MUTED,maxh=13)
     if i<4:
         arrow(172,y+44,172,y+51,MUTED); arrow(476,y+44,476,y+51)
 label('Stays',30,521,65)
@@ -123,7 +158,7 @@ c.showPage()
 # PAGE 2: All lifecycle stages; separate branch rail and explicit decision gate.
 page(2,'END-TO-END WORKFLOW','From report to <font color="'+ORANGE+'">verified completion</font>','One connected process, with questions, approvals, progress, and closure kept on the same record.')
 box(30,132,409,468,WHITE,r=14)
-line(52,152,52,574)
+line(52.5,152,52.5,574)
 stages = [
  (140,52,'Receive and connect','Keep the report and attachments; acknowledge receipt. Verify identity; link replies, duplicates, and incidents.'),
  (196,65,'Interpret and check','<b>AI:</b> urgency, trade, language, access, and pets.'),
@@ -142,7 +177,8 @@ for i,(y,h,head,body) in enumerate(stages):
     if i==1:
         box(76,y+36,346,26,SOFT,r=5)
         text('<b>Fixed rules:</b> apply policy; only raise urgency.',83,y+42,333,10,GREEN,maxh=13)
-    if i<7 and i!=4: line(76,y+h,426,y+h)
+    # The numbered rail groups the steps. Extra dividers consume the small
+    # inter-step gaps and make otherwise separate text blocks feel crowded.
 box(455,132,163,468,INK,r=14)
 label('Routes that matter',469,144,135,'#D6CFC5')
 heading('Safety first',469,167,135,13,'#EEAA8D')
@@ -156,20 +192,21 @@ heading('Owner approval',469,366,135,13,'#EEAA8D')
 text('Spend approval returns to step 5. Vendor contact waits for approval.',469,390,135,10,'#F0EBE4')
 arrow(439,383,457,383,ORANGE); line(457,383,457,426,ORANGE); arrow(457,426,439,426,ORANGE)
 line(469,452,604,452,'#514B44')
-heading('Human ownership',469,465,135,13,WHITE)
-arrow(439,475,457,475,MUTED)
-text('Unclear, sensitive, unreadable, or failed cases go to named staff. Use approved languages; identity or vendor gaps do not become guesses.',469,489,135,10,'#F0EBE4')
+label('At any stage',469,465,135,'#D6CFC5')
+heading('Human ownership',469,484,135,13,WHITE)
+text('Unclear, sensitive, unreadable, or failed cases go to named staff. Use approved languages; identity and vendor gaps go to review.',469,508,135,10,'#F0EBE4')
 c.showPage()
 
 # PAGE 3: A spoke map with numbered, directional exchanges and matching route key.
 page(3,'TOOLS & CONNECTIONS','How your <font color="'+ORANGE+'">systems connect</font>','Proposed stack and routes. Access depends on the client’s accounts and permissions.')
-def node(x,y,w,h,name,copy,fill=WHITE):
+def node(x,y,w,h,name,copy,fill=WHITE,ic='mail'):
     box(x,y,w,h,fill,LINE,10)
-    heading(name,x+10,y+9,w-20,13)
-    text(copy,x+10,y+28,w-20,10,MUTED,maxh=h-33)
+    icon(ic,x+11,y+10,17)
+    heading(name,x+36,y+11,w-46,11.5)
+    text(copy,x+12,y+34,w-24,10,MUTED,maxh=h-39)
 
-node(30,132,180,67,'Resident channels','Portal / email / SMS / phone transcripts')
-node(436,132,182,67,'OpenAI API','HTTPS API: interpretation and drafts. No action authority.')
+node(30,132,180,72,'Resident channels','Portal / email / SMS / phone transcripts')
+node(436,132,182,72,'OpenAI API','HTTPS API: interpretation and drafts. No action authority.',ic='cpu')
 shell(242,218,164,171,SOFT)
 box(247,223,154,49,INK,r=11)
 box(247,251,154,21,INK,r=0)
@@ -179,10 +216,10 @@ text('Connectors • fixed rules<br/>Queue and retries',253,284,141,10)
 line(253,318,394,318,'#BED1C1')
 heading('PostgreSQL',253,329,141,13)
 text('Processing state,<br/>audit and send checks',253,350,141,10)
-node(30,256,163,74,'[Client PMS]','Business record: residents, units, open work, final status')
-node(455,256,163,74,'[Manager channel]','Decisions and verified staff approvals')
-node(30,377,180,64,'[Vendor channel]','Approved jobs, replies, and delivery results')
-node(438,377,180,64,'[Owner process]','Spending approval and recorded decisions')
+node(30,252,163,82,'[Client PMS]','Business record: residents, units, open work, final status',ic='database')
+node(455,252,163,82,'[Manager channel]','Decisions and verified staff approvals',ic='user-round')
+node(30,377,180,68,'[Vendor channel]','Approved jobs, replies, and delivery results',ic='send')
+node(438,377,180,68,'[Owner process]','Spending approval and recorded decisions',ic='circle-check')
 # Intake has distinct incoming report and outgoing resident communication paths.
 line(210,152,294,152,GREEN); arrow(294,152,294,218)
 text('1 · reports',232,134,110,10,GREEN)
@@ -193,21 +230,22 @@ line(374,218,374,151,GREEN); arrow(374,151,436,151)
 text('context',379,135,58,10,GREEN)
 line(436,181,393,181,GREEN); arrow(393,181,393,218)
 text('drafts',402,194,46,10,GREEN)
-arrow(193,279,242,279); text('2 · data',196,263,48,10,GREEN)
+arrow(193,279,242,279); text('2 · read',197,263,45,10,GREEN)
 arrow(242,314,193,314); text('updates',196,299,46,10,GREEN)
-arrow(406,279,455,279); text('3 · ask',412,263,42,10,GREEN)
+arrow(406,279,455,279); text('3 · review',407,263,48,10,GREEN,maxh=13)
 arrow(455,314,406,314); text('approve',408,299,46,10,GREEN)
 line(258,389,258,400,GREEN); arrow(258,400,210,400)
-text('4 · job',218,381,48,10,GREEN)
+text('4 · job',213,382,45,10,GREEN)
 line(210,426,281,426,GREEN); arrow(281,426,281,389)
 text('reply',236,429,44,10,GREEN)
 line(390,389,390,400,GREEN); arrow(390,400,438,400)
-text('5 · ask',391,381,45,10,GREEN)
+text('5 · spend',391,382,46,10,GREEN,maxh=13)
 line(438,426,368,426,GREEN); arrow(368,426,368,389)
 text('decision',380,429,55,10,GREEN)
 arrow(324,389,324,445)
-box(245,446,159,28,WHITE,LINE,8)
-text('6 · [Reporting tool]',258,452,140,11,bold=True)
+box(232,446,184,28,WHITE,LINE,10)
+icon('chart-no-axes-column',244,452,16)
+text('6 · [Reporting tool]',268,453,137,11,bold=True)
 text('events',330,427,44,10,GREEN)
 label('Connection methods / confirm for each prospect',30,483,588,ORANGE)
 routes=[
@@ -227,38 +265,35 @@ c.showPage()
 
 # PAGE 4: Running the service, not repeating the lifecycle.
 page(4,'OPERATIONS & OUTCOMES','How your team <font color="'+ORANGE+'">runs it each day</font>','Staff work in familiar tools. Each waiting item or failed action has an owner and a next step.')
-heading('Daily operating view',30,137,275,14)
-ops=[
- ('Start with priority, not inbox order','See urgent work, overdue items, owner approvals, vendor delays, and unowned exceptions.'),
- ('Alert according to company policy','Check unanswered emergencies. Apply on-call and quiet-hour rules; age alone never creates an emergency.'),
- ('Keep the portfolio visible','Daily summaries and existing reports show volume, waiting work, response targets, and exceptions.'),
-]
-for i,(head,body) in enumerate(ops):
-    y=166+i*78
-    heading(head,30,y,278,13)
-    text(body,30,y+25,278,11,maxh=42)
-    if i<2: line(30,y+73,307,y+73)
-shell(328,132,290,272,INK)
-label('Authority stays with people',344,146,257,'#EEAA8D')
-text('Staff control vendor selection, dispatch, spend, emergency downgrades, appointments, credits, and closure.',344,167,255,11,WHITE)
-line(344,218,602,218,'#514B44')
-heading('Review the cases that need judgment',344,232,255,13,WHITE)
-text('Legal or accommodation cases need trained staff. Unverified identity: reveal no records; route to staff.',344,267,255,11,'#E9E3DB')
-heading('Keep every action accountable',344,322,255,13,WHITE)
-text('Reject stale or duplicate approvals. Preserve the actor, decision, and send result. Resident updates follow confirmed facts.',344,345,255,11,'#E9E3DB')
-heading('Recovery is part of the build',30,418,588,14)
-text('<b>Visible failures.</b> AI failure keeps the report and safety checks. PMS or send failures retry, then go to staff. Data conflicts trigger review, not a silent overwrite.',30,442,282,11,maxh=69)
-text('<b>Service controls.</b> Roles, MFA, encryption, secrets, and retention. Monitor intake and the full path; test backup restores, rule changes, and rollback. No self-training.',335,442,283,11,maxh=69)
-line(30,513,618,513)
-text('<b>Questions + linked history</b> → less chasing.<br/><b>Policy-led alerts</b> → fewer needless interruptions.',30,524,285,10,GREEN)
-text('<b>Tracked sends + facts</b> → clearer handoffs and updates.<br/><b>Shared event history</b> → better portfolio visibility.',334,524,284,10,GREEN)
-shell(30,563,588,43,INK)
-heading('Discuss your tools and workflow.',44,573,386,15,WHITE)
-text('Sambhav Jain / sambhav@sambhavbuilds.com',44,591,371,8.5,'#D6CFC5')
-box(451,570,154,29,ORANGE,r=14.5)
-text('Discuss the fit',465,578,112,10,WHITE,True)
-box(578,575,19,19,'#A63E1D',r=9.5); arrow(583,584,592,584,WHITE)
-c.linkURL('https://cal.com/sambhav-builds/pm-automation-audit',(451,H-599,605,H-570),relative=0)
+shell(30,132,282,174)
+heading('Daily operating view',46,147,250,14)
+text('<b>Priority work.</b> Urgent and overdue items, owner/vendor delays, and unowned work.',46,172,250,11,maxh=41)
+text('<b>Alerts.</b> Follow on-call and quiet-hour rules; check unanswered emergencies. Age alone never creates an emergency.',46,211,250,11,maxh=55)
+text('<b>Daily summary.</b> Volume, response targets, waiting work, and exceptions.',46,265,250,11,maxh=28)
+shell(328,132,290,174,INK)
+heading('Human authority',344,147,255,14,'#EEAA8D')
+text('Staff control vendor selection, dispatch, spend, emergency downgrades, appointments, credits, and closure.',344,172,255,11,WHITE)
+line(344,225,602,225,'#514B44')
+heading('Sensitive-case review',344,239,255,13,WHITE)
+text('Staff review legal and accommodation cases. Verify identity before revealing any records.',344,260,255,11,'#E9E3DB',maxh=28)
+
+box(30,320,588,116,WHITE,LINE,12)
+icon('shield-check',46,335,18,GREEN)
+heading('Controls and recovery',72,337,529,14)
+text('AI failure keeps reports and safety checks. Failed PMS updates or sends retry, then go to staff. Reject stale or duplicate approvals. Log decisions and send results; give residents confirmed facts.',46,365,263,11,maxh=55)
+text('Review data conflicts. Set roles, MFA, encryption, secrets, and retention. Monitor the full path; test backup restores, rule changes, and rollback. No self-training.',337,365,264,11,maxh=55)
+
+heading('What this changes for the business',30,450,588,14)
+text('Linked history reduces chasing; policy-led alerts reduce interruptions. Confirmed updates and shared reporting support clearer handoffs and portfolio visibility.',30,474,588,11,GREEN,maxh=28)
+
+shell(30,514,588,92,INK)
+heading('Discuss your maintenance workflow.',46,531,388,17,WHITE)
+text('Review your tools, connections, and approval rules.',46,558,367,11,'#E9E3DB',maxh=14)
+text('Sambhav Jain / sambhav@sambhavbuilds.com',46,584,371,10,'#D6CFC5')
+box(451,542,150,38,ORANGE,r=19)
+text('Discuss the fit',465,555,106,10,WHITE,True)
+box(574,549,24,24,'#A63E1D',r=12); arrow(580,561,591,561,WHITE)
+c.linkURL('https://cal.com/sambhav-builds/pm-automation-audit',(451,H-580,601,H-542),relative=0)
 c.showPage()
 c.save()
 print(OUT)
