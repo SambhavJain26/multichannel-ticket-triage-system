@@ -196,3 +196,10 @@ The staged plan is saved in `build-plan.md`.
 - Email deliverability from demo and production domains must be handled explicitly before showing tenant replies.
 - The live Gmail mailbox should stay dedicated to demo traffic; unrelated unread messages can be ingested when the IMAP trigger is active.
 - Before a prospect call, run the Stage 8 clean reset or restore a clean local snapshot so old test tickets such as `MR-0002` do not show on the board.
+
+## 2026-09-28 - Four-page production brief redesign
+
+- Rebuilt the reusable square brief around current/system comparison, the full eight-stage lifecycle, a directional system map, and daily controls/outcomes. Production blueprint controls scope; the demo's How It Works document is only a behaviour cross-check. No live client deployment or platform permission is claimed.
+- Preserved the previous square PDF and builder in `output/pdf/archive/square-20260928-redesign/`. Portrait PDFs, sent prospect PDFs, existing portrait-source edits, unrelated PDF deletions, and V4 sources were not changed.
+- Reused the portfolio's Geist/Manrope fonts and warm palette; reviewed the portrait reference and applied frontend design and UI/UX skills to components, hierarchy, semantic colors, and spacing. Kept ReportLab and selective inset frames; no gradients or new personalization generator.
+- Verified four 648 x 648pt pages, embedded used fonts, the existing clickable meeting CTA, text bounds, capability coverage, and archive identity. Inspected every final page at 648px and 1100px. Added `validate-square-brief.py` for repeatable checks. `pdffonts` and PyMuPDF were unavailable; pypdf/pdfplumber provide font, link, and text checks without extra dependencies.

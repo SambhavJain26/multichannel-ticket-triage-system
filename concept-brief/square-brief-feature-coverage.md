@@ -9,12 +9,12 @@ This is a prospect brief, not an exhaustive implementation specification. The fo
 | Capability | PDF page | Blueprint section |
 |---|---|---|
 | Portal/email/SMS/phone transcript intake | 1, 3 | 3-6 |
-| Preserve original and attachment history | 1, 2 | 3, 8 |
+| Preserve original and attachment history | 2 | 3, 8 |
 | Verified resident/property/unit context | 1, 2 | 3, 8 |
 | Duplicate/reply linking and shared incident grouping | 1, 2 | 8 A-C |
 | Vague messages get clarification, not vendor tasks | 2 | 7, 8 |
 | Urgency/trade/access/pets interpretation | 1, 2 | 3, 7 |
-| Approved language support and human fallback | 1, 4 | 3, 9 |
+| Approved language support and human fallback | 2 | 3, 9 |
 | Separate, escalate-only fixed rules | 1, 2, 3 | 7 |
 | Receipt acknowledgment and bounded missing-detail follow-up | 1, 2 | 3, 7 |
 | Preserve known details and reassess replies | 2 | 7, 8 |
@@ -23,19 +23,28 @@ This is a prospect brief, not an exhaustive implementation specification. The fo
 | Emergency alerts versus quiet routine tasks | 2 | 6-8 |
 | Hold/edit/assign/vendor choice/owner approval | 2, 4 | 7, 8 |
 | Approved send, duplicate/stale approval protection | 2, 4 | 6, 9 |
-| Truthful status replies; no new ticket or invented ETA | 1, 2 | 8 B |
+| Truthful status replies; no new ticket or invented ETA | 2, 4 | 8 B |
 | Existing PMS/manager/vendor channels and prospect-specific routes | 3 | 4-6 |
 | Limited-write fallback, owner routing, reporting feed | 3 | 4 |
 | Named stack, hosting, state/queue/retry/audit, AI boundary | 3 | 5-7 |
-| Vendor replies, confirmed schedule, progress, verification/closure | 1, 4 | 8 A |
+| Vendor replies, confirmed schedule, progress, verification/closure | 2 | 8 A |
 | Unanswered-emergency checks and daily delay digests | 4 | 8 D |
 | No age-only emergency escalation | 4 | 8 D |
-| Sensitive, unreadable, identity, language, no-vendor review | 4 | 9 |
+| Sensitive, unreadable, identity, language, no-vendor review | 2, 4 | 9 |
 | AI failure, PMS/channel retry and owned exceptions | 4 | 9 |
 | Reconciliation without silent overwrites | 4 | 6, 9 |
 | Silent-intake monitoring, full-path checks, tested recovery | 4 | 9 |
 | Privacy, encrypted data, credential control, MFA/roles | 4 | 9 |
 | Staff-approved tested changes, no self-training, rollback/support | 4 | 4, 7, 9 |
+
+## September 28 redesign coverage
+
+- Page 1: explicitly assumed current process beside five matched system-assisted steps. Neutral existing systems; green added preparation. Research placeholders and business value, without numeric savings.
+- Page 2: all eight stages from receipt to human closure, independently readable. Fixed safety policy is separate from AI. Visible safety bypass, clarification return, owner approval return, and human-review branch. The optional leak annotation is omitted to preserve space for the general lifecycle.
+- Page 3: directional business exchanges connect the approved hosting boundary to resident channels, PMS, manager, vendor, owner, and reporting. Numbered arrows map to six editable route fields. OpenAI sits outside the hosting boundary and has no direct business-action connection. Payload descriptions reside in the endpoint cards; arrow labels identify their direction.
+- Page 4: daily work and policy-based alerts, oversight, authority, visible failure recovery, privacy and service controls, mechanism-to-outcome statements, and meeting CTA. It does not continue the lifecycle from page 2.
+
+The PDF is a proposed production design. It neither asserts a finished client deployment nor verifies platform permissions. Supporting controls such as support agreements, data deletion procedures, queue implementation, and low-level event contracts remain engineering/discovery details in the blueprint.
 
 ## Personalization connection fields
 
