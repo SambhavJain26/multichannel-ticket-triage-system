@@ -177,6 +177,8 @@ The staged plan is saved in `build-plan.md`.
 
 ## Outstanding Risks To Recheck During Build
 
+- 2026-09-27: Created a separate four-page half-letter `maintenance-triage-pocket-guide.pdf`, without changing the active three-page brief or personalized prospect PDFs. The independent output-first structure uses an explicitly illustrative manager view, one leak request with clarification and human approval, named proposed software, and client-fit questions. Added an editorial decision record and reproducible ReportLab builder. Verified all four pages at 390-pixel width, 396 x 612 pt dimensions, selectable text, and the meeting link. Existing V4 source files and the user's deleted workflow-map PDF were left untouched. The fictional example is not a screenshot or a claim of deployed PMS integration.
+
 - Current OpenAI model IDs, prices, and accepted API parameters may change; Stage 3 must verify live.
 - The accidentally exposed OpenAI API key should be rotated before further work or screen sharing.
 - Full-corpus Stage 3 hardening is not demo-blocking but remains weak: the 30-fixture x 3-run nano harness had under-escalations and missed safety signals. Revisit before claiming broad accuracy or moving toward production.
