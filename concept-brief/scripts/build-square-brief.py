@@ -123,8 +123,9 @@ label('Research reviewed',50,145,129,'#D6CFC5')
 text('[Website / source]<br/>[Portfolio / markets]<br/>[Verified operating detail]',50,162,130,10,WHITE,leading=12)
 label('A note for [Decision Maker]',205,141,397,ORANGE)
 text('Your [verified company detail] makes [operating goal] relevant. Connecting [intake] to [Client PMS] would help [team] spend less time gathering details and more time making informed decisions.',205,159,396,11,maxh=55)
-heading('Assumed current process',40,228,269,13)
-heading('With the system',344,228,264,13,GREEN)
+box(30,226,588,326,'#FAF8F3',LINE,14)
+heading('Assumed current process',40,236,269,13)
+heading('With the system',344,236,264,13,GREEN)
 rows = [
  ('Resident channels','Portal, email, SMS, or phone reports.','Same channels, connected','Reports enter one controlled intake.'),
  ('Staff read and identify','Find the resident, unit, and open work.','Identity and request linked','Match units, duplicates, and related work.'),
@@ -133,9 +134,9 @@ rows = [
  ('Staff decide and coordinate','Approve work, send it, and chase updates.','Staff approve; actions tracked','Record confirmed sends and follow-ups.'),
 ]
 for i,(lh,lb,rh,rb) in enumerate(rows):
-    y=251+i*53
-    box(30,y,284,43,WHITE,LINE,9)
-    box(334,y,284,43,SOFT if i in (1,2,3) else WHITE,LINE,9)
+    y=260+i*49
+    box(38,y,276,43,WHITE,LINE,9)
+    box(334,y,276,43,SOFT if i in (1,2,3) else WHITE,LINE,9)
     icon_tile(['mail','list-filter','message-circle-question-mark','database','user-round'][i],39,y+8)
     icon_tile(['mail','cpu','message-circle-question-mark','shield-check','circle-check'][i],343,y+8,GREEN if i in (1,2,3) else MUTED, '#E0ECE2' if i in (1,2,3) else PAPER)
     text(lh,73,y+6,230,11,bold=True)
@@ -143,13 +144,13 @@ for i,(lh,lb,rh,rb) in enumerate(rows):
     text(rh,377,y+6,230,11,GREEN if i in (1,2,3) else INK,True)
     text(rb,377,y+23,230,10,MUTED,maxh=13)
     if i<4:
-        arrow(172,y+44,172,y+51,MUTED); arrow(476,y+44,476,y+51)
-label('Stays',30,521,65)
-text('Channels, PMS, people’s authority',84,519,234,10)
-label('Reduced',334,521,65)
-text('Reading, copying, and chasing',398,519,220,10)
-label('Added',30,541,65,GREEN)
-text('Connectors, workflow, AI, fixed rules, database, and follow-up checks',84,539,534,10)
+        arrow(172,y+43,172,y+48,MUTED); arrow(476,y+43,476,y+48)
+label('Stays',46,516,65)
+text('Channels, PMS, people’s authority',100,514,230,10)
+label('Reduced',344,516,65)
+text('Reading, copying, and chasing',408,514,202,10)
+label('Added',46,536,65,GREEN)
+text('Connectors, workflow, AI, fixed rules, database, and follow-up checks',100,534,502,10)
 line(30,563,618,563)
 heading('What this helps your team do',30,573,258,13)
 text('Repeat less preparation. Decide sooner.<br/>Avoid duplicate actions. See who owns each step.',303,572,315,11,GREEN)
@@ -157,12 +158,12 @@ c.showPage()
 
 # PAGE 2: All lifecycle stages; separate branch rail and explicit decision gate.
 page(2,'END-TO-END WORKFLOW','From report to <font color="'+ORANGE+'">verified completion</font>','One connected process, with questions, approvals, progress, and closure kept on the same record.')
-box(30,132,409,468,WHITE,r=14)
+box(30,132,409,474,WHITE,LINE,r=14)
 line(52.5,152,52.5,574)
 stages = [
- (140,52,'Receive and connect','Keep the report and attachments; acknowledge receipt. Verify identity; link replies, duplicates, and incidents.'),
+ (142,46,'Receive and connect','Keep reports and attachments; acknowledge receipt. Verify identity; link replies, duplicates, and incidents.'),
  (196,65,'Interpret and check','<b>AI:</b> urgency, trade, language, access, and pets.'),
- (265,51,'Clarify and reassess','Ask approved questions for missing symptoms or details. Keep known facts; reassess replies and worsening issues.'),
+ (265,51,'Clarify and reassess','Ask for missing symptoms or details with approved questions. Keep known facts; reassess replies and worsening issues.'),
  (320,49,'Prepare the work','Draft PMS notes and vendor instructions. Check trade, coverage, hours, and compliance.'),
  (373,59,'Obtain the human decision','Review the original, context, and rule reason. Hold, edit, reclassify, assign, choose a vendor, or seek owner approval.'),
  (436,49,'Execute the approved action','Claim once; update the PMS and contact the vendor. Tell the resident only what the send result confirms.'),
@@ -172,32 +173,32 @@ stages = [
 for i,(y,h,head,body) in enumerate(stages):
     if i==4: box(36,y-3,397,h+5,'#FCF0E9',r=9)
     dot(i+1,41,y+2,PAPER,ORANGE if i==4 else INK)
-    heading(head,76,y,350,13,ORANGE if i==4 else INK)
-    text(body,76,y+18,348,11,maxh=42)
+    heading(head,76,y,347,13,ORANGE if i==4 else INK)
+    text(body,76,y+18,347,11,maxh=42)
     if i==1:
         box(76,y+36,346,26,SOFT,r=5)
         text('<b>Fixed rules:</b> apply policy; only raise urgency.',83,y+42,333,10,GREEN,maxh=13)
     # The numbered rail groups the steps. Extra dividers consume the small
     # inter-step gaps and make otherwise separate text blocks feel crowded.
-box(455,132,163,468,INK,r=14)
+box(455,132,163,474,INK,r=14)
 label('Routes that matter',469,144,135,'#D6CFC5')
 heading('Safety first',469,167,135,13,'#EEAA8D')
 text('Alert the on-call role under policy. Do not wait for clarification.',469,191,135,11,'#F0EBE4')
 line(449,219,449,176,ORANGE); arrow(449,176,458,176,ORANGE)
 line(439,219,449,219,ORANGE)
 heading('Clarification loop',469,263,135,13,'#B8D8C5')
-text('Reply received → reassess at step 2. No symptom yet? Ask before preparing vendor work.',469,287,135,10,'#F0EBE4')
+text('Replies return to step 2. No symptom yet? Ask before preparing vendor work.',469,287,135,11,'#F0EBE4')
 line(439,293,451,293,GREEN); line(451,293,451,240,GREEN); arrow(451,240,439,240)
 heading('Owner approval',469,366,135,13,'#EEAA8D')
-text('Spend approval returns to step 5. Vendor contact waits for approval.',469,390,135,10,'#F0EBE4')
+text('Spend approval returns to step 5. Vendor contact waits.',469,390,135,11,'#F0EBE4')
 arrow(439,383,457,383,ORANGE); line(457,383,457,426,ORANGE); arrow(457,426,439,426,ORANGE)
 line(469,452,604,452,'#514B44')
 label('At any stage',469,465,135,'#D6CFC5')
 heading('Human ownership',469,484,135,13,WHITE)
-text('Unclear, sensitive, unreadable, or failed cases go to named staff. Use approved languages; identity and vendor gaps go to review.',469,508,135,10,'#F0EBE4')
+text('Named staff review unclear, sensitive, unreadable, or failed cases, including identity or vendor gaps. Use approved languages.',469,508,135,10,'#F0EBE4')
 c.showPage()
 
-# PAGE 3: A spoke map with numbered, directional exchanges and matching route key.
+# PAGE 3: Readable connection rows; all external actions pass through n8n.
 page(3,'TOOLS & CONNECTIONS','How your <font color="'+ORANGE+'">systems connect</font>','Proposed stack and routes. Access depends on the client’s accounts and permissions.')
 def node(x,y,w,h,name,copy,fill=WHITE,ic='mail'):
     box(x,y,w,h,fill,LINE,10)
@@ -205,62 +206,51 @@ def node(x,y,w,h,name,copy,fill=WHITE,ic='mail'):
     heading(name,x+36,y+11,w-46,11.5)
     text(copy,x+12,y+34,w-24,10,MUTED,maxh=h-39)
 
-node(30,132,180,72,'Resident channels','Portal / email / SMS / phone transcripts')
-node(436,132,182,72,'OpenAI API','HTTPS API: interpretation and drafts. No action authority.',ic='cpu')
-shell(242,218,164,171,SOFT)
-box(247,223,154,49,INK,r=11)
-box(247,251,154,21,INK,r=0)
-label('Approved / client cloud',253,230,142,'#D6CFC5')
-heading('n8n workflow',253,249,141,15,WHITE)
-text('Connectors • fixed rules<br/>Queue and retries',253,284,141,10)
-line(253,318,394,318,'#BED1C1')
-heading('PostgreSQL',253,329,141,13)
-text('Processing state,<br/>audit and send checks',253,350,141,10)
-node(30,252,163,82,'[Client PMS]','Business record: residents, units, open work, final status',ic='database')
-node(455,252,163,82,'[Manager channel]','Decisions and verified staff approvals',ic='user-round')
-node(30,377,180,68,'[Vendor channel]','Approved jobs, replies, and delivery results',ic='send')
-node(438,377,180,68,'[Owner process]','Spending approval and recorded decisions',ic='circle-check')
-# Intake has distinct incoming report and outgoing resident communication paths.
-line(210,152,294,152,GREEN); arrow(294,152,294,218)
-text('1 · reports',232,134,110,10,GREEN)
-line(274,218,274,181,GREEN); arrow(274,181,210,181)
-text('questions<br/>+ updates',218,186,53,10,GREEN)
-# AI has no connection to any business endpoint.
-line(374,218,374,151,GREEN); arrow(374,151,436,151)
-text('context',379,135,58,10,GREEN)
-line(436,181,393,181,GREEN); arrow(393,181,393,218)
-text('drafts',402,194,46,10,GREEN)
-arrow(193,279,242,279); text('2 · read',197,263,45,10,GREEN)
-arrow(242,314,193,314); text('updates',196,299,46,10,GREEN)
-arrow(406,279,455,279); text('3 · review',407,263,48,10,GREEN,maxh=13)
-arrow(455,314,406,314); text('approve',408,299,46,10,GREEN)
-line(258,389,258,400,GREEN); arrow(258,400,210,400)
-text('4 · job',213,382,45,10,GREEN)
-line(210,426,281,426,GREEN); arrow(281,426,281,389)
-text('reply',236,429,44,10,GREEN)
-line(390,389,390,400,GREEN); arrow(390,400,438,400)
-text('5 · spend',391,382,46,10,GREEN,maxh=13)
-line(438,426,368,426,GREEN); arrow(368,426,368,389)
-text('decision',380,429,55,10,GREEN)
-arrow(324,389,324,445)
-box(232,446,184,28,WHITE,LINE,10)
-icon('chart-no-axes-column',244,452,16)
-text('6 · [Reporting tool]',268,453,137,11,bold=True)
-text('events',330,427,44,10,GREEN)
-label('Connection methods / confirm for each prospect',30,483,588,ORANGE)
-routes=[
- ('1','[API / webhook / secure mailbox]'),
- ('2','[API / partner / export-import route]'),
- ('3','[App integration / secure review link]'),
- ('4','[PMS vendor route / portal / email service]'),
- ('5','[Existing owner approval process]'),
- ('6','[Reporting connection]'),
+shell(30,132,186,416,SOFT)
+box(38,140,170,75,INK,r=10)
+label('Added / approved hosting',50,151,147,'#D6CFC5')
+heading('n8n workflow',50,171,147,16,WHITE)
+text('All connections run here.',50,195,147,10,'#E9E3DB')
+icon('shield-check',50,231,18,GREEN)
+heading('Rules and delivery',50,258,148,13)
+text('Fixed safety policy,<br/>approved questions,<br/>queue and retries.',50,280,148,11)
+arrow(111,328,111,350); arrow(131,350,131,328)
+box(44,357,158,91,WHITE,'#BED1C1',9)
+icon('database',55,369,18,GREEN)
+heading('PostgreSQL',80,371,115,13)
+text('Processing state,<br/>conversation history,<br/>audit and send checks.',55,394,135,10)
+line(50,465,196,465,'#BED1C1')
+text('Client-owned or approved cloud.<br/><br/>PMS remains the business record.',50,478,147,10,MUTED)
+
+# A generous 144-point routing corridor keeps labels separate from endpoints.
+connections = [
+ ('Resident channels','Portal / email / SMS / phone','[API / webhook / secure mailbox]','reports + replies','questions + updates','mail'),
+ ('OpenAI API','Interpretation and drafts only','HTTPS API; outside client hosting','context to AI','structured result','cpu'),
+ ('[Client PMS]','Resident / unit / open-work records','[API / partner / export-import route]','lookup + updates','records + result','database'),
+ ('[Manager channel]','Human review and authenticated approval','[App integration / secure review link]','decision request','staff approval','user-round'),
+ ('[Vendor channel]','Approved job and delivery tracking','[PMS route / portal / email service]','approved job','reply + send result','send'),
+ ('[Owner process]','Spending authority stays with the owner','[Existing owner approval process]','spend request','owner decision','circle-check'),
+ ('[Reporting tool]','Portfolio status and exception reporting','[Reporting connection]','operational events',None,'chart-no-axes-column'),
 ]
-for i,(num,route) in enumerate(routes):
-    x=30 if i<3 else 334; y=501+(i%3)*20
-    text(num,x,y,18,10,GREEN,True); text(route,x+19,y,265,10)
-line(30,563,618,563)
-text('<b>Confirm:</b> [Products], [permissions], [hosting / AI data policy]. If PMS writes are blocked, use [staff task / approved import]. Manager approvals must be authenticated; every route returns confirmed state where supported.',30,574,588,10,MUTED,maxh=30)
+for i,(name,role,method,outgoing,incoming,ic) in enumerate(connections):
+    y=132+i*60
+    box(370,y,248,54,WHITE,LINE,9)
+    icon(ic,381,y+9,16)
+    heading(name,404,y+9,203,12)
+    text(role,382,y+25,224,10,MUTED,maxh=13)
+    text(method,382,y+39,224,10,MUTED,maxh=13)
+    # Incoming resident reports reverse the usual request/response direction.
+    if i==0: arrow(370,y+22,216,y+22)
+    else: arrow(216,y+22,370,y+22)
+    text(outgoing,225,y+7,140,10,GREEN,maxh=13)
+    if incoming:
+        if i==0: arrow(216,y+48,370,y+48)
+        else: arrow(370,y+48,216,y+48)
+        text(incoming,225,y+33,140,10,GREEN,maxh=13)
+
+line(30,560,618,560)
+label('Confirm before connecting',30,572,186,ORANGE)
+text('[Products / permissions / hosting / AI data policy]. If PMS writes are blocked: [staff task / approved import]. Confirm reply and delivery support for each route.',230,571,388,10,MUTED,maxh=38)
 c.showPage()
 
 # PAGE 4: Running the service, not repeating the lifecycle.
@@ -280,11 +270,13 @@ text('Staff review legal and accommodation cases. Verify identity before reveali
 box(30,320,588,116,WHITE,LINE,12)
 icon('shield-check',46,335,18,GREEN)
 heading('Controls and recovery',72,337,529,14)
-text('AI failure keeps reports and safety checks. Failed PMS updates or sends retry, then go to staff. Reject stale or duplicate approvals. Log decisions and send results; give residents confirmed facts.',46,365,263,11,maxh=55)
-text('Review data conflicts. Set roles, MFA, encryption, secrets, and retention. Monitor the full path; test backup restores, rule changes, and rollback. No self-training.',337,365,264,11,maxh=55)
+heading('Keep failures visible',46,363,263,11,GREEN)
+text('Keep reports and safety checks if AI fails. Retry failed writes or sends; route exceptions to staff. Reject stale or duplicate approvals.',46,381,263,10,maxh=42)
+heading('Protect and maintain the service',337,363,264,11,GREEN)
+text('Review data conflicts. Set access, MFA, encryption, secrets, and retention. Monitor; test backup restores, changes, and rollback. No self-training.',337,381,264,10,maxh=42)
 
 heading('What this changes for the business',30,450,588,14)
-text('Linked history reduces chasing; policy-led alerts reduce interruptions. Confirmed updates and shared reporting support clearer handoffs and portfolio visibility.',30,474,588,11,GREEN,maxh=28)
+text('Linked history means less chasing. Policy-led alerts limit interruptions. Logged decisions, confirmed resident updates, and shared reporting support reliable handoffs and portfolio visibility.',30,474,588,11,GREEN,maxh=28)
 
 shell(30,514,588,92,INK)
 heading('Discuss your maintenance workflow.',46,531,388,17,WHITE)

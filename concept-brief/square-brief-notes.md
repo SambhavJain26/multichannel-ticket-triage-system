@@ -17,6 +17,10 @@ Output: `output/pdf/maintenance-triage-square-brief.pdf`. Four 648 x 648 point p
 
 Reviewed all three rendered pages of `output/pdf/maintenance-triage-prospect-brief.pdf` and the portfolio's `src/index.css`, `Hero.tsx`, `Methodology.tsx`, and `OutcomeBand.tsx`. Adopted Geist display headings, Manrope body text, warm stone background, terracotta brand emphasis, nested rounded frames, thin icons, and dark anchor panels. Green denotes added preparation or confirmed operational movement; existing client tools remain neutral. No gradients.
 
+## Current reference audit
+
+See `square-brief-design-audit.md` for page-specific findings, reference principles, changes and verification. The latest connection map supersedes the historical numbered-key layout below: methods now sit beside each endpoint, with separate payload arrows in a wide corridor. The incoming PDF and builder are archived under `square-20260928-reference-audit`.
+
 ## QA
 
 Render with Poppler and inspect every page. Confirm exactly four square pages, no overflow or line collisions, distinct AI/fixed-policy display, no AI-to-vendor connection, working CTA, and no demo language. Only use verified facts when replacing personalization placeholders. Keep template placeholders visible until a specific prospect is selected.

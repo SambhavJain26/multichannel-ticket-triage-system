@@ -197,6 +197,12 @@ The staged plan is saved in `build-plan.md`.
 - The live Gmail mailbox should stay dedicated to demo traffic; unrelated unread messages can be ingested when the IMAP trigger is active.
 - Before a prospect call, run the Stage 8 clean reset or restore a clean local snapshot so old test tickets such as `MR-0002` do not show on the board.
 
+## 2026-09-28 - Reference-based visual audit
+
+- Compared all three portrait-reference pages with the square brief. Recorded concrete findings and changes in `concept-brief/square-brief-design-audit.md`; used redesign-existing-projects audit guidance and static-document principles from the existing design skills.
+- Grouped page 1 comparison, tuned page 2 rail spacing, rebuilt page 3 with readable labeled connection rows and local method labels, and split page 4 controls into scan-friendly sections while preserving its full CTA panel. Archived incoming source/PDF in `square-20260928-reference-audit`.
+- Durable lesson: reading skills or running text-bound checks does not constitute a visual audit. Record page-specific findings, compare rendered references, revise, and inspect the final renders. Production scope and unrelated files remain unchanged.
+
 ## 2026-09-28 - Four-page production brief redesign
 
 - Rebuilt the reusable square brief around current/system comparison, the full eight-stage lifecycle, a directional system map, and daily controls/outcomes. Production blueprint controls scope; the demo's How It Works document is only a behaviour cross-check. No live client deployment or platform permission is claimed.
