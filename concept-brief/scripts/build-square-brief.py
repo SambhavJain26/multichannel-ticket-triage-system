@@ -1,4 +1,6 @@
-"""Four-page square solution brief. Synthetic examples; no client data."""
+"""Production solution brief, based on docs/production-maintenance-triage-blueprint.md.
+Portfolio type and palette; illustrative examples, not claims of a live deployment.
+"""
 from pathlib import Path
 from reportlab.pdfgen import canvas
 from reportlab.pdfbase import pdfmetrics
@@ -6,37 +8,58 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.lib.colors import HexColor
 from reportlab.platypus import Paragraph
 from reportlab.lib.styles import ParagraphStyle
+from fontTools.ttLib import TTFont as SourceFont
+from fontTools.varLib.instancer import instantiateVariableFont
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / 'output/pdf/maintenance-triage-square-brief.pdf'
 OUT.parent.mkdir(parents=True, exist_ok=True)
-for name, file in [('Body','arial.ttf'), ('Bold','arialbd.ttf')]:
-    pdfmetrics.registerFont(TTFont(name, 'C:/Windows/Fonts/' + file))
+CACHE=ROOT/'tmp/pdfs/square-fonts'
+CACHE.mkdir(parents=True,exist_ok=True)
+for name,family,weight in [('Body','manrope',500),('Bold','manrope',700),('Display','geist',800)]:
+    dest=CACHE/(name+'.ttf')
+    font=SourceFont(ROOT/f'concept-brief/assets/fonts/{family}-variable.ttf')
+    font=instantiateVariableFont(font,{'wght':weight},inplace=True)
+    # Distinct embedded names prevent ReportLab from treating both weights as one face.
+    for rec in font['name'].names:
+        if rec.nameID in (1,4,6):rec.string=('Brief'+name).encode(rec.getEncoding())
+    font.save(dest)
+    pdfmetrics.registerFont(TTFont(name,str(dest)))
 pdfmetrics.registerFontFamily('Body', normal='Body', bold='Bold')
 W = H = 648
-INK='#191B18'; MUTED='#585F58'; PAPER='#F7F5EF'; LINE='#D5D9D0'
-GREEN='#28634C'; SOFT='#EAF2EB'; ORANGE='#C7512A'; WHITE='#FFFFFF'
+INK='#141210'; MUTED='#5A544B'; PAPER='#F4F1EA'; LINE='#E4DED4'
+GREEN='#28634C'; SOFT='#EFF5F0'; ORANGE='#C2542D'; WHITE='#FFFFFF'
 c=canvas.Canvas(str(OUT), pagesize=(W,H))
-c.setTitle('Maintenance request triage | A solution brief')
+c.setTitle('Maintenance request coordination | Production solution brief')
 c.setAuthor('Sambhav Jain')
 
 def box(x,y,w,h,fill=WHITE,stroke=None,r=12):
+    c.setLineWidth(.6)
     c.setFillColor(HexColor(fill)); c.setStrokeColor(HexColor(stroke or fill))
     c.roundRect(x,H-y-h,w,h,r,fill=1,stroke=bool(stroke))
-def text(s,x,y,w,size=13,color=INK,bold=False,leading=None):
-    p=Paragraph(s,ParagraphStyle('p',fontName='Bold' if bold else 'Body',fontSize=size,leading=leading or size*1.3,textColor=HexColor(color)))
+def shell(x,y,w,h,fill=WHITE):
+    box(x,y+2,w,h,'#EAE5DC',r=18)
+    box(x,y,w,h,'#FAF8F3',LINE,18)
+    box(x+5,y+5,w-10,h-10,fill,r=13)
+def text(s,x,y,w,size=13,color=INK,bold=False,leading=None,font=None):
+    p=Paragraph(s,ParagraphStyle('p',fontName=font or ('Bold' if bold else 'Body'),fontSize=size,leading=leading or size*1.3,textColor=HexColor(color)))
     _,h=p.wrap(w,1000); p.drawOn(c,x,H-y-h)
     assert y+h < 616, (s,y,h)
     return h
 def line(x,y,x2,y2,color=LINE,width=1):
     c.setStrokeColor(HexColor(color));c.setLineWidth(width);c.line(x,H-y,x2,H-y2)
-def arrow(x,y,x2,y2,color=GREEN):
+def arrow(x,y,x2,y2,color=GREEN,both=False):
     line(x,y,x2,y2,color,1.4)
     import math
     a=math.atan2(y2-y,x2-x)
     for d in [-.55,.55]:
         line(x2,y2,x2-6*math.cos(a+d),y2-6*math.sin(a+d),color,1.4)
-def label(s,x,y,w,color=GREEN):text(s.upper(),x,y,w,9.5,color,True,12)
+    if both:
+        for d in [-.55,.55]:line(x,y,x+6*math.cos(a+d),y+6*math.sin(a+d),color,1.4)
+def label(s,x,y,w,color=GREEN):text(s.upper(),x,y,w,9,color,True,12)
+def title(s,x,y,w,size=27,color=INK):return text(s,x,y,w,size,color,leading=size*1.08,font='Display')
+def badge(s,x,y,w,color=GREEN,fill=SOFT):
+    box(x,y,w,22,fill,r=11);text(s,x+10,y+4,w-18,9,color,True)
 def icon(kind,x,y,color=GREEN):
     c.setStrokeColor(HexColor(color));c.setLineWidth(1.5)
     if kind=='person':
@@ -56,113 +79,119 @@ def icon(kind,x,y,color=GREEN):
         line(x+5,y+6,x+17,y+6,color);line(x+5,y+11,x+13,y+11,color)
 def page(n,section,title,sub):
     box(0,0,W,H,PAPER,r=0)
-    text('Sambhav Jain',32,22,180,11,bold=True)
-    text('FOR [CLIENT COMPANY]',365,23,250,9,MUTED)
-    line(32,48,616,48)
-    label(f'0{n} / {section}',32,64,580)
-    text(title,32,86,584,29,bold=True,leading=32)
-    text(sub,32,157,580,13,MUTED)
+    text('Sambhav Jain',30,19,220,11,bold=True)
+    text('AI automation for property management',30,35,280,8.5,MUTED)
+    text('PREPARED FOR',437,19,181,8,MUTED)
+    text('[Client Company]',437,33,181,10,bold=True)
+    line(30,55,618,55)
+    badge(f'0{n} / {section}',30,67,255,MUTED,WHITE)
+    text(title,30,99,588,27,leading=29,font='Display')
+    text(sub,30,162,588,11.5,MUTED)
     line(32,615,616,615)
-    c.setFont('Body',9);c.setFillColor(HexColor(MUTED));c.drawString(32,16,'sambhavbuilds.com')
+    c.setFont('Body',8.5);c.setFillColor(HexColor(MUTED));c.drawString(32,16,'sambhavbuilds.com / Production solution brief')
     c.drawRightString(616,16,f'0{n} / 04')
 def end():c.showPage()
 
-# 1: Business relevance, then a visible change in responsibility.
-page(1,'The operational change','Less preparation work.\n<br/>Better-informed decisions.','Maintenance request triage and coordination for your existing operation.')
-box(32,199,584,107,WHITE,LINE)
-box(40,207,151,91,INK,r=9)
-label('Prepared for',53,219,125,'#D6D9D0')
-text('[Decision Maker]',53,239,125,13,WHITE,True)
-text('[Client Company]',53,263,125,11,'#D6D9D0')
-label('A note for your team',207,213,390,ORANGE)
-text('After reviewing [verified company detail], I see a possible fit around [specific intake bottleneck]. This system would help [team or role] spend less time chasing details and more time deciding the next action.',207,232,392,12)
-label('Today / staff assemble the context',32,325,280,MUTED)
-label('With the system / staff decide',340,325,276)
-steps=[('Read each message','Capture and link the request'),('Chase the missing details','Ask focused follow-up questions'),('Search records and vendors','Prepare context and vendor options')]
-for i,(a,b) in enumerate(steps):
-    y=348+i*53
-    box(32,y,264,42,WHITE,LINE,9);text(a,46,y+12,239,12,bold=True)
-    arrow(307,y+21,329,y+21)
-    box(340,y,276,42,SOFT,r=9);text(b,354,y+12,248,12,GREEN,True)
-    if i<2:
-        arrow(164,y+43,164,y+51,MUTED);arrow(478,y+43,478,y+51)
-line(32,519,616,519)
-icon('person',34,534,MUTED)
-text('What stays yours',68,532,200,13,bold=True)
-text('Resident channels, the PMS, vendor relationships, and staff approval.',68,552,536,13,MUTED)
-text('Intended result: less repeat handling, clearer urgency, and a prepared next step.',32,586,584,12,GREEN,True)
+# 1: Relevance and the division of work.
+page(1,'What changes for your team','Maintenance requests, prepared.<br/><font color="'+ORANGE+'">Decisions stay with your team.</font>','A production system that gathers details, prepares the next action, and tracks each handoff.')
+shell(30,202,588,105)
+box(38,210,151,89,INK,r=11)
+label('Research reviewed',51,222,127,'#CFC6BA')
+text('[Company website]<br/>[Portfolio / markets]<br/>[Verified operating detail]',51,242,128,10.5,WHITE)
+label('A note for [Decision Maker]',204,215,395,ORANGE)
+text('Your [verified company detail] suggests a need to [specific operating goal]. I would connect [current intake] with [Client PMS] so [team] can review prepared requests instead of chasing the same details.',204,235,396,11.5)
+label('Today / repeated staff work',42,325,265,MUTED)
+label('Added / system preparation',343,325,260)
+items=[('Read and match messages','Link resident, unit, and open work','message'),('Ask for missing information','Ask only what is still missing','message'),('Look up policy and vendors','Prepare eligible options and notes','db')]
+for i,(a,b,ic) in enumerate(items):
+    y=349+i*57
+    box(30,y,275,44,WHITE,r=11);icon(ic,42,y+12,MUTED);text(a,72,y+12,221,11.5,bold=True)
+    arrow(313,y+22,333,y+22)
+    box(343,y,275,44,SOFT,r=11);text(b,356,y+12,248,11.5,GREEN,True)
+    if i<2:arrow(168,y+45,168,y+54,MUTED);arrow(480,y+45,480,y+54)
+shell(30,524,588,79,INK)
+label('What stays',45,537,95,'#EEAA8D')
+text('Your PMS, resident channels, vendor relationships, and approval authority.',145,535,455,12,WHITE,True)
+text('Less chasing. Clearer priorities. A visible owner and next action.',45,575,551,12,'#DDD7CE')
 end()
 
-# 2: Dialogue and a real-looking, explicitly illustrative decision preview.
-page(2,'One request, end to end','From a resident message\n<br/>to a manager decision.','Illustrative example: a kitchen leak. Known access and pet details stay with the request.')
-line(48,226,48,552,GREEN,1.5)
-for y,num in [(216,'1'),(305,'2'),(421,'3'),(551,'4')]:
-    box(34,y,28,28,PAPER,GREEN,14);text(num,43,y+5,20,12,GREEN,True)
-label('Resident reports',78,208,200)
-box(78,228,538,62,WHITE,LINE,10)
-text('"Water is spreading under the kitchen sink. It is still flowing with the tap off. My dog is here. You have permission to enter."',92,240,510,13)
-label('System checks and clarifies',78,307,500)
-text('Links the unit and flags spreading water under your safety rules. Alerts the on-call team without waiting for a reply.',78,328,528,12)
-box(78,368,538,37,SOFT,r=9)
-text('If onset is missing: "When did the water start spreading?"',92,379,510,12,GREEN,True)
-label('Manager reviews / illustrative preview',78,422,500,ORANGE)
-box(78,442,538,96,INK,r=12)
-text('Kitchen leak  |  [Property / Unit]',93,454,508,15,WHITE,True)
-text('Escalation: spreading water; flow continues.<br/>Access allowed. Dog in unit. Plumbing vendor options ready.',93,479,500,12,'#E0E4DB')
-text('Review original message   /   Hold   /   Select vendor',93,516,500,11,'#F2B69A',True)
-text('Approved action is sent and recorded.',78,550,530,14,bold=True)
-text('The resident is told a provider was contacted only after the send succeeds. No invented arrival time.',78,574,530,12,MUTED)
+# 2: Process rail and a distinct manager-facing decision package.
+page(2,'How a request moves','From the first message<br/>to an approved action.','Illustrative production example: spreading water under a kitchen sink at 10:42 p.m.')
+shell(30,200,588,61)
+icon('message',45,220)
+text('"Water is spreading under the kitchen sink. The tap is off but it is still flowing. My dog is here. You have permission to enter."',80,214,522,12)
+shell(30,276,353,280)
+line(54,306,54,526)
+stages=[(291,'1','Match the request','Verify resident and unit; keep the original message. Link repeats and replies.'),(357,'2','Interpret and check safety','AI suggests urgency and trade.'),(438,'3','Ask only what is missing','Approved follow-up: "When did the water start spreading?" Reassess the reply.'),(512,'4','Prepare the human decision','Safety alerts do not wait for clarification.')]
+for y,num,head,copy in stages:
+    box(42,y+2,24,24,PAPER,r=12);text(num,50,y+6,15,10,bold=True)
+    text(head,77,y,285,12,bold=True)
+    text(copy,77,y+21,285,11,MUTED)
+    if num=='1':line(77,y+57,365,y+57)
+    if num=='2':
+        box(77,399,290,28,SOFT,r=8)
+        text('<b>Fixed rules:</b> raise urgency; never lower it.',85,406,274,10,GREEN)
+shell(397,276,221,280,INK)
+label('Manager receives',412,292,191,'#EEAA8D')
+title('One prepared<br/>decision',412,315,187,21,WHITE)
+text('<b>Kitchen leak</b><br/>[Property / Unit]<br/><br/>Spreading water; flow continues.<br/>Entry allowed. Dog in unit.<br/><br/>Original message, policy reason, vendor choices, and owner-approval need.',412,371,189,11.3,'#F0EBE4')
+badge('Review / hold / approve',412,520,190,WHITE,'#39352F')
+arrow(384,490,396,490)
+text('<b>After approval:</b> claim the action once, update the PMS, and contact the vendor. Tell the resident only what the sending service confirms.',30,575,588,12,GREEN)
 end()
 
-# 3: Named software with explicit read, send, and approval routes.
-page(3,'The proposed build','Connected to your tools.\n<br/>Run in an approved environment.','Existing tools stay neutral. Green shows the software and connections I would add.')
-box(32,207,584,56,WHITE,LINE)
-icon('message',47,223,MUTED)
-text('Your resident channels',82,217,500,14,bold=True)
-text('[Portal]  /  [Maintenance Email]  /  [SMS Provider]',82,240,500,12,MUTED)
-arrow(324,264,324,297)
-text('API, webhook, or mailbox access',339,274,264,10,MUTED)
-box(32,301,365,144,SOFT,GREEN)
-label('Added / client cloud or approved host',47,313,336)
-text('n8n workflows',47,335,320,18,GREEN,True)
-text('Capture messages, apply fixed safety rules, ask questions, and route approved actions.',47,364,330,13)
-icon('db',47,411)
-text('PostgreSQL: request state and history',80,414,300,12,GREEN,True)
-box(429,301,187,144,WHITE,LINE)
-label('External AI service',441,313,164)
-text('OpenAI API',441,336,164,17,bold=True)
-text('Reads allowed message data and returns a summary.',441,365,161,12)
-text('No direct vendor contact.',441,413,161,11,GREEN,True)
-arrow(398,352,429,352);arrow(429,390,398,390)
-line(210,446,210,467,GREEN,1.4)
-line(117,467,523,467,GREEN,1.4)
-arrow(117,467,117,485);arrow(324,467,324,485);arrow(523,467,523,485)
-for x,w,title,desc in [(32,177,'[Client PMS]','Read unit context; write approved updates.'),(225,177,'[Manager Channel]','Send review request; receive approval.'),(418,198,'[Vendor Channel]','Send only after staff approval.')]:
-    box(x,489,w,73,WHITE,LINE,10)
-    text(title,x+12,501,w-24,13,bold=True);text(desc,x+12,526,w-24,11,MUTED)
-text('Connection routes depend on your PMS access. If writes are limited, prepare a task for staff instead. Hosting, credentials, and AI data use are agreed with you.',32,578,584,12,MUTED)
+# 3: Actual business connections; AI never controls downstream channels directly.
+page(3,'What connects to what','Your existing tools.<br/><font color="'+ORANGE+'">A connected production service.</font>','Proposed stack: n8n, PostgreSQL, and the OpenAI API. Exact routes follow your access and permissions.')
+shell(30,205,588,51)
+icon('message',44,219,MUTED)
+text('Existing portal / email / SMS / phone transcripts',77,215,524,12,bold=True)
+text('Resident messages in; approved questions and confirmed updates back.',77,235,524,10.5,MUTED)
+arrow(206,257,206,289,both=True)
+text('API, webhook, or mailbox',224,264,255,10,MUTED)
+shell(30,294,366,159,SOFT)
+label('Client-owned or approved cloud',46,308,332)
+title('n8n workflows',46,329,330,21)
+text('Verify context; apply fixed rules; ask questions; route approvals; coordinate sends.',46,359,331,12)
+line(46,401,380,401,'#C9DCCF')
+icon('db',46,414)
+text('<b>PostgreSQL</b> stores state, audit history, queued work, and duplicate-action checks.',79,408,300,11)
+shell(424,294,194,159)
+label('External service',440,308,162)
+title('OpenAI API',440,333,162,19)
+text('Receives limited, approved context. Returns the issue summary and draft wording.',440,363,160,11.5)
+text('No approval authority.',440,426,160,10.5,GREEN,True)
+arrow(397,355,423,355);arrow(423,401,397,401)
+line(206,454,206,473,GREEN,1.1);line(120,473,528,473,GREEN,1.1)
+for x,w,head,desc in [(30,180,'[Client PMS]','Resident and unit lookup; work orders and final status.'),(234,180,'[Manager Channel]','Decision request out; authorized approval back.'),(438,180,'[Vendor Channel]','Approved job out; replies and delivery status back.')]:
+    arrow(x+w/2,473,x+w/2,490,both=True)
+    box(x,493,w,70,WHITE,r=12)
+    text(head,x+12,503,w-24,12,bold=True);text(desc,x+12,525,w-24,10.5,MUTED)
+text('<b>PMS stays the business record.</b> If write access is limited, return prepared tasks for staff. Connect owner approvals and reporting to the tools already in use.',30,578,588,11.5,MUTED)
 end()
 
-# 4: Evidence boundaries, buyer controls, and a restrained working-call CTA.
-page(4,'Capability and control','A working demo.\n<br/>A client-specific implementation.','The core flow is built. Your PMS connection and production setup are separate work.')
-label('Implemented in the local demo',32,207,584)
-demo=[('message','Follow-up conversations','Missing details stay linked to the same request.'),('person','Manager-approved vendor email','Vendor options are shown; Hold sends nothing.'),('check','Duplicate-send protection','A repeated approval cannot claim a second send.')]
-for i,(ic,title,desc) in enumerate(demo):
-    y=233+i*57
-    icon(ic,34,y+2)
-    text(title,72,y,544,14,bold=True)
-    text(desc,72,y+23,544,12,MUTED)
-    if i<2:line(72,y+48,616,y+48)
-text('Demo tools: n8n, PostgreSQL, OpenAI, Airtable, Telegram, and email. These demo channels do not need to become your business tools.',32,410,584,12,MUTED)
-box(32,455,584,65,SOFT,r=10)
-text('Your team keeps the decision.',46,468,550,14,GREEN,True)
-text('Spend, vendor choice, sensitive cases, appointments, and closure stay with staff. Failed sends remain visible; they do not become success updates.',46,489,550,11)
-box(32,535,584,66,INK,r=12)
-text('Would this fit your maintenance process?',47,545,365,16,WHITE,True)
-text('Bring your PMS and current intake setup.\n<br/>Sambhav Jain  |  sambhav@sambhavbuilds.com',47,569,355,10.5,'#D6D9D0')
-box(435,551,165,34,ORANGE,r=8)
-text('Discuss your setup',450,560,147,12,WHITE,True)
-c.linkURL('https://cal.com/sambhav-builds/pm-automation-audit',(435,H-585,600,H-551),relative=0)
+# 4: Production lifecycle and service ownership, without demo framing.
+page(4,'Daily operation and control','The process continues<br/>after the vendor is contacted.','Production scope includes progress tracking, failure handling, and a named person for exceptions.')
+shell(30,204,588,92)
+label('In your PMS / same work order',46,217,552)
+for x,head,desc in [(46,'Vendor replies','Quote or acceptance'),(190,'Time confirmed','Then update resident'),(334,'Work progresses','Chase stalled work'),(478,'Staff verify','Then close the job')]:
+    text(head,x,243,127,12,bold=True);text(desc,x,265,126,10.5,MUTED)
+    if x<478:arrow(x+124,251,x+138,251)
+label('Your team controls',30,316,278,ORANGE)
+label('The service keeps work visible',337,316,281)
+controls=[('person','Approvals','Vendor choice, spend, owner approval, sensitive cases, and closure.'),('db','Access and data','Approved data fields, role-based access, retention, and protected credentials.'),('check','Policy and ownership','Your on-call rules and vendor criteria. A named operator owns service health.')]
+for i,(ic,head,body) in enumerate(controls):
+    y=340+i*59
+    icon(ic,31,y+2,ORANGE);text(head,65,y,246,12,bold=True);text(body,65,y+20,246,10.5,MUTED)
+    if i<2:line(65,y+53,309,y+53)
+shell(337,337,281,179,INK)
+text('<b>Failed connection</b><br/>Queue and retry. If it still fails, assign it to a person.<br/><br/><b>Conflicting or unclear data</b><br/>Flag for review; never overwrite silently.<br/><br/><b>Service health</b><br/>Monitor intake, reconcile PMS updates, and test encrypted backup recovery.',352,352,251,11,'#F0EBE4')
+shell(30,538,588,65,INK)
+title('Map this to your operation.',46,550,368,18,WHITE)
+text('Your channels, PMS access, approval rules, and hosting.<br/>Sambhav Jain / sambhav@sambhavbuilds.com',46,573,368,9.5,'#D6CFC5')
+box(442,552,159,37,ORANGE,r=18.5)
+text('Discuss the fit',455,562,112,11,WHITE,True)
+box(571,560,22,22,'#D87654',r=11);arrow(577,571,587,571,WHITE)
+c.linkURL('https://cal.com/sambhav-builds/pm-automation-audit',(442,H-589,601,H-552),relative=0)
 end()
 c.save()
 print(OUT)
