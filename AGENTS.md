@@ -146,7 +146,7 @@ Data-only snapshots do not include `triage.ticket_ref_seq`. Any restore that rep
 
 ## Commit And Completion Guidelines
 
-For public work samples, use genuine local workflow and output screenshots with synthetic or approved demo data. Explain each workflow in plain language and show enlarged canvas sections when node labels are small. Keep internal paths, document names, personal contact routes, and internal gaps or production-readiness checklists out of prospect-facing PDFs; keep operational caveats in the project docs instead.
+For public work samples, use genuine local workflow and output screenshots with synthetic or approved demo data. Keep the workflow canvas theme consistent across full views and enlarged captures. Explain each workflow in plain language and show enlarged canvas sections when node labels are small. Keep internal paths, document names, personal contact routes, and internal gaps or production-readiness checklists out of prospect-facing PDFs; keep operational caveats in the project docs instead.
 
 Use short imperative commits, for example `docs: update triage workflow guidance` or `feat: add fixture harness`.
 
