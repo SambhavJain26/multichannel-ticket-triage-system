@@ -197,6 +197,12 @@ The staged plan is saved in `build-plan.md`.
 - The live Gmail mailbox should stay dedicated to demo traffic; unrelated unread messages can be ingested when the IMAP trigger is active.
 - Before a prospect call, run the Stage 8 clean reset or restore a clean local snapshot so old test tickets such as `MR-0002` do not show on the board.
 
+## 2026-09-28 - Role clarity and full-brief copy pass
+
+- Added actor labels across page 2 and a concise AI/workflow/people key; kept AI recommendation distinct from fixed escalation rules and manager authority. Shortened repetitive process copy while keeping clarification, owner approval, confirmed sending, progress, and staff closure.
+- Standardized page-3 external cards, moved unconfirmed connection routes to a compact key, and joined the left and right connection groups at n8n so the diagram does not imply a direct AI/database or AI/vendor route. Reviewed and tightened copy across all four pages using the syntax-polish skill; archived the incoming PDF and builder under `square-20260928-role-clarity`.
+- Rendered every page at desktop size, corrected text collisions and connector placement, and kept the validation gate for page geometry, fonts, capability terms, and meeting link. Unrelated working-tree changes remain outside the task.
+
 ## 2026-09-28 - Central connection map revision
 
 - Replaced page 3's long parallel-arrow rows with a three-zone architecture: resident channels and external AI, the proposed hosting/n8n/PostgreSQL service, and existing PMS/manager/vendor/owner/reporting tools. Short branches show each business-system connection; endpoint copy and a concise confirmation area retain payloads and route placeholders. The OpenAI API has no business-action path, and AWS remains a client/approved-cloud placeholder.

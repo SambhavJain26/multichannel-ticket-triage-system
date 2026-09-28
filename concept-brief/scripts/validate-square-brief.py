@@ -11,8 +11,10 @@ expected = [
     ['Assumed current process', 'Focused follow-up questions', 'What this helps', 'Added'],
     ['Receive and connect', 'Fixed rules', 'Clarify and reassess', 'Prepare the work',
      'Obtain the human decision', 'Execute the approved action', 'Coordinate progress',
-     'Verify and close', 'Do not wait', 'Owner approval', 'without opening new requests'],
-    ['n8n', 'PostgreSQL', 'OpenAI API', 'Reporting tool', 'secure mailbox', 'partner', 'secure review link'],
+     'Verify and close', 'Do not wait', 'Owner approval', 'without a new request',
+     'Who handles what', 'Workflow', 'Manager', 'Staff'],
+    ['n8n', 'PostgreSQL', 'OpenAI API', 'Reporting tool', 'secure mailbox', 'partner',
+     'secure review link', 'Added / proposed system', 'Routes to confirm with the client'],
     ['unanswered emergencies', 'age alone never', 'stale or duplicate', 'rollback', 'backup restores', 'Discuss the fit'],
 ]
 used_fonts = set()

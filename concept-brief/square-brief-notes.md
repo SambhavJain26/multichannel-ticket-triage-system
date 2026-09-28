@@ -19,7 +19,7 @@ Reviewed all three rendered pages of `output/pdf/maintenance-triage-prospect-bri
 
 ## Current reference audit
 
-See `square-brief-design-audit.md` for page-specific findings, reference principles, changes and verification. Page 3 now uses a central hosting boundary with short grouped connections; the earlier row and numbered-key layouts remain documented as history. The incoming PDF and builder are archived under `square-20260928-central-map`.
+See `square-brief-design-audit.md` for page-specific findings, reference principles, changes and verification. Page 2 now labels AI, workflow, manager, and staff ownership. Page 3 uses a central hosting boundary with grouped connections and matching external cards; the earlier row and numbered-key layouts remain documented as history. The incoming PDF and builder for this pass are archived under `square-20260928-role-clarity`.
 
 ## QA
 

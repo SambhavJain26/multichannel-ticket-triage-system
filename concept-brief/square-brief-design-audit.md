@@ -36,3 +36,11 @@ The row map made the exchanges readable but gave its many parallel arrows more v
 - Bottom: editable intake, PMS, vendor, and manager connection fields plus permissions, hosting, AI-data, and delivery-result checks.
 
 This replaces the page-3 finding and row-map solution in the historical table above. The previous PDF and exact builder are archived under `output/pdf/archive/square-20260928-central-map/`. The new page was inspected at 1200px and native 648px after correcting a wrapped centre heading and crowded route notes. The long parallel-arrow pattern is no longer used.
+
+## 2026-09-28 role and copy pass
+
+Page 2 previously described the work but left automatic preparation and human authority implicit in several steps. It now labels the responsible actor at every stage and uses a concise role key. AI makes recommendations and drafts; fixed rules can only raise urgency; the workflow links, asks, checks, sends after approval, and tracks delivery; the manager decides; staff verify and close. The side rail no longer repeats each exception branch in long prose.
+
+Page 3 had inconsistent external card padding and divider use. All external cards now share one icon, heading, body, corner, and border treatment. Proposed connection methods moved to one compact key. Both grouped connection paths meet the n8n header, preventing a visual suggestion that AI reaches PostgreSQL or business tools directly. Card copy states direction without rows of arrows. The n8n header and resident title were shortened after rendered checks showed collisions.
+
+Every page received a text pass using syntax-polish guidance: shorter concrete sentences, retained conditional language for prospective integrations, and no added client evidence or promised savings. The controls, lifecycle, and full capability families remain represented. Incoming PDF and builder are archived under `output/pdf/archive/square-20260928-role-clarity/`.
