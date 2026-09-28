@@ -6,7 +6,6 @@ from reportlab.lib.colors import HexColor
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.lib.utils import ImageReader
-import re
 
 ROOT = Path(__file__).resolve().parents[1]
 TMP = ROOT / "docs" / "work-sample-screenshots"
@@ -57,7 +56,9 @@ def box(x,y,w,h,fill=PALE):
     c.setFillColor(fill); c.roundRect(x,y,w,h,9,stroke=0,fill=1)
 
 def screenshot(name,crop,x=42,y=130,w=708,max_h=None):
-    img=Image.open(TMP / f"workflow-{name}-full.png").convert("RGB")
+    path=TMP / f"workflow-{name}-full.png"
+    if not path.exists(): path=TMP / f"workflow-{name}.png"
+    img=Image.open(path).convert("RGB")
     img=img.crop(crop)
     h=w*img.height/img.width
     if max_h and h>max_h:
@@ -66,147 +67,187 @@ def screenshot(name,crop,x=42,y=130,w=708,max_h=None):
     c.drawImage(ImageReader(img),x,y,width=w,height=h,mask="auto")
     return h
 
-def workflow_page(num,kicker,title,summary,name,crop,bullets,caption,image_x=42,image_w=708):
+def output_shot(filename,crop,x=42,y=130,w=708):
+    img=Image.open(TMP / filename).convert("RGB").crop(crop)
+    h=w*img.height/img.width
+    c.setFillColor(WHITE); c.setStrokeColor(LINE); c.roundRect(x-1,y-1,w+2,h+2,6,stroke=1,fill=1)
+    c.drawImage(ImageReader(img),x,y,width=w,height=h)
+    return h
+
+def workflow_page(kicker,title,summary,name,crop,flow,caption,image_x=42,image_w=708):
     header(kicker,title,summary)
-    h=screenshot(name,crop,x=image_x,y=202,w=image_w)
+    screenshot(name,crop,x=image_x,y=202,w=image_w)
     text(42,189,caption,9,color=GREEN)
-    y=163
-    for b in bullets:
-        c.setFillColor(GREEN); c.circle(48,y+3,2.5,stroke=0,fill=1)
-        y=para(62,y,b,680,10.5,15)-8
+    for i,(label,body) in enumerate(flow):
+        y=166-i*29
+        text(42,y,label.upper(),9.4,"Geist",GREEN)
+        para(119,y,body,629,9.7,13)
     end()
 
-def detail_page(kicker,title,summary,name,crop,caption,body):
+def detail_page(kicker,title,summary,name,crop,caption,body,shot_y=156):
     header(kicker,title,summary)
-    h=screenshot(name,crop,y=156,max_h=320)
-    text(42,143,caption,9,color=GREEN)
+    screenshot(name,crop,y=shot_y,max_h=320)
+    text(42,shot_y-13,caption,9,color=GREEN)
     box(42,60,708,66)
     para(56,104,body,678,10.2,15)
     end()
 
-# 1 - Overview
+# 1 - Prospect overview with a genuine output screenshot
 header("Automation case study","Maintenance request triage",
-       "A local n8n demonstration that turns unstructured tenant messages into manager-controlled maintenance decisions.")
-box(42,236,708,191)
-text(62,389,"THE PROBLEM",10,color=GREEN)
-para(62,365,"Maintenance requests arrive through email, forms and messages with no consistent priority, trade or property context. A manager must read, sort and follow up on each one - often after hours.",660,14,21)
-text(62,294,"THE BUILD",10,color=GREEN)
-para(62,270,"Five connected n8n workflows normalize intake, classify and store tickets, continue tenant clarification, prepare a manager decision, and run operational checks. Postgres owns durable state; Airtable is the manager view.",660,12,18)
-text(42,189,"HUMAN APPROVAL IS THE SEND GATE",12,"Geist",GREEN)
-para(42,168,"Vendor email is sent only after a manager selects a vendor in Telegram. A Hold or review-only path sends no vendor email. The tenant hears that a provider was contacted only after SMTP succeeds.",700,11,16)
+       "A working local demo that sorts incoming maintenance requests and brings clear, actionable choices to the property manager.")
+output_shot("airtable-requests.png",(52,48,1090,335),y=218)
+text(42,204,"LIVE DEMO OUTPUT  /  AIRTABLE REQUESTS  /  SYNTHETIC RECORDS",9,color=GREEN)
+text(42,170,"The problem",12,"Geist")
+para(42,151,"Tenant messages arrive through different channels, in different words, without a reliable priority or next step. A manager still has to read, sort and chase details before acting.",708,10.4,15)
+text(42,105,"What I built",12,"Geist")
+para(42,86,"Five connected n8n workflows organize each request, ask for missing detail, surface the right manager decision and record what happened. Vendor contact stays behind a human approval.",708,10.4,15)
 end()
 
 # 2 - architecture
 header("System design","One connected decision flow",
-       "The workflow exports, Postgres schema and local n8n editor show five published operational workflows. Historical exports remain in the repository but are not part of this live set.")
+       "Email, a web form and a tenant Telegram bot feed one triage process. The manager sees the result in Airtable and approves any vendor email in Telegram.")
 rows=[
- ("01","Tenant Intake","IMAP / form -> normalized request -> Triage Engine -> pairing link"),
- ("02","Triage Engine","Deduplicate -> strict model output -> safety rules -> Postgres ticket / draft"),
- ("03","Tenant Telegram","Pairing, direct issue intake, clarification and factual status replies"),
- ("04","Manager Desk","Vendor match -> Telegram choice -> one claimed SMTP send -> tenant update"),
- ("05","Operations","Digest, heartbeat, unanswered emergencies and Airtable conversation sync"),
+ ("01","Tenant Intake","Email or form -> one standard request -> Triage Engine"),
+ ("02","Triage Engine","Read issue -> check urgency and trade -> save ticket"),
+ ("03","Tenant Telegram","Collect missing detail or answer a status question"),
+ ("04","Manager Desk","Show vendor choices -> manager approves or holds -> record outcome"),
+ ("05","Operations","Summaries, unanswered-emergency checks and conversation sync"),
 ]
 y=423
 for n,title,desc in rows:
     text(55,y,n,12,color=GREEN); text(98,y,title,14,"Geist"); text(98,y-20,desc,9.6,color=MUTED)
     c.setStrokeColor(LINE); c.line(55,y-32,739,y-32); y-=67
 box(42,55,708,48)
-para(56,85,"State and handoffs: Postgres is authoritative for tickets, messages, callbacks and one-send claims. Airtable mirrors requests and conversations and supplies demo vendor/tenant rosters. OpenAI output remains advisory.",675,9.7,14)
+para(56,85,"Behind the screens: n8n routes work; Postgres keeps the ticket and conversation history; Airtable is the manager's visible workspace. The AI suggests an interpretation, while fixed safety rules and manager approval control action.",675,9.7,14)
 end()
 
 # 3 intake
-workflow_page(3,"Workflow 01 / Tenant Intake","Two sources, one triage path",
- "Email IMAP and the n8n form normalize into one message contract and invoke the Triage Engine.","intake",(145,355,1815,780),[
- "The intake context is preserved before the sub-workflow call so source identifiers and reply details survive database lookups.",
- "A stored ticket can trigger a one-time Telegram pairing email; the system subject prefix prevents shared-mailbox loops."
-],"Actual n8n editor capture - complete 15-node workflow")
+workflow_page("Workflow 01 / Tenant Intake","Two sources, one intake path",
+ "Email and web-form requests enter the same triage process.","intake",(145,355,1815,780),[
+ ("Trigger","A new maintenance email or form submission starts the flow."),
+ ("Steps","Normalize the message, keep its source context and pass it to the Triage Engine."),
+ ("Decision","Send one onboarding message when a tenant can continue the request in Telegram."),
+ ("Output","A saved request, manager handoff and form confirmation or pairing email.")
+],"Actual n8n editor capture - every node visible in the full canvas")
 
 # 4 engine overview
-workflow_page(4,"Workflow 02 / Triage Engine","Classify, check, persist",
- "The reusable core takes normalized text and returns a stored outcome or an existing-ticket/thread result.","engine",(160,385,1800,735),[
- "It deduplicates and threads before calling the Responses API through HTTP Request. The installed n8n node did not expose the required strict response contract.",
- "Fixed safety rules can raise urgency; model failure and sensitive requests route to human review."
-],"Actual n8n editor capture - complete 25-node workflow")
+workflow_page("Workflow 02 / Triage Engine","Read, check and save",
+ "One engine handles the request after any intake channel has normalized it.","engine",(160,385,1800,735),[
+ ("Trigger","Tenant Intake or Tenant Telegram submits a concrete maintenance issue."),
+ ("Steps","Check for an existing ticket, classify priority and trade, then save the result."),
+ ("Decision","Fixed safety checks can raise urgency; sensitive or unclear cases go to review."),
+ ("Output","A ticket with a summary, priority, trade, history and an eligible draft.")
+],"Actual n8n editor capture - every node visible in the full canvas")
 
 detail_page("Workflow 02 / Detail A","The classifier and safety boundary",
- "This enlarged editor section shows the model branch joining the deterministic safety step.","engine",(500,395,1170,690),
- "Actual editor crop - classification, safety, persistence",
- "The model supplies structured priority, trade, missing information and rationale. Post-model rules handle known safety and maintenance edge cases. Postgres records the result and audit events before any draft path continues.")
+ "The model's reading is checked before the ticket becomes a manager decision.","engine-detail-a",(125,225,950,540),
+ "Actual editor crop - classification, safety check and saved request",
+ "The AI identifies the issue, priority, trade and missing details. Separate fixed rules then check for safety signals and can raise urgency. The ticket and the reason for its priority are saved before any draft is prepared.",shot_y=180)
 
 detail_page("Workflow 02 / Detail B","Draft only when allowed",
- "The draft path branches from the persisted ticket and rejoins priority routing.","engine",(1100,405,1890,690),
+ "The saved result determines whether a vendor note should be drafted.","engine-detail-b",(300,210,1125,530),
  "Actual editor crop - draft and output routing",
- "Review-only and human-only requests bypass drafting. Eligible maintenance requests get a structured vendor draft; the workflow then routes emergency, urgent, routine and review outputs to downstream handling.")
+ "A request that needs human review skips the automatic draft. For eligible maintenance work, the system prepares a vendor note and routes the saved ticket by priority for the next workflow.",shot_y=180)
 
 # 7 tenant
-workflow_page(7,"Workflow 03 / Tenant Telegram","A bounded tenant conversation",
- "The dedicated demo tenant bot handles pairing, direct requests, missing details, new-issue commands and status questions.","tenant",(155,260,1820,900),[
- "A generic opening is buffered until the tenant names a concrete symptom, so it creates no ticket or manager alert.",
- "Status intent is handled before new-ticket creation; clarification reuses the same request and calls the manager only once reviewable."
-],"Actual n8n editor capture - complete 40-node workflow")
+workflow_page("Workflow 03 / Tenant Telegram","Continue the conversation",
+ "The tenant bot keeps clarification and status questions tied to the right request.","tenant",(155,260,1820,900),[
+ ("Trigger","A tenant sends a Telegram message or opens a one-time pairing link."),
+ ("Steps","Load the conversation, recognize the intent and keep each issue in one thread."),
+ ("Decision","A vague opening prompts for a symptom; a status question does not create a ticket."),
+ ("Output","A clarification, factual status reply or complete request for manager review.")
+],"Actual n8n editor capture - every node visible in the full canvas")
 
 detail_page("Workflow 03 / Detail A","Pair or route the message",
- "This enlarged section shows the entry gate and conversation router.","tenant",(175,280,1015,790),
+ "The first decision distinguishes a pairing link from an ordinary tenant message.","tenant",(175,280,1015,790),
  "Actual editor crop - pairing and message routing",
- "The bot loads the chat and reattaches trigger context after Postgres lookup. Pairing claims a one-time token. Other messages are separated into welcome, new ticket, preliminary buffer, status and clarification paths.")
+ "A pairing link connects the chat to an existing request. Other messages are routed to a welcome, new issue, clarification or status path, using the saved conversation so the tenant does not have to start over.")
 
 detail_page("Workflow 03 / Detail B","Keep one issue in one thread",
- "This enlarged section shows ticket creation, status reply and clarification routes.","tenant",(865,300,1840,885),
+ "The route for a concrete issue stays separate from status and missing-detail replies.","tenant",(865,300,1840,885),
  "Actual editor crop - new ticket, status and clarification",
- "A concrete issue calls the Triage Engine and links the ticket to the chat. Missing fields prompt the tenant; a status question records one factual reply; a completed issue can invoke the Manager Desk.")
+ "A concrete symptom becomes one saved request. Missing details prompt targeted questions; a progress question returns the recorded status. When the request is complete, the manager receives it for a decision.")
 
 # 10 manager
-workflow_page(10,"Workflow 04 / Manager Desk","Approval before vendor contact",
- "The manager path matches candidates from Airtable and sends a Telegram alert with only valid choices plus Hold.","manager",(155,175,1825,965),[
- "Review-only, incomplete and no-match tickets cannot expose a vendor-send button.",
- "The callback claims a unique Postgres send attempt before SMTP; successful delivery is recorded before any tenant provider-contacted update."
-],"Actual n8n editor capture - complete 35-node workflow",image_x=86,image_w=620)
+workflow_page("Workflow 04 / Manager Desk","The manager makes the call",
+ "A complete request becomes a clear choice of matching vendors or Hold.","manager",(155,175,1825,965),[
+ ("Trigger","The Triage Engine or Tenant Telegram submits a reviewable request."),
+ ("Steps","Match vendors by property and trade; show the summary and draft to the manager."),
+ ("Decision","The manager selects a vendor or Holds. Review-only cases show no send choice."),
+ ("Output","One approved vendor email, a recorded result and a tenant update after send success.")
+],"Actual n8n editor capture - every node visible in the full canvas",image_x=86,image_w=620)
 
-detail_page("Workflow 04 / Detail A","Candidate and alert path",
- "The upper route loads the ticket, finds matching vendors and assembles the manager choice.","manager",(170,315,1140,705),
- "Actual editor crop - ticket lookup, vendor matching, alert preparation",
- "Candidates match property and trade and are ordered by configured vendor priority. The request and conversation state are mirrored into Airtable, while Postgres retains the durable approval state.")
+detail_page("Workflow 04 / Detail A","Match vendors before alerting",
+ "This route prepares a manager message from the saved request and vendor roster.","manager-detail-a",(195,110,1030,370),
+ "Actual editor crop - ticket lookup and vendor matching",
+ "The flow finds vendors serving the request's property and trade, then presents only those valid options. The request also appears in the manager's Airtable workspace, while the approval remains recorded with the ticket.",shot_y=215)
 
-header("Workflow 04 / Detail B","One approved SMTP send",
-       "The lower route is activated by a manager Telegram callback.")
+header("Workflow 04 / Detail B","One approved vendor email",
+       "The lower route starts when the manager taps a vendor button in Telegram.")
 screenshot("manager",(165,745,1000,950),y=323)
 screenshot("manager",(960,745,1815,950),y=140)
-text(42,129,"Actual editor crops - callback claim, SMTP and recorded outcomes",9,color=GREEN)
+text(42,129,"Actual editor crops - approval, email and recorded outcome",9,color=GREEN)
 box(42,52,708,62)
-para(56,92,"The unique vendor-send claim prevents a second tap from resending. On SMTP success, the result is persisted before the tenant update. A failed send leaves the tenant uninformed about provider contact.",678,10.2,15)
+para(56,92,"The ticket can claim only one vendor send, so a repeat tap cannot resend it. After the approved email succeeds, the result is saved and the tenant is told a provider was contacted.",678,10.2,15)
 end()
 
 # 13 operations
-workflow_page(13,"Workflow 05 / Operations","Scheduled checks and sync",
- "Four clean lanes keep routine monitoring apart from ticket ingestion and manager approval.","operations",(260,230,1700,950),[
- "Daily digest and operator heartbeat are implemented but config-gated off in the clean demo state.",
- "Unanswered emergencies can re-alert the manager; conversation sync appends stored messages to Airtable. Age alone creates overdue visibility, not an emergency phone alert."
-],"Actual n8n editor capture - complete 17-node workflow")
+workflow_page("Workflow 05 / Operations","Keep the queue visible",
+ "Scheduled checks work from saved request and conversation state.","operations",(260,230,1700,950),[
+ ("Trigger","Time-based schedules start separate summary, alert and sync lanes."),
+ ("Steps","Read open requests, unanswered emergencies and unsynced conversations."),
+ ("Decision","Aging marks an item overdue; only an unanswered emergency can re-alert."),
+ ("Output","A daily summary, operator check or updated conversation view in Airtable.")
+],"Actual n8n editor capture - every node visible in the full canvas",image_x=126,image_w=540)
 
-# 14 evidence
-header("Verification and limits","What the demo actually proves",
-       "All results below come from synthetic fixtures, controlled mailboxes or local workflow checks - not a client deployment.")
-text(42,435,"VERIFIED",11,"Geist",GREEN)
-facts=[
- "Stage 8 five-run rehearsal: 30/30 expected priorities across six fixtures x five clean runs; zero fixture-mode Telegram sends.",
- "Stage 9 conversation-routing regression and structural validation passed; live webhook status question created no extra ticket or manager action.",
- "Controlled live tests included form ingestion, Airtable request sync, Telegram manager alerts and an approved SMTP send.",
- "Six-fixture historical nano scorecard: 6/6 priority matches, zero under/over-escalations and zero missed safety signals; average call-plus-draft latency 10.9 s."
+detail_page("Workflow 05 / Detail A","Summary and alert lanes",
+ "The scheduled checks read saved state and run independently of the intake flow.","operations",(270,230,1290,700),
+ "Actual editor crop - digest, operator heartbeat and emergency re-alert",
+ "One lane prepares a daily email summary; another checks whether the inbox has gone quiet. The emergency lane looks only for requests that still need a manager response.")
+
+header("Workflow 05 / Detail B","Conversation sync",
+       "The final lane moves saved conversation entries into the manager's Airtable view.")
+screenshot("operations",(280,730,1010,970),y=315,max_h=160)
+screenshot("operations",(930,730,1760,970),y=132,max_h=160)
+text(42,121,"Actual editor crops - select, append and mark synced",9,color=GREEN)
+box(42,52,708,55)
+para(56,88,"The schedule selects unsynced messages, appends them to Airtable and records that the sync completed. This keeps the visible conversation tied to its saved request.",678,10.2,15)
+end()
+
+# 14 - live output: Requests
+header("Demo output / Requests","A sortable manager view",
+       "The saved request is mirrored into Airtable, where the manager can see its reference, status, priority and source.")
+output_shot("airtable-requests.png",(52,48,1090,365),y=208)
+text(42,193,"ACTUAL AIRTABLE GRID  /  SYNTHETIC DEMO REQUESTS",9,color=GREEN)
+box(42,77,708,91)
+text(56,143,"What the visible rows show",11,"Geist",GREEN)
+para(56,123,"The same workspace contains requests that began in Telegram, email and the web form. The priority is saved with each reference, so the manager can scan the queue before opening a conversation.",675,10.5,16)
+end()
+
+# 15 - live output: Conversations
+header("Demo output / Conversations","The follow-up stays attached",
+       "A second Airtable view records the request reference, message direction and channel for tenant follow-up.")
+output_shot("airtable-conversations.png",(52,48,1090,390),y=196)
+text(42,181,"ACTUAL AIRTABLE GRID  /  CONTROLLED DEMO CONVERSATIONS",9,color=GREEN)
+box(42,69,708,86)
+text(56,132,"Why this matters",11,"Geist",GREEN)
+para(56,112,"The visible entries include an inbound tenant message and outbound follow-up tied to the same request. Email onboarding and Telegram updates are recorded in the same conversation history.",675,10.5,16)
+end()
+
+# 16 - recorded proof, presented as demo evidence only
+header("Recorded checks","Verified with controlled demo traffic",
+       "These checks used synthetic maintenance scenarios and controlled accounts. They describe the demonstrated build, not a client outcome.")
+output_shot("n8n-intake-execution.png",(350,190,1258,510),y=234)
+text(42,219,"ACTUAL N8N EXECUTION  /  SUCCESSFUL INTAKE PATH",9,color=GREEN)
+evidence=[
+ "Six synthetic scenarios were each run five times from clean state: 30/30 expected priorities, with zero Telegram sends in fixture mode.",
+ "A controlled form request completed the intake path and appeared in the Airtable Requests view as an urgent request.",
+ "A live status question produced one factual reply without opening another ticket or invoking the manager decision flow."
 ]
-y=411
-for f in facts:
+y=181
+for item in evidence:
     c.setFillColor(GREEN); c.circle(48,y+3,2.5,stroke=0,fill=1)
-    y=para(62,y,f,670,10.4,15)-13
-text(42,248,"LIMITATIONS + MANUAL STEPS",11,"Geist",GREEN)
-limits=[
- "The full 30-fixture x three-run nano hardening gate failed with under-escalations and missed safety signals. The live workflow now uses gpt-5.6-luna; broad accuracy is unproven.",
- "Telegram callbacks need a current HTTPS tunnel and operator-controlled bot/chat setup. Final tenant-originated live checks remain operator actions.",
- "The demo bot represents one known tenant; pairing links do not verify identity. No PMS integration, appointment scheduling, automatic closure or production hosting is included."
-]
-y=225
-for f in limits:
-    c.setFillColor(GREEN); c.circle(48,y+3,2.5,stroke=0,fill=1)
-    y=para(62,y,f,670,10.2,14)-10
+    y=para(62,y,item,670,10.1,14)-8
 end()
 
 total=len(pages)
