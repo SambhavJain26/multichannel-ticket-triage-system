@@ -197,6 +197,11 @@ The staged plan is saved in `build-plan.md`.
 - The live Gmail mailbox should stay dedicated to demo traffic; unrelated unread messages can be ingested when the IMAP trigger is active.
 - Before a prospect call, run the Stage 8 clean reset or restore a clean local snapshot so old test tickets such as `MR-0002` do not show on the board.
 
+## 2026-09-28 - Central connection map revision
+
+- Replaced page 3's long parallel-arrow rows with a three-zone architecture: resident channels and external AI, the proposed hosting/n8n/PostgreSQL service, and existing PMS/manager/vendor/owner/reporting tools. Short branches show each business-system connection; endpoint copy and a concise confirmation area retain payloads and route placeholders. The OpenAI API has no business-action path, and AWS remains a client/approved-cloud placeholder.
+- Archived the incoming PDF and builder under `output/pdf/archive/square-20260928-central-map/`. Reviewed 1200px and 648px page renders, fixed a central-heading collision and crowded route note, and passed structural PDF checks. Durable lesson: optimize the relationship the diagram teaches before optimizing individual arrow-label readability.
+
 ## 2026-09-28 - Reference-based visual audit
 
 - Compared all three portrait-reference pages with the square brief. Recorded concrete findings and changes in `concept-brief/square-brief-design-audit.md`; used redesign-existing-projects audit guidance and static-document principles from the existing design skills.

@@ -198,59 +198,81 @@ heading('Human ownership',469,484,135,13,WHITE)
 text('Named staff review unclear, sensitive, unreadable, or failed cases, including identity or vendor gaps. Use approved languages.',469,508,135,10,'#F0EBE4')
 c.showPage()
 
-# PAGE 3: Readable connection rows; all external actions pass through n8n.
+# PAGE 3: Three-zone architecture. Short links leave the central system legible.
 page(3,'TOOLS & CONNECTIONS','How your <font color="'+ORANGE+'">systems connect</font>','Proposed stack and routes. Access depends on the client’s accounts and permissions.')
-def node(x,y,w,h,name,copy,fill=WHITE,ic='mail'):
-    box(x,y,w,h,fill,LINE,10)
-    icon(ic,x+11,y+10,17)
-    heading(name,x+36,y+11,w-46,11.5)
-    text(copy,x+12,y+34,w-24,10,MUTED,maxh=h-39)
+label('Existing channels / proposed AI',30,137,168)
+label('Added / proposed service',211,137,200,GREEN)
+label('Existing business tools',437,137,181)
 
-shell(30,132,186,416,SOFT)
-box(38,140,170,75,INK,r=10)
-label('Added / approved hosting',50,151,147,'#D6CFC5')
-heading('n8n workflow',50,171,147,16,WHITE)
-text('All connections run here.',50,195,147,10,'#E9E3DB')
-icon('shield-check',50,231,18,GREEN)
-heading('Rules and delivery',50,258,148,13)
-text('Fixed safety policy,<br/>approved questions,<br/>queue and retries.',50,280,148,11)
-arrow(111,328,111,350); arrow(131,350,131,328)
-box(44,357,158,91,WHITE,'#BED1C1',9)
-icon('database',55,369,18,GREEN)
-heading('PostgreSQL',80,371,115,13)
-text('Processing state,<br/>conversation history,<br/>audit and send checks.',55,394,135,10)
-line(50,465,196,465,'#BED1C1')
-text('Client-owned or approved cloud.<br/><br/>PMS remains the business record.',50,478,147,10,MUTED)
+# Intake and AI sit outside the hosting boundary. Each card states the exchange.
+box(30,169,160,133,WHITE,LINE,10)
+icon('mail',43,183,18)
+heading('Resident channels',68,184,111,12)
+text('Portal, email, SMS, and phone transcripts.',43,211,134,10,MUTED,maxh=27)
+line(43,244,177,244)
+text('Reports + replies in.<br/>Questions + confirmed updates out.',43,251,134,10,maxh=40)
+box(30,332,160,113,WHITE,LINE,10)
+icon('cpu',43,346,18)
+heading('OpenAI API',68,347,111,12)
+text('Context out; interpretation and drafts back.',43,375,134,10,maxh=27)
+line(43,413,177,413)
+text('HTTPS API; outside client hosting.',43,421,134,10,MUTED,maxh=25)
 
-# A generous 144-point routing corridor keeps labels separate from endpoints.
-connections = [
- ('Resident channels','Portal / email / SMS / phone','[API / webhook / secure mailbox]','reports + replies','questions + updates','mail'),
- ('OpenAI API','Interpretation and drafts only','HTTPS API; outside client hosting','context to AI','structured result','cpu'),
- ('[Client PMS]','Resident / unit / open-work records','[API / partner / export-import route]','lookup + updates','records + result','database'),
- ('[Manager channel]','Human review and authenticated approval','[App integration / secure review link]','decision request','staff approval','user-round'),
- ('[Vendor channel]','Approved job and delivery tracking','[PMS route / portal / email service]','approved job','reply + send result','send'),
- ('[Owner process]','Spending authority stays with the owner','[Existing owner approval process]','spend request','owner decision','circle-check'),
- ('[Reporting tool]','Portfolio status and exception reporting','[Reporting connection]','operational events',None,'chart-no-axes-column'),
+# The enclosed area represents a client-owned or approved cloud environment.
+shell(211,153,200,353,SOFT)
+box(219,161,184,69,INK,r=10)
+label('[Client AWS / approved cloud]',231,171,162,'#D6CFC5')
+heading('n8n workflow',231,190,162,17,WHITE)
+text('Routes and confirms every action.',231,213,162,10,'#E9E3DB')
+box(224,243,174,61,WHITE,'#BED1C1',9)
+icon('shield-check',235,255,17,GREEN)
+heading('Fixed rules',260,256,127,12)
+text('Safety policy, authority checks, and approved questions.',235,278,151,10,maxh=25)
+box(224,314,174,60,WHITE,'#BED1C1',9)
+icon('message-circle-question-mark',235,326,17,GREEN)
+heading('Conversation state',260,327,127,11)
+text('Link replies; retry sends;<br/>record delivery results.',235,348,151,10,maxh=25)
+arrow(296,378,296,390); arrow(316,390,316,378)
+box(224,397,174,83,WHITE,'#BED1C1',9)
+icon('database',235,409,17,GREEN)
+heading('PostgreSQL',260,410,127,13)
+text('Processing state, history, audit, and duplicate-action checks.',235,435,151,10,maxh=37)
+text('PMS keeps the business record.',224,485,174,9,MUTED,maxh=12)
+
+# Only four short arrows appear beside the two left-hand cards.
+arrow(190,214,211,214)
+arrow(211,234,190,234)
+arrow(211,370,190,370)
+arrow(190,391,211,391)
+
+# The business-side junction groups the five integrations. Payload and route
+# appear in each endpoint, so the connectors need no long labels.
+line(411,338,423,338,GREEN,1.2)
+line(423,200,423,476,GREEN,1.2)
+business = [
+ ('[Client PMS]','Read resident, unit, open work; write approved status.','[API / partner / export-import]','database',True),
+ ('[Manager channel]','Decision request out; verified approval back.','[App / secure review link]','user-round',True),
+ ('[Vendor channel]','Approved job out; reply + send result back.','[PMS route / portal / email]','send',True),
+ ('[Owner process]','Spend request out; owner decision back.','[Existing approval process]','circle-check',True),
+ ('[Reporting tool]','Operational events out for portfolio view.','[Reporting connection]','chart-no-axes-column',False),
 ]
-for i,(name,role,method,outgoing,incoming,ic) in enumerate(connections):
-    y=132+i*60
-    box(370,y,248,54,WHITE,LINE,9)
-    icon(ic,381,y+9,16)
-    heading(name,404,y+9,203,12)
-    text(role,382,y+25,224,10,MUTED,maxh=13)
-    text(method,382,y+39,224,10,MUTED,maxh=13)
-    # Incoming resident reports reverse the usual request/response direction.
-    if i==0: arrow(370,y+22,216,y+22)
-    else: arrow(216,y+22,370,y+22)
-    text(outgoing,225,y+7,140,10,GREEN,maxh=13)
-    if incoming:
-        if i==0: arrow(216,y+48,370,y+48)
-        else: arrow(370,y+48,216,y+48)
-        text(incoming,225,y+33,140,10,GREEN,maxh=13)
+for i,(name,exchange,method,ic,two_way) in enumerate(business):
+    y=169+i*69
+    box(437,y,181,62,WHITE,LINE,9)
+    icon(ic,448,y+9,16)
+    heading(name,472,y+9,135,11.5)
+    text(exchange,448,y+25,159,10,MUTED,maxh=25)
+    text(method,448,y+50,159,9,MUTED,maxh=12)
+    arrow(423,y+25,437,y+25)
+    if two_way: arrow(437,y+36,423,y+36)
 
-line(30,560,618,560)
-label('Confirm before connecting',30,572,186,ORANGE)
-text('[Products / permissions / hosting / AI data policy]. If PMS writes are blocked: [staff task / approved import]. Confirm reply and delivery support for each route.',230,571,388,10,MUTED,maxh=38)
+line(30,526,618,526)
+label('Connection routes to confirm',30,538,250,ORANGE)
+text('<b>Intake:</b> [API / webhook / secure mailbox]',30,555,278,10,maxh=13)
+text('<b>PMS:</b> [API / partner / approved import]',324,555,294,10,maxh=13)
+text('<b>Vendor:</b> [PMS route / portal / email service]',30,575,278,10,maxh=25)
+text('<b>Manager:</b> [app / secure review link]',324,575,294,10,maxh=13)
+text('Confirm access rights, hosting, AI data policy, and delivery results for [Client Company].',30,594,588,10,MUTED,maxh=13)
 c.showPage()
 
 # PAGE 4: Running the service, not repeating the lifecycle.

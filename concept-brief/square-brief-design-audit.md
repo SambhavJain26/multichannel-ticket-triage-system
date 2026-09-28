@@ -25,3 +25,14 @@ The redesign-existing-projects skill's scan/diagnose/fix sequence guided this pa
 - Portrait reference, sent prospect PDFs and unrelated working-tree edits are outside scope.
 
 Remaining trade-off: page 2 is denser than the reference because it contains eight lifecycle stages, not five. Readable copy and continuous flow take precedence over decorative cards or dropping behaviour.
+
+## 2026-09-28 central-map revision
+
+The row map made the exchanges readable but gave its many parallel arrows more visual weight than the actual system. Compared a radial spoke map, the row map, and a grouped three-zone architecture against the page's main question: what already exists, what is added, and what talks to what. The grouped version keeps the central service legible while reducing long connector lines.
+
+- Left: existing resident channels and the proposed external OpenAI API, explicitly distinguished.
+- Centre: a client AWS or approved-cloud placeholder enclosing n8n, fixed rules, conversation/delivery handling, and PostgreSQL. The PMS remains the business record.
+- Right: existing PMS, manager, vendor, owner, and reporting tools. A short shared junction connects each tool to the central workflow; each card states the payload and proposed route.
+- Bottom: editable intake, PMS, vendor, and manager connection fields plus permissions, hosting, AI-data, and delivery-result checks.
+
+This replaces the page-3 finding and row-map solution in the historical table above. The previous PDF and exact builder are archived under `output/pdf/archive/square-20260928-central-map/`. The new page was inspected at 1200px and native 648px after correcting a wrapped centre heading and crowded route notes. The long parallel-arrow pattern is no longer used.

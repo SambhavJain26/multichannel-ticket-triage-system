@@ -19,7 +19,7 @@ Reviewed all three rendered pages of `output/pdf/maintenance-triage-prospect-bri
 
 ## Current reference audit
 
-See `square-brief-design-audit.md` for page-specific findings, reference principles, changes and verification. The latest connection map supersedes the historical numbered-key layout below: methods now sit beside each endpoint, with separate payload arrows in a wide corridor. The incoming PDF and builder are archived under `square-20260928-reference-audit`.
+See `square-brief-design-audit.md` for page-specific findings, reference principles, changes and verification. Page 3 now uses a central hosting boundary with short grouped connections; the earlier row and numbered-key layouts remain documented as history. The incoming PDF and builder are archived under `square-20260928-central-map`.
 
 ## QA
 
