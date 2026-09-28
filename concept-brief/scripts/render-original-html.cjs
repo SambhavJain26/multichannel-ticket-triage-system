@@ -38,12 +38,38 @@ try {
           });
         })
         .map((element) => element.className);
-      return { width: pageRect.width, height: pageRect.height, escaped, clipped };
+      const tight = [...paper.querySelectorAll(".research-sources,.research-copy,.comparison-card,.responsibility,.external-card,.stack-card,.daily .shell-inner,.authority .shell-inner,.controls,.cta .shell-inner")]
+        .map((parent) => {
+          const box = parent.getBoundingClientRect();
+          const text = [...parent.querySelectorAll("h2,h3,p,.small-label,strong")];
+          if (!text.length) return null;
+          const bottom = Math.min(...text.map((child) => box.bottom - child.getBoundingClientRect().bottom));
+          const right = Math.min(...text.map((child) => box.right - child.getBoundingClientRect().right));
+          return { component: parent.className, bottom: +bottom.toFixed(1), right: +right.toFixed(1) };
+        })
+        .filter((entry) => entry && (entry.bottom < 12 || entry.right < 12));
+      const comparison = paper.querySelector(".comparison");
+      const key = paper.querySelector(".comparison-key");
+      if (comparison && key) {
+        const bottom = +(comparison.getBoundingClientRect().bottom - key.getBoundingClientRect().bottom).toFixed(1);
+        if (bottom < 12) tight.push({ component: "comparison key to panel", bottom });
+      }
+      const misaligned = [];
+      const matchEdge = (name, selectorA, selectorB, edge) => {
+        const a = paper.querySelector(selectorA);
+        const b = paper.querySelector(selectorB);
+        if (a && b && Math.abs(a.getBoundingClientRect()[edge] - b.getBoundingClientRect()[edge]) > 1) misaligned.push(name);
+      };
+      matchEdge("comparison lane tops", ".lane", ".added-lane", "top");
+      matchEdge("existing card tops", ".intake", ".pms", "top");
+      matchEdge("existing title alignment", ".zone-title.right", ".pms", "left");
+      matchEdge("operations card tops", ".daily", ".authority", "top");
+      return { width: pageRect.width, height: pageRect.height, escaped, clipped, tight, misaligned };
     }));
     const dest = path.join(root, "tmp/pdfs/original-html");
     fs.mkdirSync(dest, { recursive: true });
     for (let i = 0; i < 4; i++) await page.locator(".page").nth(i).screenshot({ path: path.join(dest, `page-${i + 1}.png`) });
-    if (errors.length || link !== "https://cal.com/sambhav-builds/pm-automation-audit" || checks.length !== 4 || checks.some((check) => check.width !== 864 || check.height !== 864 || check.escaped.length || check.clipped.length)) {
+    if (errors.length || link !== "https://cal.com/sambhav-builds/pm-automation-audit" || checks.length !== 4 || checks.some((check) => check.width !== 864 || check.height !== 864 || check.escaped.length || check.clipped.length || check.tight.length || check.misaligned.length)) {
       throw new Error(JSON.stringify({ errors, link, checks }, null, 2));
     }
     const output = path.join(root, "output/pdf/maintenance-triage-square-brief-html-recreation.pdf");
