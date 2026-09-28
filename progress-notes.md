@@ -240,3 +240,9 @@ The staged plan is saved in `build-plan.md`.
 - Kept the HTML/CSS design but used the earlier square PDF as the copy/type reference: 22pt titles, about 13pt process headings, 11pt primary copy, 10pt diagram text, and 8pt metadata. Shortened all four pages slightly below the earlier square brief's word count while retaining the production capability and approval boundaries.
 - Preserved the incoming HTML/CSS/PDF in `output/pdf/archive/html-brief-20260928-before-phone-pass/`. Re-exported the separately named HTML PDF; the older square PDF and builder remain unchanged.
 - Inspected all four 750px Poppler renders and passed the four-page, font, link, bounds, content, and archive-preservation validator. Page 1 footer clearance was corrected before final export. The PDF is more legible at phone width but remains a fixed square document, not mobile-reflowing HTML.
+
+## 2026-09-28 - Earlier square PDF recreated as HTML
+
+- Added separate `concept-brief/square-brief-original.html` and CSS to reproduce the cleaner `maintenance-triage-square-brief.pdf` layout as editable DOM/SVG rather than page images. It uses local portfolio fonts and the licensed icon geometry already in the brief; the only shared icon-script change adds the missing circle-check shape.
+- Compared all four source-PDF renders with browser screenshots of the HTML. Corrected a page-two decision-text collision and page-four authority-panel clipping, then passed the four-page DOM bounds/card/footer checker. The HTML retains the meeting link and bracketed prospect placeholders.
+- On the user's follow-up, exported a separate `output/pdf/maintenance-triage-square-brief-html-recreation.pdf` from the HTML. Verified four 648 x 648pt pages, the meeting link, and all four Poppler page renders. The source square PDF, newer HTML brief/PDF, older ReportLab builder, portrait PDFs, sent prospect PDFs, and unrelated working-tree changes remain untouched.
