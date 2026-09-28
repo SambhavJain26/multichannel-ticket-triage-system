@@ -251,3 +251,8 @@ The staged plan is saved in `build-plan.md`.
 
 - Audited all four rendered pages and fixed tight research-note, comparison-key, responsibility-rail, integration-card, central-stack, and operations-card text insets. Matched the page-three existing-system card tops and aligned their heading with the card edge; kept the central hosting boundary distinct. Added a visible keyboard focus ring to the HTML CTA.
 - Extended the HTML renderer's gate to require at least 12px of text clearance inside selected surfaces and matching comparison/system/operations alignments. Regenerated only `maintenance-triage-square-brief-html-recreation.pdf`; inspected every final page and verified four 648pt square pages plus the active meeting link. The original PDF and unrelated changes remain untouched.
+
+## 2026-09-28 - Page-two decision rail alignment
+
+- Corrected the screenshot-reported page-two geometry in the HTML recreation: the numbered circles now share the process-line center, and the manager-decision highlight sits beside the rail with consistent content padding instead of covering the number and interrupting the line.
+- Added a geometry check for all eight circle centers and the decision highlight's clearance from the circle, title, and manager badge. Regenerated the separate HTML-recreation PDF; the four-page DOM gate passes, and its page-two Poppler render was inspected at 1200px. The source square PDF and unrelated files remain unchanged.

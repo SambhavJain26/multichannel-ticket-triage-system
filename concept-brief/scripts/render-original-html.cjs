@@ -64,6 +64,24 @@ try {
       matchEdge("existing card tops", ".intake", ".pms", "top");
       matchEdge("existing title alignment", ".zone-title.right", ".pms", "left");
       matchEdge("operations card tops", ".daily", ".authority", "top");
+      const spine = paper.querySelector(".flow-spine");
+      if (spine) {
+        const line = spine.getBoundingClientRect();
+        const center = line.left + line.width / 2;
+        for (const number of paper.querySelectorAll(".stage .number")) {
+          const circle = number.getBoundingClientRect();
+          if (Math.abs(circle.left + circle.width / 2 - center) > .25) misaligned.push(`number ${number.textContent} to process spine`);
+        }
+        const decision = paper.querySelector(".stage.decision");
+        const panel = getComputedStyle(decision, "::before");
+        const stage = decision.getBoundingClientRect();
+        const panelLeft = stage.left + parseFloat(panel.left);
+        const panelRight = stage.right - parseFloat(panel.right);
+        const circle = decision.querySelector(".number").getBoundingClientRect();
+        const title = decision.querySelector("h2").getBoundingClientRect();
+        const actor = decision.querySelector(".actor").getBoundingClientRect();
+        if (panelLeft - circle.right < 3 || title.left - panelLeft < 10 || panelRight - actor.right < 8) misaligned.push("decision panel to rail and content");
+      }
       return { width: pageRect.width, height: pageRect.height, escaped, clipped, tight, misaligned };
     }));
     const dest = path.join(root, "tmp/pdfs/original-html");
