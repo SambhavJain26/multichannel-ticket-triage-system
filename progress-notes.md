@@ -262,3 +262,9 @@ The staged plan is saved in `build-plan.md`.
 - Moved prospect-only fields into `concept-brief/prospect-data.template.json`: company, decision maker, verified research note/source labels, and optional system/connection names. The renderer fills named HTML slots as plain text, keeps unknown optional routes visibly bracketed, and writes each lead to a distinct slugged PDF without changing the reusable source PDF.
 - Kept research evidence in the data file for internal verification rather than printing it. Documented the one-file personalization command in `concept-brief/square-brief-original-notes.md`; no generator or production-workflow behaviour changed.
 - Verified the placeholder and synthetic-data exports as four square pages with valid booking links and passing page/card/alignment checks. The synthetic fixture and PDF remain QA-only; no actual prospect facts were invented.
+
+## 2026-09-28 - Keep only the current brief files
+
+- On explicit request, removed 51 superseded HTML, CSS, and PDF files across the active brief, examples, and PDF archive folders. Recycled the remaining archived legacy builder directory (seven Python snapshots) as well. The current HTML, its CSS, shared icons/fonts, data template, renderer, and PDF remain.
+- Replaced the outdated `concept-brief/README.md` with the current brief's paths and personalization command. The removed files went to the Windows Recycle Bin; tracked versions remain in Git history. Three output PDFs already deleted in the working tree were included in the PDF cleanup; the user's older progress-note edits remain outside this task.
+- Re-exported the current PDF after cleanup. All four 864px square browser pages passed overflow, clipping, spacing, and alignment checks, and the booking link was present.
