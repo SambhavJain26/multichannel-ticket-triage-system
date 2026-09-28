@@ -1,6 +1,7 @@
 """Verify the HTML-exported PDF without modifying the earlier square brief."""
 from pathlib import Path
 from hashlib import sha256
+import re
 from pypdf import PdfReader
 import pdfplumber
 
@@ -12,10 +13,10 @@ expected = [
     ['Assumed current process', 'Focused follow-up questions', 'What this helps', 'Reduced', 'Added'],
     ['Receive and connect', 'Fixed rules', 'Clarify and reassess', 'Prepare the work',
      'Obtain the human decision', 'Execute the approved action', 'Coordinate progress',
-     'Verify and close', 'do not wait', 'Owner approval', 'without a new request',
+    'Verify and close', 'do not wait', 'Owner approval', 'without a new ticket',
      'Who handles what', 'Workflow', 'Manager', 'Staff'],
     ['n8n', 'PostgreSQL', 'OpenAI API', 'Reporting tool', 'secure mailbox', 'partner',
-     'secure review link', 'Added / proposed system', 'Confirm the route'],
+     'secure review link', 'Added / proposed system', 'Routes to confirm'],
     ['unanswered emergencies', 'Age alone never', 'stale or duplicate', 'rollback', 'backup restores', 'Discuss the fit'],
 ]
 fonts = set()
@@ -23,7 +24,9 @@ for i, page in enumerate(reader.pages):
     assert tuple(float(v) for v in page.mediabox) == (0, 0, 648, 648)
     content = ' '.join(page.extract_text().split())
     for term in expected[i]:
-        assert term.lower() in content.lower(), (i+1, term)
+        # Chromium's Type 3 font extraction can insert an internal word gap.
+        compact = re.sub(r'\s+', '', content.lower())
+        assert term.lower() in content.lower() or re.sub(r'\s+', '', term.lower()) in compact, (i+1, term)
     for font_ref in page['/Resources']['/Font'].values():
         font = font_ref.get_object()
         if font.get('/Subtype') == '/Type3':

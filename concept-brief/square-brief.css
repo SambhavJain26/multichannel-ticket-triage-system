@@ -1044,6 +1044,290 @@ i svg {
 .cta {
   margin-top: 13px;
 }
+/* Phone-readable print scale follows the earlier square brief:
+   11pt main copy, 10pt compact diagram text, 13pt step heads. */
+.recipient b,
+footer {
+  font-size: 10.67px;
+}
+.recipient span,
+.eyebrow,
+.label {
+  font-size: 10.67px;
+}
+.page-heading > p {
+  font-size: 14.67px;
+}
+.research {
+  grid-template-columns: 197px 1fr;
+  gap: 18px;
+  margin-bottom: 12px;
+}
+.research-sources {
+  padding: 14px 16px;
+}
+.research-sources .label {
+  font-size: 10.67px;
+}
+.research-sources p {
+  font-size: 13.33px;
+  line-height: 1.35;
+  margin-top: 9px;
+}
+.research-note {
+  padding: 10px 13px 8px 0;
+}
+.research-note p {
+  margin-top: 9px;
+  font-size: 14.67px;
+  line-height: 1.35;
+}
+.lane-title {
+  margin-bottom: 10px;
+}
+.lane-title h2,
+.value-band h2 {
+  font-size: 17.33px;
+}
+.flow-lane {
+  gap: 10px;
+}
+.flow-lane li {
+  min-height: 61px;
+  padding: 8px 10px;
+  gap: 10px;
+}
+.flow-lane li:not(:last-child):after {
+  line-height: 10px;
+}
+.flow-lane h3 {
+  font-size: 14.67px;
+}
+.flow-lane p,
+.legend,
+.legend b {
+  font-size: 13.33px;
+}
+.flow-lane p {
+  margin-top: 2px;
+  line-height: 1.2;
+}
+.legend {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3px 20px;
+  margin: 10px 0 10px;
+  line-height: 1.25;
+}
+.legend span:last-child {
+  grid-column: 1 / -1;
+}
+.legend b {
+  display: inline;
+  margin-right: 6px;
+}
+.value-band {
+  grid-template-columns: 260px 1fr;
+  padding-top: 9px;
+}
+.value-band p {
+  font-size: 14.67px;
+}
+.process {
+  padding: 6px 13px;
+}
+.process > li {
+  padding: 4px 0;
+}
+.step-heading {
+  margin-bottom: 3px;
+}
+.step-heading h3 {
+  font-size: 17.33px;
+}
+.actor {
+  font-size: 10.67px;
+}
+.process p {
+  font-size: 14.67px;
+  line-height: 1.27;
+}
+.policy {
+  margin-top: 5px;
+  padding: 5px 8px;
+  font-size: 13.33px;
+}
+.policy b {
+  font-size: 13.33px;
+}
+.process > li.decision {
+  padding: 7px;
+}
+.process-rail .dark-panel {
+  height: 100%;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+}
+.process-rail .dark-panel h2 {
+  font-size: 18.67px;
+}
+.process-rail dl {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  flex: 1;
+  margin: 12px 0;
+}
+.process-rail dt {
+  color: #b8d8c5;
+  font-size: 16px;
+  margin-top: 12px;
+}
+.process-rail dd,
+.rail-exception {
+  font-size: 14.67px;
+  line-height: 1.35;
+}
+.rail-exception {
+  border-top: 1px solid #514b44;
+  padding-top: 13px;
+}
+.rail-exception b {
+  display: inline-block;
+  color: #eeaa8d;
+  margin-bottom: 5px;
+}
+.architecture {
+  height: 460px;
+}
+.hosting {
+  height: 460px;
+  padding: 11px 10px;
+}
+.source-column {
+  gap: 39px;
+}
+.source-column .system-card {
+  padding: 14px;
+}
+.resident {
+  min-height: 160px;
+}
+.ai-service {
+  min-height: 150px;
+}
+.system-card p,
+.core-block p,
+.database p {
+  font-size: 13.33px;
+  line-height: 1.32;
+}
+.system-card p + p {
+  margin-top: 9px;
+}
+.card-title h3,
+.destination-column .card-title h3 {
+  font-size: 15.33px;
+}
+.ai-service .label,
+.hosting > .label {
+  font-size: 10px;
+}
+.hosting .host-name,
+.hosting-note {
+  font-size: 12px;
+}
+.orchestrator {
+  padding: 14px;
+}
+.orchestrator h2 {
+  font-size: 22.67px;
+  margin-bottom: 3px;
+}
+.orchestrator p {
+  font-size: 13.33px;
+}
+.core-block {
+  padding: 15px 8px 0;
+}
+.core-block h3,
+.database h3 {
+  font-size: 16px;
+}
+.core-block p {
+  margin-top: 3px;
+}
+.database {
+  margin-top: 16px;
+  padding: 11px;
+}
+.hosting-note {
+  padding-top: 9px;
+}
+.destination-column .system-card {
+  height: 84px;
+  padding: 8px 12px;
+}
+.destination-column .card-title {
+  margin-bottom: 3px;
+}
+.destination-column .system-card p {
+  font-size: 13.33px;
+  line-height: 1.24;
+}
+.routes {
+  margin-top: 15px;
+  padding-top: 11px;
+  border-top: 1px solid var(--line);
+}
+.routes h2 {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--orange);
+  margin-bottom: 8px;
+}
+.route-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 20px;
+}
+.route-grid p {
+  font-size: 13.33px;
+  color: var(--ink);
+}
+.daily-copy p,
+.authority p,
+.control-columns p,
+.outcomes > p,
+.cta p {
+  font-size: 14.67px;
+  line-height: 1.35;
+}
+.daily-copy {
+  gap: 11px;
+}
+.authority h3,
+.control-columns h3 {
+  font-size: 16px;
+}
+.control-columns p {
+  margin-bottom: 0;
+}
+.outcomes h2 {
+  font-size: 18.67px;
+}
+.outcomes > p {
+  color: var(--green);
+}
+.cta h2 {
+  font-size: 22.67px;
+}
+.contact,
+.meeting {
+  font-size: 13.33px;
+}
 /* Preserve copy/search text when Chromium subsets the variable fonts. */
 * {
   font-variant-ligatures: none;
