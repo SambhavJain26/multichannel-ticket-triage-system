@@ -148,6 +148,8 @@ Data-only snapshots do not include `triage.ticket_ref_seq`. Any restore that rep
 
 For public work samples, use genuine local workflow and output screenshots with synthetic or approved demo data. Keep the workflow canvas theme consistent across full views and enlarged captures. Explain each workflow in plain language and show enlarged canvas sections when node labels are small. Keep internal paths, document names, personal contact routes, and internal gaps or production-readiness checklists out of prospect-facing PDFs; keep operational caveats in the project docs instead.
 
+Before reusing an Airtable grid in a public work sample, compare each visible request reference, priority, source, and conversation link with the authoritative Postgres rows. Correct stale demo mirrors before capture, and keep unrelated mailbox traffic out of the public view. Render every PDF page at normal viewing size; inspect the first and last workflow views as well as every detail crop for overlapping nodes, clipped edge nodes, unreadable labels, mixed canvas themes, and personal contact details. Keep the editable workflow export positions aligned with any layout correction made in the n8n editor.
+
 Use short imperative commits, for example `docs: update triage workflow guidance` or `feat: add fixture harness`.
 
 Before every final response, decide whether the task exposed a durable mistake, blocker, workaround, command, gotcha, or best practice. If yes, update `AGENTS.md` or the relevant plan document first. Use `progress-notes.md` for stage status, deviations, verification results, and outstanding work. For documentation-only planning edits, do not auto-commit unless the user asks.

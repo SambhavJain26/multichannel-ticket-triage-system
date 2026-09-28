@@ -95,7 +95,7 @@ def detail_page(kicker,title,summary,name,crop,caption,body,shot_y=156):
 # 1 - Prospect overview with a genuine output screenshot
 header("Automation case study","Maintenance request triage",
        "A working local demo that sorts incoming maintenance requests and brings clear, actionable choices to the property manager.")
-output_shot("airtable-requests.png",(52,48,1090,335),y=218)
+output_shot("airtable-requests.png",(332,128,1258,324),y=218)
 text(42,204,"LIVE DEMO OUTPUT  /  AIRTABLE REQUESTS  /  SYNTHETIC RECORDS",9,color=GREEN)
 text(42,170,"The problem",12,"Geist")
 para(42,151,"Tenant messages arrive through different channels, in different words, without a reliable priority or next step. A manager still has to read, sort and chase details before acting.",708,10.4,15)
@@ -123,12 +123,22 @@ end()
 
 # 3 intake
 workflow_page("Workflow 01 / Tenant Intake","Two sources, one intake path",
- "Email and web-form requests enter the same triage process.","intake",(145,355,1815,780),[
+ "Email and web-form requests enter the same triage process.","intake",(126,297,1222,473),[
  ("Trigger","A new maintenance email or form submission starts the flow."),
  ("Steps","Normalize the message, keep its source context and pass it to the Triage Engine."),
  ("Decision","Send one onboarding message when a tenant can continue the request in Telegram."),
  ("Output","A saved request, manager handoff and form confirmation or pairing email.")
 ],"Actual n8n editor capture - every node visible in the full canvas")
+
+detail_page("Workflow 01 / Detail A","One route after either trigger",
+ "The email and form entrances converge before the request is interpreted.","intake",(125,300,660,475),
+ "Actual editor crop - normalize, save context and call the triage engine",
+ "Each trigger is normalized into the same request shape. The workflow keeps the source message identifier, calls the shared Triage Engine and then looks up the saved ticket before continuing.",shot_y=180)
+
+detail_page("Workflow 01 / Detail B","Pairing and confirmation",
+ "The saved request determines the manager handoff and tenant onboarding.","intake",(565,302,1220,481),
+ "Actual editor crop - pairing token, manager handoff and form completion",
+ "The saved ticket receives a one-time pairing token. A reviewable request goes to the Manager Desk; eligible email and form intakes send a Telegram onboarding link. The form finishes with a confirmation.",shot_y=180)
 
 # 4 engine overview
 workflow_page("Workflow 02 / Triage Engine","Read, check and save",
@@ -159,14 +169,19 @@ workflow_page("Workflow 03 / Tenant Telegram","Continue the conversation",
 ],"Actual n8n editor capture - every node visible in the full canvas")
 
 detail_page("Workflow 03 / Detail A","Pair or route the message",
- "The first decision distinguishes a pairing link from an ordinary tenant message.","tenant",(175,280,1015,790),
+ "The first decision distinguishes a pairing link from an ordinary tenant message.","tenant",(175,390,985,650),
  "Actual editor crop - pairing and message routing",
- "A pairing link connects the chat to an existing request. Other messages are routed to a welcome, new issue, clarification or status path, using the saved conversation so the tenant does not have to start over.")
+ "A pairing link connects the chat to an existing request. Other messages are routed to a welcome, new issue, clarification or status path, using the saved conversation so the tenant does not have to start over.",shot_y=180)
 
-detail_page("Workflow 03 / Detail B","Keep one issue in one thread",
- "The route for a concrete issue stays separate from status and missing-detail replies.","tenant",(865,300,1840,885),
- "Actual editor crop - new ticket, status and clarification",
- "A concrete symptom becomes one saved request. Missing details prompt targeted questions; a progress question returns the recorded status. When the request is complete, the manager receives it for a decision.")
+detail_page("Workflow 03 / Detail B","Create a request from a real symptom",
+ "A greeting stays conversational; a concrete maintenance issue enters the triage engine.","tenant",(985,270,1840,575),
+ "Actual editor crop - welcome, new request and manager handoff",
+ "A vague opening prompts for a specific symptom. Once the tenant describes a real issue, the shared engine creates the request. The manager receives it only when the issue is complete or explicitly needs review.",shot_y=180)
+
+detail_page("Workflow 03 / Detail C","Clarify or answer status",
+ "The same saved conversation handles follow-up without opening duplicate requests.","tenant",(985,575,1840,885),
+ "Actual editor crop - status lookup, clarification and follow-up",
+ "A progress question reads the tenant's open requests and returns one factual reply. Missing details prompt a targeted question; the conversation resumes the saved ticket once the tenant answers.",shot_y=180)
 
 # 10 manager
 workflow_page("Workflow 04 / Manager Desk","The manager makes the call",
@@ -193,7 +208,7 @@ end()
 
 # 13 operations
 workflow_page("Workflow 05 / Operations","Keep the queue visible",
- "Scheduled checks work from saved request and conversation state.","operations",(260,230,1700,950),[
+ "Scheduled checks work from saved request and conversation state.","operations",(225,230,1790,950),[
  ("Trigger","Time-based schedules start separate summary, alert and sync lanes."),
  ("Steps","Read open requests, unanswered emergencies and unsynced conversations."),
  ("Decision","Aging marks an item overdue; only an unanswered emergency can re-alert."),
@@ -201,14 +216,14 @@ workflow_page("Workflow 05 / Operations","Keep the queue visible",
 ],"Actual n8n editor capture - every node visible in the full canvas",image_x=126,image_w=540)
 
 detail_page("Workflow 05 / Detail A","Summary and alert lanes",
- "The scheduled checks read saved state and run independently of the intake flow.","operations",(270,230,1290,700),
+ "The scheduled checks read saved state and run independently of the intake flow.","operations",(270,230,1290,740),
  "Actual editor crop - digest, operator heartbeat and emergency re-alert",
  "One lane prepares a daily email summary; another checks whether the inbox has gone quiet. The emergency lane looks only for requests that still need a manager response.")
 
 header("Workflow 05 / Detail B","Conversation sync",
        "The final lane moves saved conversation entries into the manager's Airtable view.")
-screenshot("operations",(280,730,1010,970),y=315,max_h=160)
-screenshot("operations",(930,730,1760,970),y=132,max_h=160)
+screenshot("operations",(280,755,1010,950),y=315,max_h=160)
+screenshot("operations",(990,750,1790,950),y=132,max_h=160)
 text(42,121,"Actual editor crops - select, append and mark synced",9,color=GREEN)
 box(42,52,708,55)
 para(56,88,"The schedule selects unsynced messages, appends them to Airtable and records that the sync completed. This keeps the visible conversation tied to its saved request.",678,10.2,15)
@@ -217,7 +232,7 @@ end()
 # 14 - live output: Requests
 header("Demo output / Requests","A sortable manager view",
        "The saved request is mirrored into Airtable, where the manager can see its reference, status, priority and source.")
-output_shot("airtable-requests.png",(52,48,1090,365),y=208)
+output_shot("airtable-requests.png",(332,128,1258,324),y=208)
 text(42,193,"ACTUAL AIRTABLE GRID  /  SYNTHETIC DEMO REQUESTS",9,color=GREEN)
 box(42,77,708,91)
 text(56,143,"What the visible rows show",11,"Geist",GREEN)
@@ -227,27 +242,27 @@ end()
 # 15 - live output: Conversations
 header("Demo output / Conversations","The follow-up stays attached",
        "A second Airtable view records the request reference, message direction and channel for tenant follow-up.")
-output_shot("airtable-conversations.png",(52,48,1090,390),y=196)
+output_shot("airtable-conversations.png",(335,130,1260,359),y=196)
 text(42,181,"ACTUAL AIRTABLE GRID  /  CONTROLLED DEMO CONVERSATIONS",9,color=GREEN)
 box(42,69,708,86)
 text(56,132,"Why this matters",11,"Geist",GREEN)
 para(56,112,"The visible entries include an inbound tenant message and outbound follow-up tied to the same request. Email onboarding and Telegram updates are recorded in the same conversation history.",675,10.5,16)
 end()
 
-# 16 - recorded proof, presented as demo evidence only
+# Recorded proof, presented as demo evidence only
 header("Recorded checks","Verified with controlled demo traffic",
        "These checks used synthetic maintenance scenarios and controlled accounts. They describe the demonstrated build, not a client outcome.")
-output_shot("n8n-intake-execution.png",(350,190,1258,510),y=234)
-text(42,219,"ACTUAL N8N EXECUTION  /  SUCCESSFUL INTAKE PATH",9,color=GREEN)
-evidence=[
- "Six synthetic scenarios were each run five times from clean state: 30/30 expected priorities, with zero Telegram sends in fixture mode.",
- "A controlled form request completed the intake path and appeared in the Airtable Requests view as an urgent request.",
- "A live status question produced one factual reply without opening another ticket or invoking the manager decision flow."
-]
-y=181
-for item in evidence:
-    c.setFillColor(GREEN); c.circle(48,y+3,2.5,stroke=0,fill=1)
-    y=para(62,y,item,670,10.1,14)-8
+box(42,286,708,170)
+text(62,421,"30 / 30",33,"Geist",GREEN)
+text(62,391,"EXPECTED PRIORITIES",10,"Geist",GREEN)
+para(62,365,"Six synthetic scenarios, each run five times from clean state. No Telegram messages were sent in fixture mode.",658,12,18)
+text(42,244,"CONTROLLED END-TO-END CHECKS",9,color=GREEN)
+box(42,129,344,93)
+text(58,193,"Form intake",12,"Geist",GREEN)
+para(58,174,"An urgent form request completed the intake path and appeared in the Airtable Requests view.",310,10.3,15)
+box(406,129,344,93)
+text(422,193,"Tenant status",12,"Geist",GREEN)
+para(422,174,"A live status question returned one factual reply without creating another ticket or invoking the manager decision flow.",310,10.3,15)
 end()
 
 total=len(pages)

@@ -18,8 +18,8 @@
       "type": "n8n-nodes-base.emailReadImap",
       "typeVersion": 2.1,
       "position": [
-        -1000,
-        -180
+        -1008,
+        -176
       ],
       "credentials": {
         "imap": {
@@ -110,8 +110,8 @@
       "type": "n8n-nodes-base.formTrigger",
       "typeVersion": 2.6,
       "position": [
-        -1000,
-        180
+        -1008,
+        16
       ]
     },
     {
@@ -125,8 +125,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -760,
-        -180
+        -784,
+        -176
       ]
     },
     {
@@ -140,8 +140,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -760,
-        180
+        -784,
+        16
       ]
     },
     {
@@ -155,8 +155,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -520,
-        0
+        -560,
+        -80
       ]
     },
     {
@@ -173,8 +173,8 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1,
       "position": [
-        -300,
-        0
+        -336,
+        -80
       ],
       "alwaysOutputData": true
     },
@@ -189,8 +189,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -60,
-        0
+        -112,
+        -80
       ]
     },
     {
@@ -207,8 +207,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -20,
-        0
+        112,
+        -80
       ],
       "credentials": {
         "postgres": {
@@ -231,8 +231,8 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1,
       "position": [
-        220,
-        -140
+        336,
+        -176
       ]
     },
     {
@@ -246,8 +246,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        220,
-        80
+        336,
+        16
       ]
     },
     {
@@ -278,8 +278,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        460,
-        80
+        560,
+        16
       ]
     },
     {
@@ -299,8 +299,8 @@
       "type": "n8n-nodes-base.emailSend",
       "typeVersion": 2.1,
       "position": [
-        700,
-        -20
+        784,
+        -48
       ],
       "credentials": {
         "smtp": {
@@ -321,8 +321,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        920,
-        -20
+        1008,
+        -48
       ]
     },
     {
@@ -339,8 +339,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        1140,
-        -20
+        1232,
+        -48
       ],
       "credentials": {
         "postgres": {
@@ -364,8 +364,8 @@
       "type": "n8n-nodes-base.form",
       "typeVersion": 2.5,
       "position": [
-        1360,
-        140
+        1456,
+        16
       ]
     }
   ],
