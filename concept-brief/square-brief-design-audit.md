@@ -44,3 +44,13 @@ Page 2 previously described the work but left automatic preparation and human au
 Page 3 had inconsistent external card padding and divider use. All external cards now share one icon, heading, body, corner, and border treatment. Proposed connection methods moved to one compact key. Both grouped connection paths meet the n8n header, preventing a visual suggestion that AI reaches PostgreSQL or business tools directly. Card copy states direction without rows of arrows. The n8n header and resident title were shortened after rendered checks showed collisions.
 
 Every page received a text pass using syntax-polish guidance: shorter concrete sentences, retained conditional language for prospective integrations, and no added client evidence or promised savings. The controls, lifecycle, and full capability families remain represented. Incoming PDF and builder are archived under `output/pdf/archive/square-20260928-role-clarity/`.
+
+## 2026-09-28 padding correction
+
+Three screenshot-reported defects were measured and corrected:
+
+- Page 1: the left comparison icons started 1pt inside their cards, while the right icons had 9pt. Both sides now use 9pt inset; their text starts 8pt after the icon and ends 10pt before the card edge.
+- Page 3: external-card body text started 3pt before a 26pt icon tile ended. The cards now use a 22pt icon tile and put left-card body text 7pt below it; right-card body text starts 4pt below it. Card text remains within its bottom padding.
+- Page 4: contact details sat about 5pt above the dark panel's inner edge and 11pt from its left edge. The line was moved up and right to roughly 10pt bottom and 19pt left padding. The CTA button was inset to balance the right side and its clickable area was moved with it.
+
+The incoming PDF and exact builder are preserved under `output/pdf/archive/square-20260928-padding-fix/`. All four pages were regenerated; pages 1, 3, and 4 were inspected at 1200px after the changes, and the structural PDF validator passed.

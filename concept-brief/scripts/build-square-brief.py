@@ -137,12 +137,12 @@ for i,(lh,lb,rh,rb) in enumerate(rows):
     y=260+i*49
     box(38,y,276,43,WHITE,LINE,9)
     box(334,y,276,43,SOFT if i in (1,2,3) else WHITE,LINE,9)
-    icon_tile(['mail','list-filter','message-circle-question-mark','database','user-round'][i],39,y+8)
+    icon_tile(['mail','list-filter','message-circle-question-mark','database','user-round'][i],47,y+8)
     icon_tile(['mail','cpu','message-circle-question-mark','shield-check','circle-check'][i],343,y+8,GREEN if i in (1,2,3) else MUTED, '#E0ECE2' if i in (1,2,3) else PAPER)
-    text(lh,73,y+6,230,11,bold=True)
-    text(lb,73,y+23,230,10,MUTED,maxh=13)
-    text(rh,377,y+6,230,11,GREEN if i in (1,2,3) else INK,True)
-    text(rb,377,y+23,230,10,MUTED,maxh=13)
+    text(lh,81,y+6,223,11,bold=True)
+    text(lb,81,y+23,223,10,MUTED,maxh=13)
+    text(rh,377,y+6,223,11,GREEN if i in (1,2,3) else INK,True)
+    text(rb,377,y+23,223,10,MUTED,maxh=13)
     if i<4:
         arrow(172,y+43,172,y+48,MUTED); arrow(476,y+43,476,y+48)
 label('Stays',46,516,65)
@@ -207,9 +207,11 @@ label('Existing business tools',437,137,181)
 
 def external_card(x,y,w,h,title,copy,ic):
     box(x,y,w,h,WHITE,LINE,10)
-    icon_tile(ic,x+11,y+10)
-    heading(title,x+45,y+13,w-55,11.5)
-    text(copy,x+13,y+33,w-26,10,MUTED,maxh=h-38)
+    box(x+12,y+10,22,22,PAPER,r=11)
+    icon(ic,x+16,y+14,14)
+    heading(title,x+43,y+12,w-54,11.5)
+    body_offset = 39 if w < 170 else 36
+    text(copy,x+13,y+body_offset,w-26,10,MUTED,maxh=h-body_offset-4)
 
 external_card(30,170,160,118,'Resident intake',
               'Portal, email, SMS, phone.<br/>Reports and replies in; questions and confirmed updates out.','mail')
@@ -249,7 +251,7 @@ for branch_y in (229,400):
 # One shared junction, with short branches, keeps the central service visually
 # dominant. Directions are written in the endpoint copy.
 line(411,207,423,207,GREEN,1.2)
-line(423,200,423,476,GREEN,1.2)
+line(423,196,423,476,GREEN,1.2)
 business = [
  ('[Client PMS]','Reads resident, unit, and work; writes approved records.','database'),
  ('[Manager channel]','Decision request out; staff approval back.','user-round'),
@@ -258,8 +260,8 @@ business = [
  ('[Reporting tool]','Operational events out for portfolio view.','chart-no-axes-column'),
 ]
 for i,(name,exchange,ic) in enumerate(business):
-    y=169+i*69
-    external_card(437,y,181,64,name,exchange,ic)
+    y=165+i*70
+    external_card(437,y,181,65,name,exchange,ic)
     line(423,y+31,437,y+31,GREEN,1.1)
     c.setFillColor(HexColor(GREEN)); c.circle(423,H-y-31,1.8,fill=1,stroke=0)
 
@@ -301,13 +303,13 @@ heading('What this changes for the business',30,450,588,14)
 text('Linked history reduces chasing; policy-led alerts limit interruptions. Confirmed updates and shared reporting make handoffs and portfolio work easier to track.',30,474,588,11,GREEN,maxh=28)
 
 shell(30,514,588,92,INK)
-heading('Discuss your maintenance workflow.',46,531,388,17,WHITE)
-text('Review your tools, connections, and approval rules.',46,558,367,11,'#E9E3DB',maxh=14)
-text('Sambhav Jain / sambhav@sambhavbuilds.com',46,584,371,10,'#D6CFC5')
-box(451,542,150,38,ORANGE,r=19)
-text('Discuss the fit',465,555,106,10,WHITE,True)
-box(574,549,24,24,'#A63E1D',r=12); arrow(580,561,591,561,WHITE)
-c.linkURL('https://cal.com/sambhav-builds/pm-automation-audit',(451,H-580,601,H-542),relative=0)
+heading('Discuss your maintenance workflow.',54,530,375,17,WHITE)
+text('Review your tools, connections, and approval rules.',54,556,355,11,'#E9E3DB',maxh=14)
+text('Sambhav Jain / sambhav@sambhavbuilds.com',54,579,371,10,'#D6CFC5')
+box(445,542,150,38,ORANGE,r=19)
+text('Discuss the fit',459,555,106,10,WHITE,True)
+box(568,549,24,24,'#A63E1D',r=12); arrow(574,561,585,561,WHITE)
+c.linkURL('https://cal.com/sambhav-builds/pm-automation-audit',(445,H-580,595,H-542),relative=0)
 c.showPage()
 c.save()
 print(OUT)

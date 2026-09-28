@@ -197,6 +197,11 @@ The staged plan is saved in `build-plan.md`.
 - The live Gmail mailbox should stay dedicated to demo traffic; unrelated unread messages can be ingested when the IMAP trigger is active.
 - Before a prospect call, run the Stage 8 clean reset or restore a clean local snapshot so old test tickets such as `MR-0002` do not show on the board.
 
+## 2026-09-28 - Brief spacing correction
+
+- Corrected three screenshot-reported spacing problems in the square brief: comparison icons now share a 9pt card inset, external system-card text clears its icon/title area, and the final CTA contact details have larger left and bottom padding. Matched the CTA button's right inset and link rectangle.
+- Archived the incoming PDF and builder under `output/pdf/archive/square-20260928-padding-fix/`. Regenerated the four-page PDF, inspected pages 1, 3, and 4 at desktop size, and passed the existing page/font/link/content-boundary validator. The unrelated working-tree changes remain untouched.
+
 ## 2026-09-28 - Role clarity and full-brief copy pass
 
 - Added actor labels across page 2 and a concise AI/workflow/people key; kept AI recommendation distinct from fixed escalation rules and manager authority. Shortened repetitive process copy while keeping clarification, owner approval, confirmed sending, progress, and staff closure.
