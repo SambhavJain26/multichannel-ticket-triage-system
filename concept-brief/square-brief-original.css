@@ -30,7 +30,7 @@ h1,h2,h3{font-family:Geist,Manrope,sans-serif;font-weight:800;line-height:1.12}
 .research>.shell-inner{display:flex;align-items:stretch;gap:18px;padding:5px}
 .research-sources{width:204px;border-radius:15px;background:var(--ink);color:var(--white);padding:14px 16px;flex:none}
 .research-sources .small-label{color:#d6cfc5;margin-bottom:9px}
-.research-sources p{font-size:13.333px;line-height:1.2}
+.research-sources p{font-size:13.333px;line-height:1.2;white-space:pre-line}
 .research-copy{padding:7px 16px 0 0;flex:1}
 .research-copy .small-label{color:var(--orange);margin-bottom:7px}
 .research-copy p{font-size:14.667px;line-height:1.25}

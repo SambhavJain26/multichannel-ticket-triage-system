@@ -1,0 +1,26 @@
+{
+  "slug": "replace-with-prospect-slug",
+  "company": "",
+  "decisionMaker": "",
+  "research": {
+    "reviewed": ["", "", ""],
+    "note": "",
+    "evidence": []
+  },
+  "systems": {
+    "hosting": "",
+    "pms": "",
+    "managerChannel": "",
+    "vendorChannel": "",
+    "ownerProcess": "",
+    "reportingTool": ""
+  },
+  "routes": {
+    "intake": "",
+    "pms": "",
+    "manager": "",
+    "vendor": "",
+    "owner": "",
+    "reporting": ""
+  }
+}

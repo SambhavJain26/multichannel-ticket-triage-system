@@ -10,7 +10,7 @@
 <div class="document">
   <section class="page page-one" aria-label="Page 1: What changes in your maintenance process">
     <header class="page-header">
-      <div class="byline"><span>Sambhav Jain</span><span>[Client Company]</span></div>
+      <div class="byline"><span>Sambhav Jain</span><span data-prospect="company">[Client Company]</span></div>
       <div class="header-rule"></div>
       <div class="badge eyebrow">Maintenance triage / Business change</div>
       <h1>What changes in your <em>maintenance process</em></h1>
@@ -21,11 +21,11 @@
       <div class="shell-inner">
         <div class="research-sources">
           <div class="small-label">Research reviewed</div>
-          <p>[Website / source]<br>[Portfolio / markets]<br>[Verified operating detail]</p>
+          <p data-prospect="research.reviewed">[Website / source]<br>[Portfolio / markets]<br>[Verified operating detail]</p>
         </div>
         <div class="research-copy">
-          <div class="small-label">A note for [Decision Maker]</div>
-          <p>At [Client Company], [verified detail] may make [operating goal] a priority. Connecting [intake] to [Client PMS] would give [team] the request details in one place before they decide.</p>
+          <div class="small-label">A note for <span data-prospect="decisionMaker">[Decision Maker]</span></div>
+          <p data-prospect="research.note">At [Client Company], [verified detail] may make [operating goal] a priority. Connecting [intake] to [Client PMS] would give [team] the request details in one place before they decide.</p>
         </div>
       </div>
     </div>
@@ -60,7 +60,7 @@
 
   <section class="page page-two" aria-label="Page 2: End-to-end workflow">
     <header class="page-header">
-      <div class="byline"><span>Sambhav Jain</span><span>[Client Company]</span></div><div class="header-rule"></div>
+      <div class="byline"><span>Sambhav Jain</span><span data-prospect="company">[Client Company]</span></div><div class="header-rule"></div>
       <div class="badge eyebrow">Maintenance triage / End-to-end workflow</div>
       <h1>From report to <em>verified completion</em></h1>
       <p class="subtitle">See what AI prepares, what the workflow handles, and where your team decides.</p>
@@ -88,7 +88,7 @@
 
   <section class="page page-three" aria-label="Page 3: Tools and connections">
     <header class="page-header">
-      <div class="byline"><span>Sambhav Jain</span><span>[Client Company]</span></div><div class="header-rule"></div>
+      <div class="byline"><span>Sambhav Jain</span><span data-prospect="company">[Client Company]</span></div><div class="header-rule"></div>
       <div class="badge eyebrow">Maintenance triage / Tools &amp; connections</div>
       <h1>How your <em>systems connect</em></h1>
       <p class="subtitle">Proposed stack and routes. Access depends on the client’s accounts and permissions.</p>
@@ -105,24 +105,24 @@
     <div class="outside-title">Proposed / outside hosting</div>
     <div class="external-card ai-api"><div class="card-heading"><span class="icon-badge" data-icon="cpu"></span><h2>OpenAI API</h2></div><p>Context in; interpretation and drafts back. No business actions. HTTPS API.</p></div>
     <div class="hosting"><div class="hosting-inner">
-      <div class="n8n-card"><div class="small-label">[Client AWS / approved cloud]</div><h2>n8n workflow</h2><p>Links tools and runs the flow.</p></div>
+      <div class="n8n-card"><div class="small-label" data-prospect="systems.hosting">[Client AWS / approved cloud]</div><h2>n8n workflow</h2><p>Links tools and runs the flow.</p></div>
       <div class="stack-card rules"><div class="card-heading"><span class="icon-badge green" data-icon="shield-check"></span><h2>Fixed rules</h2></div><p>Safety and approval limits.</p></div>
       <div class="stack-card state"><div class="card-heading"><span class="icon-badge green" data-icon="message-circle-question-mark"></span><h2>Conversation state</h2></div><p>Replies, retries, delivery.</p></div>
       <div class="stack-card database"><div class="card-heading"><span class="icon-badge green" data-icon="database"></span><h2>PostgreSQL</h2></div><p>Request state, history, audit, and duplicate checks.</p></div>
       <p class="hosting-note">PMS remains the business record.</p>
     </div></div>
-    <div class="external-card business-card pms"><div class="card-heading"><span class="icon-badge" data-icon="database"></span><h2>[Client PMS]</h2></div><p>Reads resident, unit, and work; writes approved records.</p></div>
-    <div class="external-card business-card manager"><div class="card-heading"><span class="icon-badge" data-icon="user-round"></span><h2>[Manager channel]</h2></div><p>Decision request out; staff approval back.</p></div>
-    <div class="external-card business-card vendor"><div class="card-heading"><span class="icon-badge" data-icon="send"></span><h2>[Vendor channel]</h2></div><p>Approved job out; reply and send result back.</p></div>
-    <div class="external-card business-card owner"><div class="card-heading"><span class="icon-badge" data-icon="circle-check"></span><h2>[Owner process]</h2></div><p>Spend request out; owner decision back.</p></div>
-    <div class="external-card business-card reporting"><div class="card-heading"><span class="icon-badge" data-icon="chart-no-axes-column"></span><h2>[Reporting tool]</h2></div><p>Operational events out for portfolio view.</p></div>
-    <div class="routes"><div class="small-label">Routes to confirm with the client</div><div class="route-grid"><div><b>Intake:</b> [API / webhook / secure mailbox]</div><div><b>PMS:</b> [API / partner / import]</div><div><b>Manager:</b> [app / secure review link]</div><div><b>Vendor:</b> [PMS / portal / email]</div><div><b>Owner:</b> [existing approval]</div><div><b>Reporting:</b> [feed / export]</div></div></div>
+    <div class="external-card business-card pms"><div class="card-heading"><span class="icon-badge" data-icon="database"></span><h2 data-prospect="systems.pms">[Client PMS]</h2></div><p>Reads resident, unit, and work; writes approved records.</p></div>
+    <div class="external-card business-card manager"><div class="card-heading"><span class="icon-badge" data-icon="user-round"></span><h2 data-prospect="systems.managerChannel">[Manager channel]</h2></div><p>Decision request out; staff approval back.</p></div>
+    <div class="external-card business-card vendor"><div class="card-heading"><span class="icon-badge" data-icon="send"></span><h2 data-prospect="systems.vendorChannel">[Vendor channel]</h2></div><p>Approved job out; reply and send result back.</p></div>
+    <div class="external-card business-card owner"><div class="card-heading"><span class="icon-badge" data-icon="circle-check"></span><h2 data-prospect="systems.ownerProcess">[Owner process]</h2></div><p>Spend request out; owner decision back.</p></div>
+    <div class="external-card business-card reporting"><div class="card-heading"><span class="icon-badge" data-icon="chart-no-axes-column"></span><h2 data-prospect="systems.reportingTool">[Reporting tool]</h2></div><p>Operational events out for portfolio view.</p></div>
+    <div class="routes"><div class="small-label">Routes to confirm with the client</div><div class="route-grid"><div><b>Intake:</b> <span data-prospect="routes.intake">[API / webhook / secure mailbox]</span></div><div><b>PMS:</b> <span data-prospect="routes.pms">[API / partner / import]</span></div><div><b>Manager:</b> <span data-prospect="routes.manager">[app / secure review link]</span></div><div><b>Vendor:</b> <span data-prospect="routes.vendor">[PMS / portal / email]</span></div><div><b>Owner:</b> <span data-prospect="routes.owner">[existing approval]</span></div><div><b>Reporting:</b> <span data-prospect="routes.reporting">[feed / export]</span></div></div></div>
     <footer class="page-footer"><div class="footer-rule"></div><div class="footer-row"><span>sambhavbuilds.com / Proposed production solution</span><span class="page-count">03 / 04</span></div></footer>
   </section>
 
   <section class="page page-four" aria-label="Page 4: Operations and outcomes">
     <header class="page-header">
-      <div class="byline"><span>Sambhav Jain</span><span>[Client Company]</span></div><div class="header-rule"></div>
+      <div class="byline"><span>Sambhav Jain</span><span data-prospect="company">[Client Company]</span></div><div class="header-rule"></div>
       <div class="badge eyebrow">Maintenance triage / Operations &amp; outcomes</div>
       <h1>How your team <em>runs it each day</em></h1>
       <p class="subtitle">Staff work in familiar tools. Each waiting item or failed action has an owner and a next step.</p>

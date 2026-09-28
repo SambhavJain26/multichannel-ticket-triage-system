@@ -1,0 +1,26 @@
+{
+  "slug": "qa-only-sample",
+  "company": "Sample Property Co.",
+  "decisionMaker": "Alex Morgan",
+  "research": {
+    "reviewed": ["Sample website", "Sample portfolio", "Sample hiring page"],
+    "note": "Sample copy only: this fictional operator receives maintenance reports from several channels. Connecting those reports to its PMS would give the operations team one prepared request to review.",
+    "evidence": [{ "fact": "Fictional QA copy", "source": "Local test fixture" }]
+  },
+  "systems": {
+    "hosting": "Approved cloud",
+    "pms": "Sample PMS",
+    "managerChannel": "Manager email",
+    "vendorChannel": "Vendor portal",
+    "ownerProcess": "Owner email",
+    "reportingTool": "Portfolio dashboard"
+  },
+  "routes": {
+    "intake": "API and secure mailbox",
+    "pms": "API, subject to access",
+    "manager": "Secure review link",
+    "vendor": "Portal or email",
+    "owner": "Existing approval",
+    "reporting": "Approved export"
+  }
+}

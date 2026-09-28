@@ -256,3 +256,9 @@ The staged plan is saved in `build-plan.md`.
 
 - Corrected the screenshot-reported page-two geometry in the HTML recreation: the numbered circles now share the process-line center, and the manager-decision highlight sits beside the rail with consistent content padding instead of covering the number and interrupting the line.
 - Added a geometry check for all eight circle centers and the decision highlight's clearance from the circle, title, and manager badge. Regenerated the separate HTML-recreation PDF; the four-page DOM gate passes, and its page-two Poppler render was inspected at 1200px. The source square PDF and unrelated files remain unchanged.
+
+## 2026-09-28 - Prospect-data template for the HTML recreation
+
+- Moved prospect-only fields into `concept-brief/prospect-data.template.json`: company, decision maker, verified research note/source labels, and optional system/connection names. The renderer fills named HTML slots as plain text, keeps unknown optional routes visibly bracketed, and writes each lead to a distinct slugged PDF without changing the reusable source PDF.
+- Kept research evidence in the data file for internal verification rather than printing it. Documented the one-file personalization command in `concept-brief/square-brief-original-notes.md`; no generator or production-workflow behaviour changed.
+- Verified the placeholder and synthetic-data exports as four square pages with valid booking links and passing page/card/alignment checks. The synthetic fixture and PDF remain QA-only; no actual prospect facts were invented.
