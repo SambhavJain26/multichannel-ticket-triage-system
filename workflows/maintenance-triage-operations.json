@@ -20,7 +20,7 @@
       "typeVersion": 1.2,
       "position": [
         -720,
-        -140
+        -144
       ]
     },
     {
@@ -40,7 +40,7 @@
       "typeVersion": 1.2,
       "position": [
         -720,
-        20
+        80
       ]
     },
     {
@@ -60,7 +60,7 @@
       "typeVersion": 1.2,
       "position": [
         -720,
-        180
+        304
       ]
     },
     {
@@ -80,7 +80,7 @@
       "typeVersion": 1.2,
       "position": [
         -720,
-        340
+        528
       ]
     },
     {
@@ -97,8 +97,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -480,
-        -140
+        -496,
+        -144
       ],
       "credentials": {
         "postgres": {
@@ -118,8 +118,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -240,
-        -140
+        -272,
+        -144
       ]
     },
     {
@@ -139,8 +139,8 @@
       "type": "n8n-nodes-base.emailSend",
       "typeVersion": 2.1,
       "position": [
-        0,
-        -140
+        -48,
+        -144
       ],
       "credentials": {
         "smtp": {
@@ -164,8 +164,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -480,
-        20
+        -496,
+        80
       ],
       "credentials": {
         "postgres": {
@@ -185,8 +185,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -240,
-        20
+        -272,
+        80
       ]
     },
     {
@@ -206,8 +206,8 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        0,
-        20
+        -48,
+        80
       ],
       "credentials": {
         "telegramApi": {
@@ -231,8 +231,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -480,
-        180
+        -496,
+        304
       ],
       "credentials": {
         "postgres": {
@@ -255,8 +255,8 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1,
       "position": [
-        -240,
-        180
+        -272,
+        304
       ]
     },
     {
@@ -273,8 +273,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -480,
-        340
+        -496,
+        528
       ],
       "credentials": {
         "postgres": {
@@ -287,15 +287,15 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "return $input.all().flatMap(item=>{const j=item.json; const a=typeof j.airtable==='string'?JSON.parse(j.airtable):j.airtable||{}; return a.enabled&&a.base_id&&j.request_record_id?[{json:{...j,airtable_url:`https://api.airtable.com/v0/${a.base_id}/${encodeURIComponent(a.conversations_table||'Conversations')}`,airtable_body:{records:[{fields:{'Request':[j.request_record_id],'Direction':j.direction,'Channel':j.channel,'Intent':j.intent,'Body':j.body,'External Message ID':j.external_message_id||'','Delivery State':j.delivery_state,'At':j.created_at}}]}}}]:[];});"
+        "jsCode": "return $input.all().flatMap(item=>{const j=item.json; const a=typeof j.airtable==='string'?JSON.parse(j.airtable):j.airtable||{}; return a.enabled&&a.base_id&&j.request_record_id?[{json:{...j,airtable_url:`https://api.airtable.com/v0/${a.base_id}/${encodeURIComponent(a.conversations_table||'Conversations')}`,airtable_body:{records:[{fields:{'Conversation':j.ref+' #'+j.id,'Request':[j.request_record_id],'Direction':j.direction,'Channel':j.channel,'Intent':j.intent,'Body':j.body,'External Message ID':j.external_message_id||'','Delivery State':j.delivery_state,'At':j.created_at}}]}}}]:[];});"
       },
       "id": "prepare-airtable-conversation-append",
       "name": "Prepare Airtable Conversation Append",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -240,
-        340
+        -272,
+        528
       ]
     },
     {
@@ -323,8 +323,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        0,
-        340
+        -48,
+        528
       ],
       "credentials": {
         "airtableTokenApi": {
@@ -345,8 +345,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        240,
-        340
+        176,
+        528
       ]
     },
     {
@@ -363,8 +363,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        480,
-        340
+        400,
+        528
       ],
       "credentials": {
         "postgres": {

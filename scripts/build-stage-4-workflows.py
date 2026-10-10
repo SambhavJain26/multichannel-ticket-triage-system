@@ -1143,6 +1143,9 @@ def main():
         (WORKFLOWS / "maintenance-triage-core.json", build_core()),
         (WORKFLOWS / "maintenance-triage-stage-4-driver.json", build_driver()),
     ]:
+        layout = json.loads((WORKFLOWS / "canvas-layouts.json").read_text()).get(workflow["id"], {})
+        for item in workflow["nodes"]:
+            item["position"] = layout.get(item["name"], item["position"])
         path.write_text(json.dumps(workflow, indent=2) + "\n", encoding="utf-8")
         print(f"Wrote {path}")
 

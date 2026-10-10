@@ -1,0 +1,540 @@
+{
+  "mt-tenant-intake-stage-9": {
+    "Demo Mailbox IMAP Trigger": [
+      -1008,
+      -176
+    ],
+    "TenantIntakeForm": [
+      -1008,
+      16
+    ],
+    "Normalize Email Intake": [
+      -784,
+      -176
+    ],
+    "Normalize Form Intake": [
+      -784,
+      16
+    ],
+    "Preserve Intake Context": [
+      -560,
+      -80
+    ],
+    "Execute Triage Engine": [
+      -336,
+      -80
+    ],
+    "Prepare Pairing Lookup": [
+      -112,
+      -80
+    ],
+    "Postgres Create Pairing Token": [
+      112,
+      -80
+    ],
+    "Execute Manager Desk": [
+      336,
+      -176
+    ],
+    "Prepare Onboarding Email": [
+      336,
+      16
+    ],
+    "Should Send Onboarding Email": [
+      560,
+      16
+    ],
+    "SMTP Send Telegram Onboarding": [
+      784,
+      -48
+    ],
+    "Attach Onboarding Result": [
+      1008,
+      -48
+    ],
+    "Postgres Record Onboarding Email": [
+      1232,
+      -48
+    ],
+    "Show Form Completion": [
+      1456,
+      16
+    ]
+  },
+  "mt-operations-stage-9": {
+    "Daily Digest Schedule": [
+      -720,
+      -144
+    ],
+    "Heartbeat Schedule": [
+      -720,
+      80
+    ],
+    "Emergency Escalation Schedule": [
+      -720,
+      304
+    ],
+    "Conversation Sync Schedule": [
+      -720,
+      528
+    ],
+    "Postgres Load Digest Config": [
+      -496,
+      -144
+    ],
+    "Prepare Digest": [
+      -272,
+      -144
+    ],
+    "SMTP Send Daily Digest": [
+      -48,
+      -144
+    ],
+    "Postgres Load Heartbeat Config": [
+      -496,
+      80
+    ],
+    "Prepare Heartbeat": [
+      -272,
+      80
+    ],
+    "Telegram Send Operator Heartbeat": [
+      -48,
+      80
+    ],
+    "Postgres Select Unanswered Emergencies": [
+      -496,
+      304
+    ],
+    "Execute Manager Desk Escalation": [
+      -272,
+      304
+    ],
+    "Postgres Select Unsynced Conversations": [
+      -496,
+      528
+    ],
+    "Prepare Airtable Conversation Append": [
+      -272,
+      528
+    ],
+    "HTTP Airtable Append Conversation": [
+      -48,
+      528
+    ],
+    "Attach Conversation Sync Result": [
+      176,
+      528
+    ],
+    "Postgres Mark Conversation Synced": [
+      400,
+      528
+    ]
+  },
+  "mt-manager-desk-stage-9": {
+    "Manager Desk Input": [
+      -1184,
+      -48
+    ],
+    "ManagerTelegramTrigger": [
+      -1184,
+      656
+    ],
+    "Normalize Manager Callback": [
+      -960,
+      656
+    ],
+    "Postgres Claim Vendor Send": [
+      -736,
+      656
+    ],
+    "Prepare Vendor Email": [
+      -512,
+      656
+    ],
+    "Should Send Vendor Email": [
+      -288,
+      656
+    ],
+    "SMTP Send Approved Vendor Email": [
+      -64,
+      656
+    ],
+    "Attach Vendor Email Result": [
+      160,
+      656
+    ],
+    "Postgres Finalize Vendor Send": [
+      384,
+      656
+    ],
+    "Prepare Tenant Vendor Update": [
+      608,
+      560
+    ],
+    "Telegram Send Tenant Vendor Update": [
+      832,
+      560
+    ],
+    "Attach Tenant Vendor Update Delivery": [
+      1056,
+      560
+    ],
+    "Postgres Record Tenant Vendor Update": [
+      1280,
+      560
+    ],
+    "Prepare Airtable Vendor Send Sync": [
+      608,
+      752
+    ],
+    "HTTP Airtable Sync Vendor Send": [
+      832,
+      752
+    ],
+    "Postgres Load Ticket For Manager": [
+      -960,
+      -48
+    ],
+    "Prepare Airtable Vendor Lookup": [
+      -736,
+      -48
+    ],
+    "Should Fetch Airtable Vendors": [
+      -512,
+      -48
+    ],
+    "HTTP Load Airtable Vendors": [
+      -288,
+      -112
+    ],
+    "Prepare Manager Vendor Alert": [
+      -64,
+      -48
+    ],
+    "Postgres Store Vendor Candidates": [
+      160,
+      -48
+    ],
+    "Reattach Manager Alert": [
+      384,
+      -48
+    ],
+    "Prepare Airtable Request Upsert": [
+      608,
+      -48
+    ],
+    "Should Sync Airtable Request": [
+      832,
+      -48
+    ],
+    "HTTP Airtable Upsert Request": [
+      1056,
+      -48
+    ],
+    "Attach Airtable Request Result": [
+      1280,
+      -48
+    ],
+    "Postgres Store Airtable Request Link": [
+      1504,
+      -48
+    ],
+    "Should Send Manager Keyboard 0": [
+      608,
+      -432
+    ],
+    "Telegram Send Manager Keyboard 0": [
+      832,
+      -432
+    ],
+    "Should Send Manager Keyboard 1": [
+      608,
+      -240
+    ],
+    "Telegram Send Manager Keyboard 1": [
+      832,
+      -240
+    ],
+    "Should Send Manager Keyboard 2": [
+      608,
+      144
+    ],
+    "Telegram Send Manager Keyboard 2": [
+      832,
+      144
+    ],
+    "Should Send Manager Keyboard 3": [
+      608,
+      336
+    ],
+    "Telegram Send Manager Keyboard 3": [
+      832,
+      336
+    ]
+  },
+  "mt-tenant-telegram-stage-9": {
+    "TenantTelegramTrigger": [
+      -1024,
+      208
+    ],
+    "Normalize Tenant Telegram Event": [
+      -800,
+      208
+    ],
+    "Is Pairing Start": [
+      -576,
+      208
+    ],
+    "Postgres Claim Pairing Token": [
+      -352,
+      112
+    ],
+    "Prepare Pairing Receipt": [
+      -128,
+      112
+    ],
+    "Telegram Send Pairing Receipt": [
+      96,
+      112
+    ],
+    "Postgres Load Tenant Chat": [
+      -352,
+      304
+    ],
+    "Reattach Tenant Event Context": [
+      -128,
+      304
+    ],
+    "Route Tenant Message": [
+      96,
+      304
+    ],
+    "Tenant Conversation Route": [
+      320,
+      240
+    ],
+    "Prepare Direct Telegram Welcome": [
+      544,
+      -176
+    ],
+    "Telegram Send Direct Welcome": [
+      768,
+      -176
+    ],
+    "Prepare New Ticket Payload": [
+      544,
+      16
+    ],
+    "Execute Triage Engine For Tenant": [
+      768,
+      16
+    ],
+    "Prepare New Ticket Link": [
+      992,
+      16
+    ],
+    "Postgres Link New Tenant Ticket": [
+      1216,
+      16
+    ],
+    "Decide New Ticket Manager Notification": [
+      1440,
+      -80
+    ],
+    "New Ticket Needs Manager": [
+      1664,
+      -80
+    ],
+    "Execute Manager Desk For Tenant": [
+      1888,
+      -80
+    ],
+    "Prepare New Ticket Tenant Reply": [
+      1440,
+      208
+    ],
+    "Telegram Send New Ticket Reply": [
+      1664,
+      208
+    ],
+    "Prepare New Conversation Prompt": [
+      544,
+      208
+    ],
+    "Postgres Clear Pre-Triage Buffer": [
+      768,
+      208
+    ],
+    "Telegram Send New Conversation Prompt": [
+      992,
+      208
+    ],
+    "Prepare Pre-Triage Buffer": [
+      544,
+      784
+    ],
+    "Postgres Buffer Preliminary Tenant Message": [
+      768,
+      784
+    ],
+    "Prepare Pre-Triage Clarification": [
+      992,
+      784
+    ],
+    "Telegram Send Pre-Triage Clarification": [
+      1216,
+      784
+    ],
+    "Prepare Tenant Status Reply": [
+      544,
+      400
+    ],
+    "Telegram Send Status Reply": [
+      768,
+      400
+    ],
+    "Attach Status Reply Delivery": [
+      992,
+      400
+    ],
+    "Postgres Record Status Reply": [
+      1216,
+      400
+    ],
+    "Prepare Clarification Retriage": [
+      544,
+      592
+    ],
+    "Execute Clarification Retriage": [
+      768,
+      592
+    ],
+    "Prepare Clarification Merge": [
+      992,
+      592
+    ],
+    "Postgres Merge Clarification Result": [
+      1216,
+      592
+    ],
+    "Prepare Clarification Response": [
+      1440,
+      592
+    ],
+    "Clarification Needs Manager": [
+      1664,
+      400
+    ],
+    "Execute Manager Desk After Clarification": [
+      1888,
+      400
+    ],
+    "Telegram Send Clarification Reply": [
+      1664,
+      688
+    ]
+  },
+  "maintenance-triage-core-stage-4": {
+    "Core Input": [
+      -1200,
+      128
+    ],
+    "Normalize Request": [
+      -976,
+      128
+    ],
+    "Postgres Dedupe Thread Gate": [
+      -752,
+      128
+    ],
+    "Prepare Gate Decision": [
+      -528,
+      128
+    ],
+    "Should Create Ticket": [
+      -304,
+      128
+    ],
+    "Return Existing Outcome": [
+      -80,
+      224
+    ],
+    "Prepare Classification Request": [
+      -80,
+      32
+    ],
+    "Items Needing Classifier": [
+      144,
+      -64
+    ],
+    "Synthetic Classification Result": [
+      592,
+      128
+    ],
+    "HTTP OpenAI Classification": [
+      368,
+      -64
+    ],
+    "Attach Classifier Response": [
+      592,
+      -64
+    ],
+    "Apply Safety Rules": [
+      816,
+      32
+    ],
+    "Postgres Insert Ticket Events": [
+      1040,
+      32
+    ],
+    "Attach Persisted Ticket": [
+      1264,
+      32
+    ],
+    "Items Needing Draft": [
+      1488,
+      -64
+    ],
+    "Return Without Draft": [
+      2384,
+      128
+    ],
+    "Prepare Draft Request": [
+      1712,
+      -64
+    ],
+    "HTTP OpenAI Draft": [
+      1936,
+      -64
+    ],
+    "Attach Draft Response": [
+      2160,
+      -64
+    ],
+    "Postgres Update Draft": [
+      2384,
+      -64
+    ],
+    "Route By Priority": [
+      2608,
+      0
+    ],
+    "Emergency Result": [
+      2832,
+      -256
+    ],
+    "Needs Review Result": [
+      2832,
+      -64
+    ],
+    "Urgent Result": [
+      2832,
+      128
+    ],
+    "Routine Result": [
+      2832,
+      320
+    ]
+  }
+}

@@ -1,0 +1,398 @@
+[
+  {
+    "image": "intake-full.png",
+    "size": [
+      1230,
+      180
+    ],
+    "sha256": "6f3a1f106f715245d002681ad6517732e0dc2d754e686a1730a86d2b976c2c6d",
+    "redactions": 2
+  },
+  {
+    "image": "intake-normalize.png",
+    "size": [
+      870,
+      355
+    ],
+    "sha256": "613a6c8350cbcc56eb23cbfc8b6ed926a1aa96651db9fd2a08b8b4b080301ff0",
+    "redactions": 1
+  },
+  {
+    "image": "intake-pairing.png",
+    "size": [
+      895,
+      370
+    ],
+    "sha256": "c208d7e521460a15c651a5b8dab5173a4bba2e343c50be82ded3a0d5f7f71520",
+    "redactions": 1
+  },
+  {
+    "image": "intake-complete.png",
+    "size": [
+      900,
+      255
+    ],
+    "sha256": "39f53445cb2650aa5c3bb52d29c3c1ddbb4ea5e6c03c73b6fa3f699330fdab2f",
+    "redactions": 0
+  },
+  {
+    "image": "intake-success.png",
+    "size": [
+      148,
+      47
+    ],
+    "sha256": "4d6e70a07cfd5d9f432f6e3fb560f82133b66d8672f7548228e672efbd6f5bea",
+    "redactions": 0
+  },
+  {
+    "image": "form-input.png",
+    "size": [
+      460,
+      440
+    ],
+    "sha256": "dd186c5c5995cc3094f262284a38698a0acfa6b800cbf9ef6cbcd5d208fcd15b",
+    "redactions": 0
+  },
+  {
+    "image": "form-output.png",
+    "size": [
+      885,
+      320
+    ],
+    "sha256": "e052572c173aab7152eee3009a653a951558e6d9ea82d31018449c6b4ac6aa48",
+    "redactions": 1
+  },
+  {
+    "image": "form-receipt.png",
+    "size": [
+      451,
+      107
+    ],
+    "sha256": "26090fe29316ba0989ebf72171e042f7fb2d0c922416763e2d5eeb36c52a8c22",
+    "redactions": 0
+  },
+  {
+    "image": "engine-full.png",
+    "size": [
+      1210,
+      219
+    ],
+    "sha256": "8a955b11ada85d8e50a4353ccde4b0b0705021af7a2a6d6b7d943ca34a1f7844",
+    "redactions": 2
+  },
+  {
+    "image": "engine-classify.png",
+    "size": [
+      655,
+      280
+    ],
+    "sha256": "cc2bc8b12fc2cfaa3d8afd1982179e6d251ac439de0885c31af191b8a414c11b",
+    "redactions": 1
+  },
+  {
+    "image": "engine-safety.png",
+    "size": [
+      450,
+      195
+    ],
+    "sha256": "41b3a5df56059028b9845989a5ad5d01b4fb428bbd5a27ba693b336a2e5ed14e",
+    "redactions": 0
+  },
+  {
+    "image": "engine-draft.png",
+    "size": [
+      870,
+      182
+    ],
+    "sha256": "79e2b30e8bddedc01685a6dfb61ded0c681f0f68425bc394ce1b6995d767b0cf",
+    "redactions": 1
+  },
+  {
+    "image": "engine-router.png",
+    "size": [
+      185,
+      216
+    ],
+    "sha256": "949d9351e3003ab43a4149b9b1df25f8ba8f5b819a9345b5ebfa0d980c92b3d6",
+    "redactions": 0
+  },
+  {
+    "image": "engine-routes-upper.png",
+    "size": [
+      233,
+      341
+    ],
+    "sha256": "93615e5a5f141914a23d078cf431c4dca08b2e2744823d6a9ca89dc6137bd277",
+    "redactions": 0
+  },
+  {
+    "image": "engine-routes-lower.png",
+    "size": [
+      233,
+      342
+    ],
+    "sha256": "3348563c94f550a1735ce3cf5e014f0f91f008bca6fbd1a6b055e900c7a5ee87",
+    "redactions": 0
+  },
+  {
+    "image": "engine-decision.png",
+    "size": [
+      527,
+      392
+    ],
+    "sha256": "000d3dc1443a2badcfb85a73cf796d5e80a48a8df844bd895a0b9df0e8cd9849",
+    "redactions": 0
+  },
+  {
+    "image": "tenant-full.png",
+    "size": [
+      1220,
+      457
+    ],
+    "sha256": "e2f4552341375759f355c1b1eb6984cc275303ce3e6b5767d56315681f96d149",
+    "redactions": 4
+  },
+  {
+    "image": "tenant-buffer.png",
+    "size": [
+      875,
+      185
+    ],
+    "sha256": "81b9ed1b1a63d29fd5b80ae7336f23869a41f27e9a59bf8a65e8c3efc62b4cfe",
+    "redactions": 0
+  },
+  {
+    "image": "tenant-clarify.png",
+    "size": [
+      870,
+      186
+    ],
+    "sha256": "a4c5b6b7477552fd86893aadbb7121d405bf5343457ff8f99bab51bc9cbc1619",
+    "redactions": 1
+  },
+  {
+    "image": "tenant-status.png",
+    "size": [
+      875,
+      180
+    ],
+    "sha256": "77ceb858e1e796b50b47c55cbb1e75b45b08b536e7970a82dd4845364d2ea91b",
+    "redactions": 0
+  },
+  {
+    "image": "tenant-handoff.png",
+    "size": [
+      645,
+      195
+    ],
+    "sha256": "9b56dda488946f26058cbe07d9e79faf660a3a4c3a4a3432d9c710faa66598ee",
+    "redactions": 1
+  },
+  {
+    "image": "tenant-journey-start.png",
+    "size": [
+      690,
+      289
+    ],
+    "sha256": "a228257160ff029082376943b60613c799b0a30372d04bada71eda83b31c5fa2",
+    "redactions": 0
+  },
+  {
+    "image": "tenant-journey-ready.png",
+    "size": [
+      690,
+      374
+    ],
+    "sha256": "cae05b752d7f18aef655c7b577bc2cbe414bb35373246c11c6c2f7505d326421",
+    "redactions": 0
+  },
+  {
+    "image": "tenant-journey-status.png",
+    "size": [
+      690,
+      454
+    ],
+    "sha256": "709766ed0ed1788b3c3ad9a348d0048c531f54be9fcd330fda77c24b2c0eba40",
+    "redactions": 0
+  },
+  {
+    "image": "manager-full.png",
+    "size": [
+      1230,
+      580
+    ],
+    "sha256": "b66a6786ee3df4c2ecfa131e866eb660f7c97eab7163d758bbc47e3fc882e14c",
+    "redactions": 0
+  },
+  {
+    "image": "manager-candidates.png",
+    "size": [
+      850,
+      255
+    ],
+    "sha256": "92e4770bdc10e64aeb3eea5f8d4058b71fac5e9b661bd8e66250ecf789c64335",
+    "redactions": 0
+  },
+  {
+    "image": "manager-approve.png",
+    "size": [
+      875,
+      205
+    ],
+    "sha256": "ec817e9d84699d850bd0a4b543c1108a7a286fe4ecd0f0e0b3940403a4682eed",
+    "redactions": 0
+  },
+  {
+    "image": "manager-outcome.png",
+    "size": [
+      1095,
+      380
+    ],
+    "sha256": "edcfe00f1242bfbadfd54a0b0608c1820e83f6b98630d1a3a17a5dadb988f6a5",
+    "redactions": 0
+  },
+  {
+    "image": "manager-approval-chat.png",
+    "size": [
+      485,
+      560
+    ],
+    "sha256": "c34b148b47d30e5aa7693f226bee14b7016be101425a93c8a6be853f0d6f9ed7",
+    "redactions": 0
+  },
+  {
+    "image": "manager-sent.png",
+    "size": [
+      545,
+      102
+    ],
+    "sha256": "c5571e003a6204ca542194c3932124037d6478a1f340ea46e74a067ed20656f7",
+    "redactions": 0
+  },
+  {
+    "image": "manager-repeat.png",
+    "size": [
+      620,
+      105
+    ],
+    "sha256": "430f6c28ed68f27ec7a46114f08017631c9409eb2fa3d8c78677b074a1dda6cb",
+    "redactions": 0
+  },
+  {
+    "image": "vendor-email.png",
+    "size": [
+      875,
+      329
+    ],
+    "sha256": "431bc3dd2985781a497e65a2c015a3be652550c94c96d35a355d8d6d0bab6cc4",
+    "redactions": 1
+  },
+  {
+    "image": "requests-classification.png",
+    "size": [
+      810,
+      226
+    ],
+    "sha256": "7048998948693261126b502c8b260b3f9996613802738cfc90498e675fecdc6d",
+    "redactions": 0
+  },
+  {
+    "image": "requests-dispatch.png",
+    "size": [
+      792,
+      225
+    ],
+    "sha256": "52c34d27f5986b9d37677f0f4d41bd6d7060e85ada4c4d3d962362bcb789dc00",
+    "redactions": 0
+  },
+  {
+    "image": "conversations-links.png",
+    "size": [
+      625,
+      384
+    ],
+    "sha256": "ac8fe5b6efea326147e65361867880fb0bf1638949a4ec6b541b683c9f132544",
+    "redactions": 0
+  },
+  {
+    "image": "conversations-outcomes.png",
+    "size": [
+      540,
+      384
+    ],
+    "sha256": "f1bc1b3728bbb2eb3a477af80c929fd87b11ff4250c2aee107f734739ef3b9a7",
+    "redactions": 0
+  },
+  {
+    "image": "operations-full.png",
+    "size": [
+      970,
+      629
+    ],
+    "sha256": "0e554ac9d4c0ea07a72381a5cfa5c529f8571584d4bc8adbd2ce73df5160d870",
+    "redactions": 1
+  },
+  {
+    "image": "operations-checks.png",
+    "size": [
+      930,
+      422
+    ],
+    "sha256": "427fdf6046a470e5e449c438fd5363cd1a1ea5f81ad78336ae25f62241d4c7e1",
+    "redactions": 0
+  },
+  {
+    "image": "operations-emergencies.png",
+    "size": [
+      680,
+      208
+    ],
+    "sha256": "8c9838fad90b1c742cdaa8bc2f5c83bb1c93e4ca88b036d2964f2c8cfcf34b1b",
+    "redactions": 1
+  },
+  {
+    "image": "operations-sync-select.png",
+    "size": [
+      655,
+      250
+    ],
+    "sha256": "ec37b0d35b83a19637273838f3dadb3d1516774b8a0e406ed96814ca2ba4018a",
+    "redactions": 0
+  },
+  {
+    "image": "operations-sync-complete.png",
+    "size": [
+      660,
+      250
+    ],
+    "sha256": "6840e580fbbb282508b98d38eb9ee610b5ccd828d3b2bd9ffd33858959d97955",
+    "redactions": 0
+  },
+  {
+    "image": "operations-executed-select.png",
+    "size": [
+      480,
+      136
+    ],
+    "sha256": "14963499272a24e0de51e94536c6ee94b2c4e8954213058cb14e996fb8b143f5",
+    "redactions": 0
+  },
+  {
+    "image": "operations-executed-complete.png",
+    "size": [
+      495,
+      136
+    ],
+    "sha256": "0028e240bec530a37cc576b0143bf094dd0abaf93979f513c7823e47fbdd3d19",
+    "redactions": 0
+  },
+  {
+    "image": "operations-success.png",
+    "size": [
+      141,
+      47
+    ],
+    "sha256": "55500e0ab7a499a850b3dc9cb0236d98ec3085b1fef7d83cfc8c96b287878bd9",
+    "redactions": 0
+  }
+]

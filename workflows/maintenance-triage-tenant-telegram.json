@@ -15,15 +15,16 @@
       "type": "n8n-nodes-base.telegramTrigger",
       "typeVersion": 1.3,
       "position": [
-        -1020,
-        0
+        -1024,
+        208
       ],
       "credentials": {
         "telegramApi": {
           "id": "stage9TenantTelegram",
           "name": "maintenance-triage-tenant-telegram-bot"
         }
-      }
+      },
+      "webhookId": "800d52bd-7ce5-4440-9559-d4200e857c97"
     },
     {
       "parameters": {
@@ -37,7 +38,7 @@
       "typeVersion": 2,
       "position": [
         -800,
-        0
+        208
       ]
     },
     {
@@ -68,8 +69,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        -580,
-        -100
+        -576,
+        208
       ]
     },
     {
@@ -86,8 +87,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -360,
-        -180
+        -352,
+        112
       ],
       "credentials": {
         "postgres": {
@@ -107,8 +108,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -140,
-        -180
+        -128,
+        112
       ]
     },
     {
@@ -128,8 +129,8 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        80,
-        -180
+        96,
+        112
       ],
       "credentials": {
         "telegramApi": {
@@ -153,8 +154,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -580,
-        120
+        -352,
+        304
       ],
       "credentials": {
         "postgres": {
@@ -175,8 +176,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -360,
-        120
+        -128,
+        304
       ]
     },
     {
@@ -190,8 +191,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -140,
-        120
+        96,
+        304
       ]
     },
     {
@@ -298,8 +299,8 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
       "position": [
-        80,
-        120
+        320,
+        240
       ]
     },
     {
@@ -313,8 +314,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        80,
-        -120
+        544,
+        -176
       ]
     },
     {
@@ -334,8 +335,8 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        300,
-        -120
+        768,
+        -176
       ],
       "credentials": {
         "telegramApi": {
@@ -356,8 +357,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        80,
-        0
+        544,
+        16
       ]
     },
     {
@@ -374,8 +375,8 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1,
       "position": [
-        300,
-        0
+        768,
+        16
       ],
       "alwaysOutputData": true
     },
@@ -390,8 +391,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        520,
-        0
+        992,
+        16
       ]
     },
     {
@@ -408,8 +409,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        740,
-        0
+        1216,
+        16
       ],
       "credentials": {
         "postgres": {
@@ -429,8 +430,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        960,
-        -60
+        1440,
+        -80
       ]
     },
     {
@@ -461,8 +462,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        1180,
-        -60
+        1664,
+        -80
       ]
     },
     {
@@ -479,8 +480,8 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1,
       "position": [
-        1400,
-        -60
+        1888,
+        -80
       ]
     },
     {
@@ -494,8 +495,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        960,
-        60
+        1440,
+        208
       ]
     },
     {
@@ -515,8 +516,8 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        1180,
-        60
+        1664,
+        208
       ],
       "credentials": {
         "telegramApi": {
@@ -537,17 +538,17 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        80,
-        160
+        544,
+        208
       ]
     },
     {
       "parameters": {
         "resource": "database",
         "operation": "executeQuery",
-        "query": "INSERT INTO triage.tenant_chats (telegram_chat_id, pending_intake_body, pending_intake_started_at)\nVALUES ($1::text, NULL, NULL)\nON CONFLICT (telegram_chat_id) DO UPDATE SET pending_intake_body = NULL, pending_intake_started_at = NULL, updated_at = now()\nRETURNING telegram_chat_id AS chat_id;",
+        "query": "INSERT INTO triage.tenant_chats (telegram_chat_id, pending_intake_body, pending_intake_started_at)\nVALUES ($1::text, NULL, NULL)\nON CONFLICT (telegram_chat_id) DO UPDATE SET pending_intake_body = NULL, pending_intake_started_at = NULL, updated_at = now()\nRETURNING telegram_chat_id AS chat_id, $2::text AS message_text;",
         "options": {
-          "queryReplacement": "={{ [$json.chat_id] }}"
+          "queryReplacement": "={{ [$json.chat_id, $json.message_text] }}"
         }
       },
       "id": "postgres-clear-pre-triage-buffer",
@@ -555,8 +556,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        300,
-        160
+        768,
+        208
       ],
       "credentials": {
         "postgres": {
@@ -583,8 +584,8 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        520,
-        160
+        992,
+        208
       ],
       "credentials": {
         "telegramApi": {
@@ -605,8 +606,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        80,
-        580
+        544,
+        784
       ]
     },
     {
@@ -623,8 +624,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        300,
-        580
+        768,
+        784
       ],
       "credentials": {
         "postgres": {
@@ -644,8 +645,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        520,
-        580
+        992,
+        784
       ]
     },
     {
@@ -665,8 +666,8 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        740,
-        580
+        1216,
+        784
       ],
       "credentials": {
         "telegramApi": {
@@ -687,8 +688,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        80,
-        300
+        544,
+        400
       ]
     },
     {
@@ -708,8 +709,8 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        300,
-        300
+        768,
+        400
       ],
       "credentials": {
         "telegramApi": {
@@ -730,8 +731,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        520,
-        300
+        992,
+        400
       ]
     },
     {
@@ -748,8 +749,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        740,
-        300
+        1216,
+        400
       ],
       "credentials": {
         "postgres": {
@@ -769,8 +770,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        80,
-        440
+        544,
+        592
       ]
     },
     {
@@ -787,8 +788,8 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1,
       "position": [
-        300,
-        440
+        768,
+        592
       ],
       "alwaysOutputData": true
     },
@@ -803,8 +804,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        520,
-        440
+        992,
+        592
       ]
     },
     {
@@ -821,8 +822,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        740,
-        440
+        1216,
+        592
       ],
       "credentials": {
         "postgres": {
@@ -842,8 +843,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        960,
-        440
+        1440,
+        592
       ]
     },
     {
@@ -874,8 +875,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        1180,
-        380
+        1664,
+        400
       ]
     },
     {
@@ -892,8 +893,8 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1,
       "position": [
-        1400,
-        320
+        1888,
+        400
       ]
     },
     {
@@ -913,8 +914,8 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        1400,
-        500
+        1664,
+        688
       ],
       "credentials": {
         "telegramApi": {
