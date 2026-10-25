@@ -1,6 +1,6 @@
-# Square production brief
+﻿# Square production brief
 
-Build with `python concept-brief/scripts/build-square-brief.py` using a Python environment with `reportlab` and `fonttools`. The bundled Codex Python environment was used for the verified export. Variable font sources and OFL licenses are in `assets/fonts`; static instances are generated under ignored `tmp/pdfs/square-fonts`.
+Build with `python concept-brief/scripts/build-square-brief.py` using a Python environment with `reportlab` and `fonttools`. The bundled the generator Python environment was used for the verified export. Variable font sources and OFL licenses are in `assets/fonts`; static instances are generated under ignored `tmp/pdfs/square-fonts`.
 
 Output: `output/pdf/maintenance-triage-square-brief.pdf`. Four 648 x 648 point pages. Preserve earlier versions under dated `output/pdf/archive` folders before replacing the output. Do not modify the portrait template or sent prospect PDFs as a side effect.
 

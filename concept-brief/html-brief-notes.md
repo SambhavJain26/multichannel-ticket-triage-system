@@ -1,4 +1,4 @@
-# HTML/CSS production brief
+﻿# HTML/CSS production brief
 
 ## Editable source and output
 
@@ -18,7 +18,7 @@ node concept-brief/scripts/render-square-brief.cjs
 pdftoppm -scale-to 1100 -png output/pdf/maintenance-triage-html-brief.pdf tmp/pdfs/html-square/final
 ```
 
-The exporter first tries local Playwright, then the bundled Codex runtime. `BRIEF_PLAYWRIGHT_PATH` and `BRIEF_BROWSER` can override the package path and Chromium channel. It waits for local fonts before printing. It checks four 864px pages, footer clearance, page bounds and content containment in key cards; human visual inspection remains required. PDF geometry is 648pt square because browser CSS uses 96px per inch and PDF uses 72pt.
+The exporter first tries local Playwright, then the bundled the generator runtime. `BRIEF_PLAYWRIGHT_PATH` and `BRIEF_BROWSER` can override the package path and Chromium channel. It waits for local fonts before printing. It checks four 864px pages, footer clearance, page bounds and content containment in key cards; human visual inspection remains required. PDF geometry is 648pt square because browser CSS uses 96px per inch and PDF uses 72pt.
 
 ## Preservation
 

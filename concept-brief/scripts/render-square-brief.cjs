@@ -1,4 +1,4 @@
-/** Export the editable HTML/CSS through Chromium. No ReportLab drawing. */
+﻿/** Export the editable HTML/CSS through Chromium. No ReportLab drawing. */
 const fs = require("node:fs");
 const path = require("node:path");
 const { pathToFileURL } = require("node:url");
@@ -9,7 +9,7 @@ try {
 } catch {
   const bundled = path.join(
     require("node:os").homedir(),
-    ".cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright",
+    ".cache/playwright-runtimes/dependencies/node/node_modules/playwright",
   );
   playwright = require(
     process.env.BRIEF_PLAYWRIGHT_PATH || path.resolve(bundled),

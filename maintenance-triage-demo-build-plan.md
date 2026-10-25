@@ -1,4 +1,4 @@
-# Maintenance Request Triage — Demo Build Plan
+﻿# Maintenance Request Triage — Demo Build Plan
 
 **Product:** advisory triage layer for inbound residential maintenance requests
 **Segment:** US residential PM companies, 150–600 doors
@@ -26,7 +26,7 @@ Stated plainly, because you asked for it.
 
 1. **Age-based auto-escalation to EMERGENCY is a bad idea.** The doc says "routine open 10 days → urgent; 14 days → emergency review." A 14-day-old squeaky door is not a safety emergency, and putting it on the same alert channel as a gas smell destroys the only thing that makes the alert channel valuable — that it never cries wolf. Changed to: aging items get an **OVERDUE** flag on the board and a line in the daily digest. They never fire a phone alert.
 2. **The deterministic keyword list as written will misfire.** `no heat` matches "there's no heat problem in the bedroom." `backed up` matches "the kitchen sink is backed up," which is usually routine. `gas` matches "gas bill," "gas station," "gas stove igniter." The rule layer is still correct in principle — it must exist — but it needs word-boundary regexes, a small negation guard, and the explicit understanding that it is **escalate-only** (it can raise a priority, never lower one). Over-escalation costs a phone call; that is the trade you want. Spec in §5.
-3. **"Token cost to build and test: under $1" is optimistic.** Not because per-call cost is high — it isn't — but because prompt iteration means running the fixture set dozens of times. Realistic OpenAI spend for the whole build is **$2–4**. Still well inside your $10 ceiling; the thing that actually threatens the ceiling is Claude Code's own token consumption reading and rewriting large workflow JSON (§12).
+3. **"Token cost to build and test: under $1" is optimistic.** Not because per-call cost is high — it isn't — but because prompt iteration means running the fixture set dozens of times. Realistic OpenAI spend for the whole build is **$2–4**. Still well inside your $10 ceiling; the thing that actually threatens the ceiling is iterative token consumption reading and rewriting large workflow JSON (§12).
 4. **The classification schema is missing four fields that matter.** No fair-housing/accommodation flag, no "this isn't a maintenance request at all" class, no follow-up/reopen detection, and no defined behaviour when the model call fails or returns garbage. That last one is the important one: a triage system whose failure mode is *silence* is the exact failure you're selling against. Added `NEEDS_REVIEW` as a **system state the model cannot produce** (§5).
 5. **"Paste all six in at once" has no mechanism.** Paste them where? Specified in §6 as a fixture-firing workflow with staggered delivery, which also looks better on screen than six cards appearing simultaneously.
 6. **Don't lead with borrowed statistics.** You have no track record; a prospect who challenges a stat you can't source live costs you more than the stat gained. Keep exactly one external reference — Buildium's own published guidance about auto-flagging leaks and gas smells, because it's their vendor and they can check it themselves — and get every other number out of the prospect's own mouth (§9).
@@ -238,7 +238,7 @@ APPROVAL (separate workflow)                              BOARD (separate workfl
 
 | Component | What it does | Cost | Licence | Why it beat the alternative |
 |---|---|---|---|---|
-| **n8n** (self-hosted, Docker) | Orchestration, all workflow logic | Free | Sustainable Use Licence (fair-code) | It's your existing stack and Claude Code can generate/import workflow JSON directly. Note the hosting caveat in §1.2. |
+| **n8n** (self-hosted, Docker) | Orchestration, all workflow logic | Free | Sustainable Use Licence (fair-code) | It's your existing stack and workflow JSON can be managed and imported directly. Note the hosting caveat in §1.2. |
 | **PostgreSQL 16** (Docker) | Tickets, events, config, feedback | Free | PostgreSQL Licence | Beat SQLite (concurrent access from multiple workflows) and Google Sheets (external dependency, rate limits, and "my data is in your Google account" is a terrible answer to a prospect). |
 | **Caddy** | Reverse proxy, automatic HTTPS | Free | Apache 2.0 | Telegram webhooks require valid HTTPS. Caddy does it with a two-line config; nginx + certbot does not. |
 | **Docker + Compose** | Runs the three services | Free | Apache 2.0 | Reproducible; you can rebuild the whole demo on a fresh VPS from one file. |
@@ -419,7 +419,7 @@ Standalone harness or HTTP fallback may use the direct OpenAI API. The exact end
 }
 ```
 
-Build notes for Claude Code:
+Build notes for implementation:
 - Put the **entire static system prompt first** so prompt caching applies (cached input bills at ~10% on this family).
 - GPT-5.x families reject `max_tokens` and may reject a custom `temperature` — use `max_completion_tokens` and omit `temperature`. If a 400 comes back naming a parameter, drop that parameter rather than downgrading the model.
 - **Do not use the Responses API** for this (§1.6).

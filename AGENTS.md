@@ -1,8 +1,8 @@
-# Repository Guidelines
+# Repository Guidelines & Operational Architecture
 
-This repository is the planning and implementation workspace for a local n8n maintenance request triage demo. Treat it as an automation project, not a compiled app. Core behavior will live in n8n workflow exports, Postgres schema/state, fixtures, prompts, and small helper scripts.
+These guidelines define the architecture, invariants, coding standards, and verification gates for this repository. All contributors and agentic workflows must strictly adhere to these specifications.
 
-## Read Order And Authority
+This repository is the implementation workspace for an enterprise n8n maintenance request triage, classification, and vendor dispatch automation system. Core behavior lives in n8n workflow exports, Postgres schema and state, synthetic fixtures, Airtable workspaces, and helper scripts.
 
 Read these files before changing scope or implementation details:
 

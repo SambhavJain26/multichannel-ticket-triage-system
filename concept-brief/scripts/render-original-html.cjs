@@ -1,4 +1,4 @@
-/** Render and check the editable HTML recreation of the earlier square PDF. */
+﻿/** Render and check the editable HTML recreation of the earlier square PDF. */
 const fs = require("node:fs");
 const path = require("node:path");
 const os = require("node:os");
@@ -60,7 +60,7 @@ let playwright;
 try {
   playwright = require("playwright");
 } catch {
-  playwright = require(path.join(os.homedir(), ".cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright"));
+  playwright = require(path.join(os.homedir(), ".cache/playwright-runtimes/dependencies/node/node_modules/playwright"));
 }
 
 (async () => {
