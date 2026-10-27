@@ -1,4 +1,4 @@
-﻿# Case Study: Autonomous Maintenance Request Triage & Dispatch Engine
+# Case Study: Multi-Channel Ticket Triage & Automated Routing System
 
 > *A comprehensive portfolio case study detailing the architecture, engineering decisions, and operational impact of an enterprise property management maintenance automation engine.*
 
@@ -6,7 +6,7 @@
 
 ## Project Hero
 
-* **Project Title**: Autonomous Maintenance Request Triage & Dispatch Engine
+* **Project Title**: Multi-Channel Ticket Triage & Automated Routing System
 * **Subtitle**: An event-driven n8n and PostgreSQL automation engine that ingests tenant repair requests across email, web forms, and Telegram, classifies urgency with deterministic safety rules, and routes 1-tap dispatch cards to managers.
 * **Role**: Lead Workflow Automation Architect & Backend Engineer
 * **Timeline**: 3 Weeks (Architecture, Database Design, Workflow Implementation, and Verification)
