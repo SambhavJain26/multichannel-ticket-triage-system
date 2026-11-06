@@ -285,3 +285,8 @@ The staged plan is saved in `build-plan.md`.
 - Saved slide copy and caption in `docs/build-2-content-strategy/technical-retrospective-carousel.md`, editable HTML in `carousel-kit/technical-retrospective-maintenance-triage.html`, rendered 810x1013 PDF in `carousel-kit/out/technical-retrospective-maintenance-triage.pdf` (215 KB, 11 pages), and preview contact sheet in `carousel-kit/out/technical-retrospective-maintenance-triage-preview.png`.
 - Automated checks confirmed all 11 slides preserve title, body, and footer wording, valid 4:5 mobile dimensions, zero internal leaks, and passing image rendering. Visually inspected every slide and the contact sheet; refined annotation targets on slides 6 and 9 to ensure clean hand-drawn geometry without clipping or line-wrap distortion.
 
+
+
+## 2026-11-07 - Add retrospective upload title
+
+- Added the explicit LinkedIn document title `Maintenance triage that puts safety first` to `docs/build-2-content-strategy/technical-retrospective-carousel.md`, matching the existing cover. Verified publishing metadata only; caption and slide fields remain unchanged. No PDF re-render or runtime changes were needed. No new durable repository rule was needed.

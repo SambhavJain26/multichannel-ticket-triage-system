@@ -2,6 +2,8 @@
 
 Revised: 2026-10-20. Status: rendered draft for review; not published or queued.
 
+**LinkedIn document title:** `Maintenance triage that puts safety first`
+
 Review PDF: `carousel-kit/out/technical-retrospective-maintenance-triage.pdf`.
 Editable HTML: `carousel-kit/technical-retrospective-maintenance-triage.html`.
 Build: `node carousel-kit/scripts/build-technical-retrospective.cjs`.
