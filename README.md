@@ -198,5 +198,5 @@ Tenant interactions can never trigger manager callbacks or view internal propert
 
 ---
 
-## License & Security
+## Security & Privacy
 Private Client Build: Proprietary Intellectual Property. All tenant names, addresses, and vendor identities in this repository are synthetic test fixtures.
