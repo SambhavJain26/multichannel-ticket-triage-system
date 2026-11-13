@@ -19,7 +19,7 @@
 
 Maintenance coordination is the second largest operational expense and the leading driver of tenant churn in property management. Over **31% of wavering renters state they would renew if maintenance response times improved**. Yet, property managers spend hours reading unstructured emails, playing phone tag for basic troubleshooting details, and guessing emergency priorities at all hours.
 
-This system provides an end-to-end autonomous triage and dispatch pipeline with strict human-in-the-loop controls.
+This system provides an end-to-end manager-approved triage and dispatch pipeline with strict human-in-the-loop controls.
 
 ```
 ┌─────────────────────────────────┐   ┌─────────────────────────────────┐   ┌─────────────────────────────────┐
@@ -206,7 +206,7 @@ When the manager taps `[Dispatch Apex]`:
 | :--- | :--- | :--- |
 | **Emergency Triage Speed** | 15-45 Minutes (or hours after-hours) | **< 60 Seconds (Automated safety detection)** |
 | **Routine Coordination Time** | 20-30 Minutes per ticket (phone tag) | **< 3 Minutes (Mobile 1-tap dispatch)** |
-| **After-Hours Coverage** | Call center with no context ($25+/call) | **24/7 Autonomous Multi-Channel Triage** |
+| **After-Hours Coverage** | Call center with no context ($25+/call) | **24/7 Manager-Approved Multi-Channel Triage** |
 | **Vendor Double-Dispatch Rate** | 2-5% due to coordinator confusion | **0% (Guaranteed by atomic DB send-locks)** |
 | **Tenant Photo Submission Rate** | Low (Tenants rarely email photos) | **High (Native mobile Telegram photo uploads)** |
 | **Manager Administrative Overhead**| High portal fatigue across desktop screens | **Zero portal logins (1-tap mobile action cards)** |

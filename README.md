@@ -22,7 +22,7 @@ Maintenance coordination is the primary operational friction point in residentia
 * **The After-Hours Coverage Gap**: Standard office hours cover only 40 of the 168 hours in a week. The remaining 128 hours typically rely on costly third-party call centers that lack context and default to expensive emergency dispatches.
 
 ### The Solution
-This system is an **autonomous maintenance intelligence and dispatch pipeline**:
+This system is a **manager-approved maintenance intelligence and dispatch pipeline**:
 1. **Multi-Channel Intake**: Accepts tenant requests via Web Form, Email (IMAP), and a dedicated Tenant Telegram Bot with conversational follow-up and photo ingestion.
 2. **Two-Stage Urgency Classification**: Evaluates requests using OpenAI's Responses API under strict JSON schemas, bounded by hardcoded keyword safety rules that can raise urgency (Emergency, Urgent, Routine) but can never lower it.
 3. **Conversational Clarification**: Automatically queries the tenant for missing troubleshooting details before a manager is ever interrupted.
